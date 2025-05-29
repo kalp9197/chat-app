@@ -1,8 +1,8 @@
 import {
   findUserByEmail,
   createUser,
-  generateToken,
   comparePasswords,
+  generateToken,
 } from "../services/auth.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
@@ -19,13 +19,12 @@ export const register = async (req, res) => {
     }
 
     const user = await createUser({ name, email, password });
-    const token = generateToken({ id: user.id, email: user.email });
     const { password: _, ...userWithoutPassword } = user;
 
     return res.status(HTTP_STATUS.CREATED).json({
       message: "User registered successfully",
       success: true,
-      data: { user: userWithoutPassword, token },
+      data: { user: userWithoutPassword },
     });
   } catch (error) {
     return res
@@ -63,6 +62,7 @@ export const login = async (req, res) => {
       data: { user: userWithoutPassword, token },
     });
   } catch (error) {
+    console.log(error.message);
     return res
       .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
       .json({ message: error.message, success: false });

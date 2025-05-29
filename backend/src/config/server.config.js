@@ -9,7 +9,7 @@ config();
 export const configureServer = (app) => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(cors({ origin: CORS_ORIGIN }));
+  app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
   initializeDatabase();
 
   // Security headers
