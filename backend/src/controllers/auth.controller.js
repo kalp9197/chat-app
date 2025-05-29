@@ -68,3 +68,25 @@ export const login = async (req, res) => {
       .json({ message: error.message, success: false });
   }
 };
+
+export const checkAuth = async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                message: "User not authenticated",
+                success: false,
+            });
+        }
+        return res.status(HTTP_STATUS.OK).json({
+            message: "User authenticated successfully",
+            success: true,
+            data: { user },
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res
+            .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+            .json({ message: error.message, success: false });
+    }
+};

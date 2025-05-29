@@ -1,30 +1,30 @@
-import { verifyToken } from '../services/auth.service.js';
-import { HTTP_STATUS } from '../constants/http.constant.js';
+import { verifyToken as verifyJwtToken } from "../services/auth.service.js";
+import { HTTP_STATUS } from "../constants/statusCodes.js";
 
-export const verifyToken = async (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        message: 'Authorization header missing or invalid',
-        success: false
+        message: "Authorization header missing or invalid",
+        success: false,
       });
     }
 
-    const token = authHeader.split(' ')[1];
+    const token = authHeader.split(" ")[1];
     if (!token) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        message: 'No token provided',
-        success: false
+        message: "No token provided",
+        success: false,
       });
     }
 
-    req.user = verifyToken(token);
+    req.user = verifyJwtToken(token);
     next();
   } catch (error) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      message: 'Invalid token',
-      success: false
+      message: "Invalid token",
+      success: false,
     });
   }
 };

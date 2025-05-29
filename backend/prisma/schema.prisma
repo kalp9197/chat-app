@@ -1,17 +1,50 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "mysql"
-    url = env("DATABASE_URL")
-}   
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
 model User {
-    id Int @id @default(autoincrement())
-    uuid String @unique
-    name String
-    email String @unique
-    password String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id                Int              @id @default(autoincrement())
+  uuid              String           @unique @default(uuid())
+  name              String
+  email             String           @unique
+  password          String
+  avatar_url        String?          @db.VarChar(512)
+  online            Boolean          @default(false)
+  last_seen         DateTime?
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+  sent_messages     DirectMessage[]  @relation("SentMessages")
+  received_messages DirectMessage[]  @relation("ReceivedMessages")
+}
+
+enum MessageType {
+  text
+  image
+  file
+}
+
+model DirectMessage {
+  id           Int        @id @default(autoincrement())
+  uuid         String     @unique @default(uuid())
+  sender_id    Int
+  receiver_id  Int
+  content      String     @db.Text
+  message_type MessageType @default(text)
+  file_url     String?    @db.VarChar(512)
+  read         Boolean    @default(false)
+  edited       Boolean    @default(false)
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+  deleted_at   DateTime?
+
+  sender   User @relation("SentMessages", fields: [sender_id], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiver_id], references: [id])
+
+  @@index([sender_id, receiver_id, created_at])
+  @@index([receiver_id])
 }

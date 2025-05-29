@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-// Helper to get initial state from localStorage
 const getStoredAuthState = () => {
   try {
     const storedData = localStorage.getItem('auth-store');
@@ -15,7 +14,6 @@ const getStoredAuthState = () => {
   return { user: null, token: null };
 };
 
-// Get initial state
 const initialState = getStoredAuthState();
 
 export const useAuth = create(
