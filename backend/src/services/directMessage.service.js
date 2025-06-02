@@ -1,10 +1,32 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prisma } from "../config/database.config.js";
 
 export const sendDirectMessage = async (messageData) => {
   try {
+    // First get the receiver's ID from their UUID
+    const receiver = await prisma.user.findUnique({
+      where: { uuid: messageData.receiver_uuid },
+      select: { id: true }
+    });
+
+    if (!receiver) {
+      throw new Error("Receiver not found");
+    }
+
     const message = await prisma.directMessage.create({
-      data: messageData,
+      data: {
+        sender_id: messageData.sender_id,
+        receiver_id: receiver.id,
+        content: messageData.content,
+        message_type: messageData.message_type || 'text'
+      },
+      include: {
+        sender: {
+          select: { id: true, uuid: true, name: true }
+        },
+        receiver: {
+          select: { id: true, uuid: true, name: true }
+        }
+      }
     });
     return message;
   } catch (error) {
@@ -13,13 +35,23 @@ export const sendDirectMessage = async (messageData) => {
   }
 };
 
-export const getDirectMessages = async (userId1, userId2) => {
+export const getDirectMessages = async (sender_id, receiver_uuid) => {
   try {
+    // First get the receiver's ID from their UUID
+    const receiver = await prisma.user.findUnique({
+      where: { uuid: receiver_uuid },
+      select: { id: true }
+    });
+
+    if (!receiver) {
+      throw new Error("Receiver not found");
+    }
+
     const messages = await prisma.directMessage.findMany({
       where: {
         OR: [
-          { sender_id: userId1, receiver_id: userId2 },
-          { sender_id: userId2, receiver_id: userId1 },
+          { sender_id: sender_id, receiver_id: receiver.id },
+          { sender_id: receiver.id, receiver_id: sender_id },
         ],
       },
       orderBy: {
@@ -27,10 +59,10 @@ export const getDirectMessages = async (userId1, userId2) => {
       },
       include: {
         sender: {
-          select: { id: true, name: true, avatar_url: true },
+          select: { id: true, uuid: true, name: true },
         },
         receiver: {
-          select: { id: true, name: true, avatar_url: true },
+          select: { id: true, uuid: true, name: true },
         },
       },
     });
@@ -40,3 +72,4 @@ export const getDirectMessages = async (userId1, userId2) => {
     throw error;
   }
 };
+

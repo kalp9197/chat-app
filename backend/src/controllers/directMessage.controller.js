@@ -1,36 +1,61 @@
 import * as directMessageService from '../services/directMessage.service.js';
+import { HTTP_STATUS } from '../constants/statusCodes.js';
 
 export const sendNewDirectMessage = async (req, res, next) => {
     try {
-        const { receiver_id, content, message_type, file_url } = req.body;
+        const { receiver_uuid, content, message_type } = req.body;
         const sender_id = req.user.id;
 
         const messageData = {
             sender_id,
-            receiver_id,
+            receiver_uuid,
             content,
-            message_type,
-            file_url,
+            message_type
         };
 
         const message = await directMessageService.sendDirectMessage(messageData);
-        res.status(201).json(message);
+        res.status(HTTP_STATUS.CREATED).json({
+            success: true,
+            message: "Message sent successfully",
+            data: message
+        });
     } catch (error) {
-        next(error);
+        if (error.message === "Receiver not found") {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                success: false,
+                message: "Receiver not found"
+            });
+        }
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
 export const getMessagesBetweenUsers = async (req, res, next) => {
     try {
-        const userId1 = req.user.id; // Authenticated user
-        const { userId2 } = req.params; // The other user in the conversation
+        const sender_id = req.user.id; // Authenticated user
+        const { receiver_uuid } = req.params; // The other user in the conversation
 
         const messages = await directMessageService.getDirectMessages(
-            userId1,
-            parseInt(userId2)
+            sender_id,
+            receiver_uuid
         );
-        res.status(200).json(messages);
+        res.status(HTTP_STATUS.OK).json({
+            success: true,
+            data: messages
+        });
     } catch (error) {
-        next(error);
+        if (error.message === "Receiver not found") {
+            return res.status(HTTP_STATUS.NOT_FOUND).json({
+                success: false,
+                message: "Receiver not found"
+            });
+        }
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: error.message
+        });
     }
-}; 
+};

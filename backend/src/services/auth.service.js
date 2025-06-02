@@ -16,14 +16,18 @@ export const generateToken = (payload) =>
   jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
 
 export const createUser = async (userData) => {
-  const hashedPassword = await hashPassword(userData.password);
-  return prisma.user.create({
-    data: {
-      ...userData,
-      password: hashedPassword,
-      uuid: uuidv4(),
-    },
-  });
+  try {
+    const hashedPassword = await hashPassword(userData.password);
+    return prisma.user.create({
+      data: {
+        ...userData,
+        password: hashedPassword,
+        uuid: uuidv4(),
+      },
+    });
+  } catch (error) {
+    throw new Error("Failed to create user",error);
+  }
 };
 
 export const findUserByEmail = async (email) =>

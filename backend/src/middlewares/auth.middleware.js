@@ -1,4 +1,4 @@
-import { verifyToken as verifyJwtToken } from "../services/auth.service.js";
+import * as authService from "../services/auth.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
 export const authMiddleware = async (req, res, next) => {
@@ -19,7 +19,7 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    req.user = verifyJwtToken(token);
+    req.user = authService.verifyToken(token);
     next();
   } catch (error) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({

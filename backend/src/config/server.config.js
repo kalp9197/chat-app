@@ -1,10 +1,7 @@
 import express from "express";
 import cors from "cors";
-import { config } from "dotenv";
 import { CORS_ORIGIN } from "../constants/env.js";
 import { initializeDatabase } from "./database.config.js";
-
-config();
 
 export const configureServer = (app) => {
   app.use(express.json());
