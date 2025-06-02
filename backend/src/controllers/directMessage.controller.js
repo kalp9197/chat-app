@@ -1,7 +1,7 @@
 import * as directMessageService from '../services/directMessage.service.js';
 import { HTTP_STATUS } from '../constants/statusCodes.js';
 
-export const sendNewDirectMessage = async (req, res, next) => {
+export const sendNewDirectMessage = async (req, res) => {
     try {
         const { receiver_uuid, content, message_type } = req.body;
         const sender_id = req.user.id;
@@ -33,7 +33,7 @@ export const sendNewDirectMessage = async (req, res, next) => {
     }
 };
 
-export const getMessagesBetweenUsers = async (req, res, next) => {
+export const getMessagesBetweenUsers = async (req, res) => {
     try {
         const sender_id = req.user.id; // Authenticated user
         const { receiver_uuid } = req.params; // The other user in the conversation

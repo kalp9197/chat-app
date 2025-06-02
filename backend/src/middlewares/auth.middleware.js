@@ -23,7 +23,7 @@ export const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      message: "Invalid token",
+      message: `Invalid token : ${error.message}`,
       success: false,
     });
   }

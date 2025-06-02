@@ -14,6 +14,7 @@ export const register = async (req, res) => {
     }
 
     const user = await authService.createUser({ name, email, password });
+    // eslint-disable-next-line no-unused-vars
     const { password: _, ...userWithoutPassword } = user;
 
     return res.status(HTTP_STATUS.CREATED).json({
@@ -52,6 +53,7 @@ export const login = async (req, res) => {
     }
 
     const token = authService.generateToken({ id: user.id, email: user.email });
+    // eslint-disable-next-line no-unused-vars
     const { password: _, ...userWithoutPassword } = user;
 
     return res.status(HTTP_STATUS.OK).json({
