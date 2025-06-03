@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/store/auth";
 import { useChatStore } from "@/store/chat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
+import { motion } from "framer-motion";
 import { Send, LogOut, Circle } from "lucide-react";
+import ChatMessage from "@/components/ChatMessage";
+import UserList from "@/components/UserList";
 
 export default function Home() {
   const user = useAuth((s) => s.user);
@@ -21,8 +22,18 @@ export default function Home() {
     setActiveChat,
     listenToUserStatus
   } = useChatStore();
+  
   const [newMessage, setNewMessage] = useState("");
   const [userStatuses, setUserStatuses] = useState({});
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     updateUserStatus(true);
@@ -84,29 +95,12 @@ export default function Home() {
           {/* Users List */}
           <div className="md:col-span-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4">
             <h2 className="text-lg font-semibold mb-4">Users</h2>
-            <div className="space-y-2">
-              {users.map((otherUser) => (
-                <button
-                  key={otherUser.uuid}
-                  onClick={() => setActiveChat(otherUser)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
-                    activeChat?.uuid === otherUser.uuid
-                      ? "bg-blue-50 dark:bg-blue-900/20"
-                      : "hover:bg-gray-50 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  <span className="font-medium">{otherUser.name}</span>
-                  <Circle
-                    size={12}
-                    className={`${
-                      userStatuses[otherUser.uuid]?.online
-                        ? "fill-green-500 text-green-500"
-                        : "fill-gray-500 text-gray-500"
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
+            <UserList 
+              users={users}
+              activeChat={activeChat}
+              userStatuses={userStatuses}
+              onSelectUser={setActiveChat}
+            />
           </div>
 
           {/* Chat Window */}
@@ -130,32 +124,10 @@ export default function Home() {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  <AnimatePresence>
-                    {messages.map((message) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className={`flex ${
-                          message.sender_uuid === user.uuid ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-lg p-3 ${
-                            message.sender_uuid === user.uuid
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-100 dark:bg-slate-700"
-                          }`}
-                        >
-                          <p className="text-sm">{message.content}</p>
-                          <p className="text-xs mt-1 opacity-70">
-                            {format(new Date(message.timestamp), "HH:mm")}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+                  {messages.map((message) => (
+                    <ChatMessage key={message.id} message={message} />
+                  ))}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Message Input */}
