@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { useAuth } from "@/store/auth";
-import { useChatStore } from "@/store/chat";
+import { useChat } from "@/store/chat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ export default function Chat({ chat }) {
   const messagesEndRef = useRef(null);
 
   const user = useAuth((s) => s.user);
-  const { messages, sendMessage, updateUserStatus } = useChatStore();
+  const { messages, sendMessage, updateUserStatus } = useChat();
 
 
   useEffect(() => {

@@ -3,14 +3,14 @@ import { Search, X, MessageCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useChatStore } from '@/store/chat';
+import { useChat } from '@/store/chat';
 import { useAuth } from '@/store/auth';
 
 export default function NewChatModal({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   
-  const { users, searchingUsers, searchUsers, startChat } = useChatStore();
+  const { users, searchingUsers, searchUsers, startChat } = useChat();
   const user = useAuth(s => s.user);
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useChatStore } from "@/store/chat";
+import { useChat } from "@/store/chat";
 import { useAuth } from "@/store/auth";
 import NewChatModal from "./NewChatModal";
 
@@ -12,7 +12,7 @@ export default function ChatList({ onSelectChat, selectedChat }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   
-  const { chats, loading, fetchChats, setActiveChat } = useChatStore();
+  const { chats, loading, fetchChats, setActiveChat } = useChat();
   const user = useAuth(s => s.user);
 
   useEffect(() => {
