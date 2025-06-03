@@ -1,8 +1,8 @@
 import { prisma } from "../config/database.config.js";
+import * as notificationService from './notification.service.js';
 
 export const sendDirectMessage = async (messageData) => {
   try {
-    // First get the receiver's ID from their UUID
     const receiver = await prisma.user.findUnique({
       where: { uuid: messageData.receiver_uuid },
       select: { id: true }
@@ -28,6 +28,10 @@ export const sendDirectMessage = async (messageData) => {
         }
       }
     });
+    
+
+    await notificationService.sendNewMessageNotification(message);
+    
     return message;
   } catch (error) {
     console.error("Error sending direct message:", error);
@@ -37,7 +41,6 @@ export const sendDirectMessage = async (messageData) => {
 
 export const getDirectMessages = async (sender_id, receiver_uuid) => {
   try {
-    // First get the receiver's ID from their UUID
     const receiver = await prisma.user.findUnique({
       where: { uuid: receiver_uuid },
       select: { id: true }

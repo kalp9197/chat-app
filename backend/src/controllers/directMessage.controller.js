@@ -35,8 +35,8 @@ export const sendNewDirectMessage = async (req, res) => {
 
 export const getMessagesBetweenUsers = async (req, res) => {
     try {
-        const sender_id = req.user.id; // Authenticated user
-        const { receiver_uuid } = req.params; // The other user in the conversation
+        const sender_id = req.user.id;
+        const { receiver_uuid } = req.params;
 
         const messages = await directMessageService.getDirectMessages(
             sender_id,

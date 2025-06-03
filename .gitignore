@@ -7,4 +7,4 @@ backend/.env
 frontend/.env
 backend/dist
 frontend/dist
-/backend/firebaseServiceAccount.json
+/backend/firebase-admin-key.json

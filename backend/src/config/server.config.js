@@ -9,7 +9,6 @@ export const configureServer = (app) => {
   app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
   initializeDatabase();
 
-  // Security headers
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");

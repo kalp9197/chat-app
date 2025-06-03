@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "@/pages/Login";
@@ -6,11 +6,13 @@ import Register from "@/pages/Register";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "@/pages/Home";
 import { useAuth } from "@/store/auth";
+import NotificationBanner from "@/components/NotificationBanner";
+import { initializeNotifications } from "@/services/notificationService";
 
 function AuthRoute({ children }) {
   const isAuthenticated = useAuth((s) => s.isAuthenticated);
 
-  // If user is already authenticated, redirect to home page
+
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
@@ -19,9 +21,40 @@ function AuthRoute({ children }) {
 }
 
 export default function App() {
+  const isAuthenticated = useAuth((s) => s.isAuthenticated);
+
+
+  const token = useAuth((s) => s.token);
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      // Ensure we have a valid token before initializing notifications
+      console.log('Auth token available, initializing notifications...');
+      
+      const initTimer = setTimeout(() => {
+        initializeNotifications()
+          .then(fcmToken => {
+            if (fcmToken) {
+              console.log('Notification system initialized successfully');
+            } else {
+              console.warn('Failed to initialize notification system');
+            }
+          })
+          .catch(error => {
+            console.error('Error initializing notifications:', error);
+          });
+      }, 2000); // Increased delay to ensure auth is fully established
+      
+      return () => clearTimeout(initTimer);
+    }
+  }, [isAuthenticated, token]);
+
   return (
     <div className="min-h-screen">
       <BrowserRouter>
+        {/* Include the notification banner for foreground notifications */}
+        <NotificationBanner />
+        
         <Routes>
           <Route
             path="/"
