@@ -5,14 +5,12 @@ import { validate } from "../middlewares/validation.middleware.js";
 import * as Validation from "../validations/directMessageValidations.js";
 const router = express.Router();
 
-
 router.post(
   "/",
   authMiddleware,
   validate(Validation.validateSendMessage),
   directMessageController.sendNewDirectMessage
 );
-
 
 router.get(
   "/:receiver_uuid",

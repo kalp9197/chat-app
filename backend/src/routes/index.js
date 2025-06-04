@@ -1,2 +1,2 @@
-export { default as authRoutes } from './auth.route.js';
-export { default as directMessageRoutes } from './directMessage.routes.js';
+export { default as authRoutes } from "./auth.route.js";
+export { default as directMessageRoutes } from "./directMessage.routes.js";

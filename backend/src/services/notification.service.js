@@ -1,12 +1,11 @@
 import { prisma } from "../config/database.config.js";
 import { messaging } from "../config/firebase.config.js";
 
-
 export const saveFcmToken = async (userId, fcmToken) => {
   try {
     await prisma.user.update({
       where: { id: userId },
-      data: { fcm_token: fcmToken }
+      data: { fcm_token: fcmToken },
     });
     return true;
   } catch (error) {
@@ -15,13 +14,11 @@ export const saveFcmToken = async (userId, fcmToken) => {
   }
 };
 
-
 export const sendNotification = async (receiverId, title, body, data = {}) => {
   try {
-
     const user = await prisma.user.findUnique({
       where: { id: receiverId },
-      select: { fcm_token: true }
+      select: { fcm_token: true },
     });
 
     if (!user || !user.fcm_token) {
@@ -38,16 +35,16 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
       data,
       webpush: {
         headers: {
-          Urgency: 'high'
+          Urgency: "high",
         },
         notification: {
-          icon: '/notification-icon.png',
+          icon: "/notification-icon.png",
           click_action: `${process.env.ORIGIN_URL}/chat`,
         },
         fcm_options: {
-          link: `${process.env.ORIGIN_URL}/chat`
-        }
-      }
+          link: `${process.env.ORIGIN_URL}/chat`,
+        },
+      },
     };
 
     const response = await messaging.send(message);
@@ -59,28 +56,24 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
   }
 };
 
-
 export const sendNewMessageNotification = async (message) => {
   try {
-
     const sender = await prisma.user.findUnique({
       where: { id: message.sender_id },
-      select: { name: true }
+      select: { name: true },
     });
 
-
     const title = `New message from ${sender.name}`;
-    const body = message.content.length > 100 
-      ? `${message.content.substring(0, 97)}...` 
-      : message.content;
-    
+    const body =
+      message.content.length > 100
+        ? `${message.content.substring(0, 97)}...`
+        : message.content;
 
     const data = {
       messageId: message.id.toString(),
       senderId: message.sender_id.toString(),
-      type: 'new_message'
+      type: "new_message",
     };
-
 
     return await sendNotification(message.receiver_id, title, body, data);
   } catch (error) {

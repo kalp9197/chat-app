@@ -5,8 +5,8 @@ export const getAllUsers = async (currentUserId) => {
     const users = await prisma.user.findMany({
       where: {
         id: {
-          not: currentUserId
-        }
+          not: currentUserId,
+        },
       },
       select: {
         id: true,
@@ -14,10 +14,11 @@ export const getAllUsers = async (currentUserId) => {
         name: true,
         email: true,
         online: true,
-        last_seen: true
-      }
+        last_seen: true,
+      },
     });
     return users;
+    // eslint-disable-next-line no-unused-vars
   } catch (error) {
     throw new Error("Failed to fetch users");
   }
