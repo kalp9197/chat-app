@@ -12,7 +12,7 @@ export default function Login() {
     setPassword,
     loading,
     error,
-    handleSubmit
+    handleSubmit,
   } = useLogin();
 
   return (

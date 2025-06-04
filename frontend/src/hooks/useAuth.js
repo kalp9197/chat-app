@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 
 const getStoredAuthState = () => {
   try {
-    const storedData = localStorage.getItem('auth-store');
+    const storedData = localStorage.getItem("auth-store");
     if (storedData) {
       const { state } = JSON.parse(storedData);
       return state;
@@ -31,9 +31,9 @@ export const useAuth = create(
       // Helper method to get current token
       getToken: () => get().token,
     }),
-    { 
+    {
       name: "auth-store",
       storage: createJSONStorage(() => localStorage),
     }
   )
-); 
+);

@@ -30,7 +30,7 @@ export const useChat = create((set, get) => ({
       set({ messagePollingInterval: intervalId });
     }
   },
-  
+
   // Cleanly stop message polling
   stopMessagePolling: () => {
     const { messagePollingInterval } = get();
@@ -39,26 +39,26 @@ export const useChat = create((set, get) => ({
       set({ messagePollingInterval: null });
     }
   },
-  
+
   // Only fetch new messages without replacing the entire message list
   fetchNewMessages: async (chatId) => {
     if (!chatId) return;
-    
+
     try {
       const user = useAuth.getState().user;
       if (!user) return;
-      
+
       let receiverUuid = chatId;
-      if (chatId.startsWith('user-')) {
-        receiverUuid = chatId.replace('user-', '');
+      if (chatId.startsWith("user-")) {
+        receiverUuid = chatId.replace("user-", "");
       }
-      
+
       const response = await axios.get(`/direct-messages/${receiverUuid}`);
-      
+
       if (response.data) {
         // Handle different response structures by checking what's available
         let rawMessages = [];
-        
+
         // Option 1: data is directly in response.data
         if (Array.isArray(response.data)) {
           rawMessages = response.data;
@@ -71,27 +71,31 @@ export const useChat = create((set, get) => ({
         else if (Array.isArray(response.data.directMessages)) {
           rawMessages = response.data.directMessages;
         }
-        
+
         // Map messages to our format - preserving the original structure for correct sender identification
         const formattedMessages = rawMessages.map((message) => ({
-          id: message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
+          id:
+            message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
           text: message.content || message.text || "",
           content: message.content || message.text || "",
-          sender: message.sender || { uuid: message.sender_uuid, name: message.sender_name },
+          sender: message.sender || {
+            uuid: message.sender_uuid,
+            name: message.sender_name,
+          },
           // Keep the original sender object for proper identification
           senderName: message.sender?.name || message.sender_name || "",
           timestamp: message.created_at || message.timestamp || Date.now(),
           // Keep raw data for debugging
-          _raw: message
+          _raw: message,
         }));
-        
+
         // Only update if we have new messages
         const currentMessages = get().messages;
         if (formattedMessages.length > currentMessages.length) {
           set({ messages: formattedMessages });
         }
       }
-    } catch (error) {
+    } catch {
       // Silent error handling to prevent UI disruption
     }
   },
@@ -109,18 +113,20 @@ export const useChat = create((set, get) => ({
       if (response.data && response.data.success) {
         // Convert users to a format that resembles chats for the UI
         const users = response.data.users || [];
-        
+
         // Transform users into chat-like objects
-        const chats = users.map(user => ({
+        const chats = users.map((user) => ({
           id: `user-${user.uuid}`,
           name: user.name,
-          avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`,
+          avatar:
+            user.avatar ||
+            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`,
           receiver_uuid: user.uuid,
           otherUser: user,
           last_message: "",
           updated_at: user.updated_at || new Date().toISOString(),
         }));
-        
+
         set({ chats });
         return chats;
       } else {
@@ -129,7 +135,6 @@ export const useChat = create((set, get) => ({
       }
     } catch (error) {
       set({ error: error.message });
-
     } finally {
       set({ loading: false });
     }
@@ -139,7 +144,7 @@ export const useChat = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       // Interceptor will automatically handle the token
-      
+
       const response = await axios.get("/users");
 
       // Safely extract users from response, defaulting to empty array
@@ -161,20 +166,20 @@ export const useChat = create((set, get) => ({
 
     try {
       set({ loading: true, error: null });
-      
+
       // Extract receiver UUID from chat ID if it starts with 'user-'
       let receiverUuid = chatId;
-      if (chatId.startsWith('user-')) {
-        receiverUuid = chatId.replace('user-', '');
+      if (chatId.startsWith("user-")) {
+        receiverUuid = chatId.replace("user-", "");
       }
-      
+
       // Use the direct-messages endpoint with the receiver UUID
       const response = await axios.get(`/direct-messages/${receiverUuid}`);
 
       if (response.data) {
         // Handle different response structures by checking what's available
         let rawMessages = [];
-        
+
         // Option 1: data is directly in response.data
         if (Array.isArray(response.data)) {
           rawMessages = response.data;
@@ -190,15 +195,19 @@ export const useChat = create((set, get) => ({
 
         // Map messages to our format - preserving the original structure for correct sender identification
         const formattedMessages = rawMessages.map((message) => ({
-          id: message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
+          id:
+            message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
           text: message.content || message.text || "",
           content: message.content || message.text || "",
-          sender: message.sender || { uuid: message.sender_uuid, name: message.sender_name },
+          sender: message.sender || {
+            uuid: message.sender_uuid,
+            name: message.sender_name,
+          },
           // Keep the original sender object for proper identification
           senderName: message.sender?.name || message.sender_name || "",
           timestamp: message.created_at || message.timestamp || Date.now(),
           // Keep raw data for debugging
-          _raw: message
+          _raw: message,
         }));
 
         set({ messages: formattedMessages });
@@ -217,13 +226,13 @@ export const useChat = create((set, get) => ({
     const user = useAuth.getState().user;
 
     if (!user || !content.trim()) return;
-    
+
     // Extract receiver UUID from chatId if no explicit receiverUuid is provided
     let receiver = receiverUuid;
-    if (!receiver && chatId && chatId.startsWith('user-')) {
-      receiver = chatId.replace('user-', '');
+    if (!receiver && chatId && chatId.startsWith("user-")) {
+      receiver = chatId.replace("user-", "");
     }
-    
+
     try {
       // Optimistically add the message to the UI first
       const tempId = `temp-${Date.now()}`;
@@ -233,67 +242,67 @@ export const useChat = create((set, get) => ({
         content: content.trim(),
         sender: {
           uuid: user.uuid,
-          name: user.name
+          name: user.name,
         },
         senderName: user.name || "",
         timestamp: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        isPending: true
+        isPending: true,
       };
-      
+
       // Add the message to the local state immediately
-      set(state => ({ 
-        messages: [...state.messages, tempMessage] 
+      set((state) => ({
+        messages: [...state.messages, tempMessage],
       }));
-      
+
       // Send the actual API request
-      const response = await axios.post(
-        "/direct-messages",
-        {
-          content: content.trim(),
-          receiver_uuid: receiver,
-        }
-      );
-      
+      const response = await axios.post("/direct-messages", {
+        content: content.trim(),
+        receiver_uuid: receiver,
+      });
+
       // If successful, update the temp message with the real one from the server if available
       if (response.data && response.data.data) {
         const serverMessage = response.data.data;
-        set(state => ({
-          messages: state.messages.map(m => 
-            m.id === tempId 
-              ? { 
+        set((state) => ({
+          messages: state.messages.map((m) =>
+            m.id === tempId
+              ? {
                   id: serverMessage.id || tempId,
                   text: serverMessage.content || m.text,
                   content: serverMessage.content || m.content,
                   sender: serverMessage.sender || {
                     uuid: serverMessage.sender_uuid || user.uuid,
-                    name: serverMessage.sender_name || user.name
+                    name: serverMessage.sender_name || user.name,
                   },
                   senderName: serverMessage.sender?.name || user.name,
-                  timestamp: new Date(serverMessage.created_at || m.timestamp).toISOString(),
+                  timestamp: new Date(
+                    serverMessage.created_at || m.timestamp
+                  ).toISOString(),
                   created_at: serverMessage.created_at || m.created_at,
-                  isPending: false
+                  isPending: false,
                 }
               : m
-          )
+          ),
         }));
       } else {
         // Just mark the message as not pending if no server data
-        set(state => ({
-          messages: state.messages.map(m => 
+        set((state) => ({
+          messages: state.messages.map((m) =>
             m.id === tempId ? { ...m, isPending: false } : m
-          )
+          ),
         }));
       }
-      
+
       return response.data.data;
     } catch (error) {
       // If there was an error, mark the message as failed
-      set(state => ({
-        messages: state.messages.map(m => 
+      set((state) => ({
+        messages: state.messages.map((m) =>
+          /* eslint-disable */
           m.id === tempId ? { ...m, isPending: false, failed: true } : m
         ),
-        error: error.message
+        error: error.message,
       }));
       return null;
     }
@@ -351,7 +360,9 @@ export const useChat = create((set, get) => ({
         const newChat = {
           id: `user-${otherUser.uuid}`,
           name: otherUser.name,
-          avatar: otherUser.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.name}`,
+          avatar:
+            otherUser.avatar ||
+            `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.name}`,
           receiver_uuid: otherUser.uuid,
           otherUser,
           last_message: "",
@@ -374,5 +385,5 @@ export const useChat = create((set, get) => ({
       console.error("Error starting chat:", error);
       return null;
     }
-  }
-})); 
+  },
+}));

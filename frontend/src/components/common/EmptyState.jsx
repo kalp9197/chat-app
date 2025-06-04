@@ -17,4 +17,4 @@ const EmptyState = ({ message, action, actionText, icon = "📫" }) => {
   );
 };
 
-export default EmptyState; 
+export default EmptyState;

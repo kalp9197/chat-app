@@ -12,4 +12,4 @@ const AuthRoute = ({ children }) => {
   return children;
 };
 
-export default AuthRoute; 
+export default AuthRoute;

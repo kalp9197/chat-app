@@ -9,7 +9,9 @@ const UserList = ({ onSelectUser }) => {
   }, [fetchAllUsers]);
 
   if (loading) {
-    return <div className="p-4 text-center text-gray-500">Loading users...</div>;
+    return (
+      <div className="p-4 text-center text-gray-500">Loading users...</div>
+    );
   }
 
   if (!users || users.length === 0) {
@@ -26,7 +28,10 @@ const UserList = ({ onSelectUser }) => {
         >
           <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
             <img
-              src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+              src={
+                user.avatar ||
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`
+              }
               alt={`${user.name}'s avatar`}
               className="w-full h-full object-cover"
             />
@@ -38,4 +43,4 @@ const UserList = ({ onSelectUser }) => {
   );
 };
 
-export default UserList; 
+export default UserList;

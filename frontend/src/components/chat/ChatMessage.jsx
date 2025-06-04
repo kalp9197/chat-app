@@ -6,13 +6,13 @@ const ChatMessage = ({ message }) => {
 
   // Check if the message was sent by the current user
   // Messages from backend include sender.uuid whereas our optimistic updates use just sender
-  const isSentByMe = 
+  const isSentByMe =
     (message.sender?.uuid && message.sender.uuid === user?.uuid) || // Format from backend
     (message.sender && message.sender === user?.uuid); // Format from optimistic update
-  
+
   // Extract the sender name
   const senderName = message.sender?.name || message.senderName || "";
-  
+
   // Status indicator for message sending state
   const messageStatus = message.isPending ? (
     <span className="ml-2 text-xs">sending...</span>
@@ -21,8 +21,10 @@ const ChatMessage = ({ message }) => {
   ) : null;
 
   return (
-    <div 
-      className={`flex w-full ${isSentByMe ? "justify-end" : "justify-start"} mb-4`}
+    <div
+      className={`flex w-full ${
+        isSentByMe ? "justify-end" : "justify-start"
+      } mb-4`}
       data-sender={isSentByMe ? "me" : "other"}
     >
       {/* Left side avatar for received messages */}
@@ -33,42 +35,52 @@ const ChatMessage = ({ message }) => {
           </div>
         </div>
       )}
-      
+
       {/* Message bubble */}
       <div
         className={`
           relative px-4 py-2 rounded-t-lg
-          ${isSentByMe 
-            ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-l-lg rounded-br-none shadow-md" 
-            : "bg-white text-gray-800 rounded-r-lg rounded-bl-none border border-gray-200 shadow-sm"
+          ${
+            isSentByMe
+              ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-l-lg rounded-br-none shadow-md"
+              : "bg-white text-gray-800 rounded-r-lg rounded-bl-none border border-gray-200 shadow-sm"
           }
           max-w-[70%]
         `}
       >
         {/* Message content */}
-        <p className="text-sm whitespace-pre-wrap break-words">{message.text || message.content || ""}</p>
-        
+        <p className="text-sm whitespace-pre-wrap break-words">
+          {message.text || message.content || ""}
+        </p>
+
         {/* Time and status */}
-        <div className={`flex items-center mt-1 text-xs ${isSentByMe ? "text-blue-100" : "text-gray-500"}`}>
+        <div
+          className={`flex items-center mt-1 text-xs ${
+            isSentByMe ? "text-blue-100" : "text-gray-500"
+          }`}
+        >
           <span>
-            {new Date(message.timestamp || message.created_at || Date.now()).toLocaleTimeString([], { 
-              hour: "2-digit", 
-              minute: "2-digit" 
+            {new Date(
+              message.timestamp || message.created_at || Date.now()
+            ).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
             })}
           </span>
           {messageStatus}
         </div>
-        
+
         {/* Triangle for speech bubble effect */}
-        <div 
+        <div
           className={`absolute bottom-0 w-3 h-3 
-            ${isSentByMe 
-              ? "right-0 transform translate-x-[95%] translate-y-[30%] bg-blue-600 rotate-45" 
-              : "left-0 transform -translate-x-[95%] translate-y-[30%] bg-white rotate-45 border-l border-b border-gray-200"
+            ${
+              isSentByMe
+                ? "right-0 transform translate-x-[95%] translate-y-[30%] bg-blue-600 rotate-45"
+                : "left-0 transform -translate-x-[95%] translate-y-[30%] bg-white rotate-45 border-l border-b border-gray-200"
             }`}
         />
       </div>
-      
+
       {/* Right side avatar for sent messages */}
       {isSentByMe && (
         <div className="w-8 h-8 rounded-full bg-blue-100 ml-2 flex-shrink-0 self-end overflow-hidden border-2 border-blue-200">
@@ -81,4 +93,4 @@ const ChatMessage = ({ message }) => {
   );
 };
 
-export default ChatMessage; 
+export default ChatMessage;

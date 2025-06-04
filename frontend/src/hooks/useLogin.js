@@ -17,11 +17,11 @@ export function useLogin() {
     setError("");
     try {
       const response = await axios.post("/auth/login", { email, password });
-      
+
       // Extract token from response, supporting different response formats
       let user = null;
       let token = null;
-      
+
       // Check different possible response structures
       if (response.data) {
         // Check if token is directly in response.data
@@ -36,26 +36,27 @@ export function useLogin() {
         else if (response.data.accessToken) {
           token = response.data.accessToken;
         }
-        
+
         // Extract user data
         if (response.data.user) {
           user = response.data.user;
-        }
-        else if (response.data.data && response.data.data.user) {
+        } else if (response.data.data && response.data.data.user) {
           user = response.data.data.user;
         }
       }
-      
+
       if (!token) {
-        throw new Error('No token received from server');
+        throw new Error("No token received from server");
       }
-      
+
       // Call login with extracted user and token
       login(user, token);
       navigate("/");
     } catch (err) {
       setError(
-        err.response?.data?.message || err.message || "Login failed. Please try again."
+        err.response?.data?.message ||
+          err.message ||
+          "Login failed. Please try again."
       );
     } finally {
       setLoading(false);
@@ -69,6 +70,6 @@ export function useLogin() {
     setPassword,
     loading,
     error,
-    handleSubmit
+    handleSubmit,
   };
-} 
+}

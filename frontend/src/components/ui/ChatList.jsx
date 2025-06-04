@@ -11,9 +11,9 @@ import NewChatModal from "./NewChatModal";
 export default function ChatList({ onSelectChat, selectedChat }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewChatModal, setShowNewChatModal] = useState(false);
-  
+
   const { chats, loading, fetchChats, setActiveChat } = useChat();
-  const user = useAuth(s => s.user);
+  const user = useAuth((s) => s.user);
 
   useEffect(() => {
     if (user) {
@@ -21,7 +21,7 @@ export default function ChatList({ onSelectChat, selectedChat }) {
     }
   }, [user, fetchChats]);
 
-  const filteredChats = chats.filter(chat =>
+  const filteredChats = chats.filter((chat) =>
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -43,7 +43,9 @@ export default function ChatList({ onSelectChat, selectedChat }) {
       <div className="h-full flex flex-col border-r">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-100">Messages</h2>
+            <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-100">
+              Messages
+            </h2>
             <Button
               size="icon"
               variant="ghost"
@@ -65,7 +67,7 @@ export default function ChatList({ onSelectChat, selectedChat }) {
             />
           </div>
         </div>
-        
+
         <ScrollArea className="flex-1">
           <div className="divide-y">
             {filteredChats.length > 0 ? (
@@ -73,7 +75,9 @@ export default function ChatList({ onSelectChat, selectedChat }) {
                 <div
                   key={chat.id}
                   className={`p-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
-                    selectedChat === chat.id ? "bg-indigo-50 dark:bg-slate-700" : ""
+                    selectedChat === chat.id
+                      ? "bg-indigo-50 dark:bg-slate-700"
+                      : ""
                   }`}
                   onClick={() => handleChatSelect(chat)}
                 >
@@ -88,14 +92,18 @@ export default function ChatList({ onSelectChat, selectedChat }) {
                           {chat.name}
                         </h3>
                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {chat.time || new Date(chat.lastMessageTime).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {chat.time ||
+                            new Date(chat.lastMessageTime).toLocaleTimeString(
+                              [],
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
                         </span>
                       </div>
                       <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                        {chat.lastMessage || 'No messages yet'}
+                        {chat.lastMessage || "No messages yet"}
                       </p>
                     </div>
                     {chat.unread > 0 && (
@@ -108,14 +116,16 @@ export default function ChatList({ onSelectChat, selectedChat }) {
               ))
             ) : (
               <div className="p-8 text-center text-slate-400">
-                {searchTerm ? 'No conversations found' : (
+                {searchTerm ? (
+                  "No conversations found"
+                ) : (
                   <div>
                     <p className="mb-2">No conversations yet</p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setShowNewChatModal(true)}
-                    > 
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Start your first chat
                     </Button>
@@ -127,10 +137,10 @@ export default function ChatList({ onSelectChat, selectedChat }) {
         </ScrollArea>
       </div>
 
-      <NewChatModal 
+      <NewChatModal
         isOpen={showNewChatModal}
         onClose={() => setShowNewChatModal(false)}
       />
     </>
   );
-} 
+}

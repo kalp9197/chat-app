@@ -35,6 +35,6 @@ export function useRegister() {
     setName,
     loading,
     error,
-    handleSubmit
+    handleSubmit,
   };
-} 
+}

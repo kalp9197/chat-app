@@ -25,10 +25,10 @@ const Chat = ({ chatId }) => {
       // Short delay to ensure messages are loaded and DOM is updated
       const scrollTimer = setTimeout(() => {
         if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+          messagesEndRef.current.scrollIntoView({ behavior: "auto" });
         }
       }, 300);
-      
+
       return () => clearTimeout(scrollTimer);
     }
   }, [chatId]);
@@ -62,15 +62,17 @@ const Chat = ({ chatId }) => {
     if (messagesEndRef.current && messageContainerRef.current) {
       // Check if user is already at the bottom or close to it
       const container = messageContainerRef.current;
-      const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-      
+      const isAtBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        100;
+
       // Always scroll if:
       // 1. Adding a new message and we're near the bottom
       // 2. We just switched to this chat and messages were loaded
       // 3. There are few messages (likely a new conversation)
       if (isAtBottom || messages.length <= 5) {
-        messagesEndRef.current.scrollIntoView({ 
-          behavior: messages.length <= 5 ? 'auto' : 'smooth' 
+        messagesEndRef.current.scrollIntoView({
+          behavior: messages.length <= 5 ? "auto" : "smooth",
         });
       }
     }
@@ -79,7 +81,7 @@ const Chat = ({ chatId }) => {
   // Function to force scroll to bottom
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -90,7 +92,7 @@ const Chat = ({ chatId }) => {
       await sendMessage(message, chatId);
       // Ensure we scroll to bottom after sending
       setTimeout(scrollToBottom, 100);
-    } catch (error) {
+    } catch {
       // Error handling is managed in the sendMessage function
     }
   };
@@ -98,10 +100,7 @@ const Chat = ({ chatId }) => {
   if (!chatId) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
-        <EmptyState
-          message="Select a chat to start messaging"
-          icon="💬"
-        />
+        <EmptyState message="Select a chat to start messaging" icon="💬" />
       </div>
     );
   }
@@ -109,10 +108,7 @@ const Chat = ({ chatId }) => {
   if (!activeChat) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
-        <EmptyState
-          message="Select a chat to start messaging"
-          icon="💬"
-        />
+        <EmptyState message="Select a chat to start messaging" icon="💬" />
       </div>
     );
   }
@@ -125,7 +121,7 @@ const Chat = ({ chatId }) => {
         onScrollToBottom={scrollToBottom}
       />
 
-      <div 
+      <div
         ref={messageContainerRef}
         className="flex-grow overflow-y-auto p-4 bg-gray-50 scroll-smooth"
       >

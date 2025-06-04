@@ -11,13 +11,13 @@ export default function Home() {
   const logout = useAuth((s) => s.logout);
   const [selectedChat, setSelectedChat] = useState(null);
   const { stopMessagePolling, setActiveChat } = useChat();
-  
+
   // Handle chat selection
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
     setActiveChat(chat);
   };
-  
+
   // Clean up polling on unmount
   useEffect(() => {
     return () => {
@@ -26,7 +26,11 @@ export default function Home() {
   }, [stopMessagePolling]);
 
   return (
-    <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <Motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800"
+    >
       {/* Header with logout button */}
       <header className="bg-white dark:bg-slate-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">

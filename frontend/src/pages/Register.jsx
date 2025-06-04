@@ -14,7 +14,7 @@ export default function Register() {
     setPassword,
     loading,
     error,
-    handleSubmit
+    handleSubmit,
   } = useRegister();
 
   return (

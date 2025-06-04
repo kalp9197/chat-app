@@ -97,4 +97,4 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
   );
 };
 
-export default ChatList; 
+export default ChatList;

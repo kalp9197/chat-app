@@ -12,17 +12,18 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function App() {
   // Use notification hook to manage notification setup
-  const { initialized, permissionStatus, requestPermission } = useNotification();
-  const isAuthenticated = useAuth(state => state.isAuthenticated);
-  
+  const { initialized, permissionStatus, requestPermission } =
+    useNotification();
+  const isAuthenticated = useAuth((state) => state.isAuthenticated);
+
   // Request notification permission when user is authenticated
   useEffect(() => {
-    if (isAuthenticated && permissionStatus === 'default' && !initialized) {
+    if (isAuthenticated && permissionStatus === "default" && !initialized) {
       // Request permission with a short delay after login
       const permissionTimer = setTimeout(() => {
         requestPermission();
       }, 2000);
-      
+
       return () => clearTimeout(permissionTimer);
     }
   }, [isAuthenticated, permissionStatus, initialized, requestPermission]);
