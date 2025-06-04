@@ -8,8 +8,8 @@ const getStoredAuthState = () => {
       const { state } = JSON.parse(storedData);
       return state;
     }
-  } catch (error) {
-    console.error('Error reading from localStorage:', error);
+  } catch {
+    // Silent error handling
   }
   return { user: null, token: null };
 };
@@ -18,14 +18,18 @@ const initialState = getStoredAuthState();
 
 export const useAuth = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: initialState.user,
       token: initialState.token,
       isAuthenticated: !!initialState.token,
-      login: (user, token) => set({ user, token, isAuthenticated: true }),
+      login: (user, token) => {
+        set({ user, token, isAuthenticated: true });
+      },
       logout: () => {
         set({ user: null, token: null, isAuthenticated: false });
       },
+      // Helper method to get current token
+      getToken: () => get().token,
     }),
     { 
       name: "auth-store",

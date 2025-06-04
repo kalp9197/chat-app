@@ -15,6 +15,7 @@ model User {
   password          String
   online            Boolean          @default(false)
   last_seen         DateTime?
+  fcm_token         String?          
   created_at        DateTime         @default(now())
   updated_at        DateTime         @updatedAt
   sent_messages     DirectMessage[]  @relation("SentMessages")

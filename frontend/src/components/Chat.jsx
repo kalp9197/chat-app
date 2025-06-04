@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import data from '@emoji-mart/data';
-import Picker from '@emoji-mart/react';
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import { useAuth } from "@/store/auth";
 import { useChat } from "@/store/chat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,34 +16,40 @@ export default function Chat({ chat }) {
   const messagesEndRef = useRef(null);
 
   const user = useAuth((s) => s.user);
-  const { messages, sendMessage, updateUserStatus } = useChat();
+  const { messages, sendMessage, updateUserStatus, fetchMessages } = useChat();
 
+  // Load messages when chat is selected
+  useEffect(() => {
+    if (chat?.id) {
+      fetchMessages(chat.id);
+    }
+  }, [chat?.id, fetchMessages]);
 
   useEffect(() => {
     if (user) {
       updateUserStatus(true);
-      
 
       return () => updateUserStatus(false);
     }
   }, [user, updateUserStatus]);
 
-
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-
   useEffect(() => {
     function handleClickOutside(event) {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target)
+      ) {
         setShowEmojiPicker(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -52,14 +58,14 @@ export default function Chat({ chat }) {
   };
 
   const handleEmojiSelect = (emoji) => {
-    setInput(prev => prev + emoji.native);
+    setInput((prev) => prev + emoji.native);
     setShowEmojiPicker(false);
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      console.log('Selected file:', file);
+      console.log("Selected file:", file);
     }
   };
 
@@ -75,7 +81,7 @@ export default function Chat({ chat }) {
       await sendMessage(input, chat.receiverUuid || chat.id);
       setInput("");
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
     }
   };
 
@@ -99,9 +105,11 @@ export default function Chat({ chat }) {
           <AvatarFallback>{chat.name?.charAt(0)}</AvatarFallback>
         </Avatar>
         <div className="ml-3">
-          <h3 className="font-medium text-slate-900 dark:text-white">{chat.name}</h3>
+          <h3 className="font-medium text-slate-900 dark:text-white">
+            {chat.name}
+          </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {chat.online ? 'Online' : 'Last seen recently'}
+            {chat.online ? "Online" : "Last seen recently"}
           </p>
         </div>
       </div>
@@ -116,9 +124,11 @@ export default function Chat({ chat }) {
           messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.isMe ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${
+                message.sender === user?.uuid ? "justify-end" : "justify-start"
+              }`}
             >
-              {!message.isMe && (
+              {message.sender !== user?.uuid && (
                 <Avatar className="h-8 w-8 mt-4 mr-2">
                   <AvatarImage src={chat.avatar} alt={chat.name} />
                   <AvatarFallback>{chat.name?.charAt(0)}</AvatarFallback>
@@ -126,30 +136,29 @@ export default function Chat({ chat }) {
               )}
               <div
                 className={`max-w-xs md:max-w-md lg:max-w-lg xl:max-w-xl rounded-lg px-4 py-2 ${
-                  message.isMe
-                    ? 'bg-indigo-500 text-white rounded-br-none'
-                    : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-bl-none'
+                  message.sender === user?.uuid
+                    ? "bg-indigo-500 text-white rounded-br-none"
+                    : "bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-bl-none"
                 }`}
               >
-                <p className="text-sm">{message.content}</p>
-                <p className={`text-xs mt-1 text-right ${
-                  message.isMe ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'
-                }`}>
+                <div className="text-sm">{message.text}</div>
+                <div className="text-xs mt-1 opacity-70">
                   {(() => {
-                    let timestamp;
-                    if (message.timestamp?.seconds) {
-                      timestamp = message.timestamp.seconds * 1000;
-                    } else if (message.createdAt) {
-                      timestamp = new Date(message.createdAt).getTime();
-                    } else {
-                      timestamp = Date.now();
+                    let formattedTime = "";
+                    try {
+                      const timestamp = new Date(message.timestamp);
+                      if (!isNaN(timestamp.getTime())) {
+                        formattedTime = timestamp.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
+                      }
+                    } catch {
+                      // Silently handle invalid dates
                     }
-                    return new Date(timestamp).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    });
+                    return formattedTime;
                   })()}
-                </p>
+                </div>
               </div>
             </div>
           ))
@@ -167,10 +176,10 @@ export default function Chat({ chat }) {
             className="hidden"
             accept="image/*,application/pdf,.doc,.docx,.txt"
           />
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
             onClick={handlePaperclipClick}
             title="Attach file"
@@ -200,7 +209,11 @@ export default function Chat({ chat }) {
                   <Picker
                     data={data}
                     onEmojiSelect={handleEmojiSelect}
-                    theme={document.documentElement.classList.contains('dark') ? 'dark' : 'light'}
+                    theme={
+                      document.documentElement.classList.contains("dark")
+                        ? "dark"
+                        : "light"
+                    }
                     previewPosition="none"
                     skinTonePosition="search"
                     searchPosition="sticky"
@@ -215,9 +228,9 @@ export default function Chat({ chat }) {
               )}
             </div>
           </div>
-          <Button 
-            type="submit" 
-            size="icon" 
+          <Button
+            type="submit"
+            size="icon"
             className="rounded-full bg-indigo-500 hover:bg-indigo-600"
             disabled={!input.trim()}
           >

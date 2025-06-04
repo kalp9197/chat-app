@@ -1,13 +1,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useChat } from "@/store/chat";
 import { useAuth } from "@/store/auth";
+import NewChatModal from "./ui/NewChatModal";
 
 export default function ChatList({ onSelectChat, selectedChat }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
   const { chats, loading, fetchChats, setActiveChat } = useChat();
   const user = useAuth(s => s.user);
 
@@ -36,8 +39,20 @@ export default function ChatList({ onSelectChat, selectedChat }) {
 
   return (
     <div className="h-full flex flex-col border-r">
+      {/* New Chat Modal */}
+      <NewChatModal isOpen={showNewChatModal} onClose={() => setShowNewChatModal(false)} />
+      
       <div className="p-4 border-b">
-        <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-100 mb-4">Messages</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-semibold text-lg text-slate-800 dark:text-slate-100">Messages</h2>
+          <Button
+            onClick={() => setShowNewChatModal(true)}
+            size="sm"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full h-8 w-8 p-0"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input

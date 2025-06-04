@@ -21,11 +21,45 @@ export default function Login() {
     setError("");
     try {
       const response = await axios.post("/auth/login", { email, password });
-      login(response.data.user, response.data.token);
+      
+      // Extract token from response, supporting different response formats
+      let user = null;
+      let token = null;
+      
+      // Check different possible response structures
+      if (response.data) {
+        // Check if token is directly in response.data
+        if (response.data.token) {
+          token = response.data.token;
+        }
+        // Check if token is in response.data.data (nested)
+        else if (response.data.data && response.data.data.token) {
+          token = response.data.data.token;
+        }
+        // Check if token is in response.data.accessToken
+        else if (response.data.accessToken) {
+          token = response.data.accessToken;
+        }
+        
+        // Extract user data
+        if (response.data.user) {
+          user = response.data.user;
+        }
+        else if (response.data.data && response.data.data.user) {
+          user = response.data.data.user;
+        }
+      }
+      
+      if (!token) {
+        throw new Error('No token received from server');
+      }
+      
+      // Call login with extracted user and token
+      login(user, token);
       navigate("/");
     } catch (err) {
       setError(
-        err.response?.data?.message || "Login failed. Please try again."
+        err.response?.data?.message || err.message || "Login failed. Please try again."
       );
     } finally {
       setLoading(false);

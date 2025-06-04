@@ -29,19 +29,19 @@ export default function App() {
   useEffect(() => {
     if (isAuthenticated && token) {
       // Ensure we have a valid token before initializing notifications
-      console.log('Auth token available, initializing notifications...');
+      // Initializing notifications
       
       const initTimer = setTimeout(() => {
         initializeNotifications()
           .then(fcmToken => {
             if (fcmToken) {
-              console.log('Notification system initialized successfully');
+              // Notification system initialized successfully
             } else {
-              console.warn('Failed to initialize notification system');
+              // Failed to initialize notification system
             }
           })
-          .catch(error => {
-            console.error('Error initializing notifications:', error);
+          .catch(() => {
+            // Error initializing notifications
           });
       }, 2000); // Increased delay to ensure auth is fully established
       

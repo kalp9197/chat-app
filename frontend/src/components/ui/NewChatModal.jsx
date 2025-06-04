@@ -8,44 +8,77 @@ import { useAuth } from '@/store/auth';
 
 export default function NewChatModal({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
   
-  const { users, searchingUsers, searchUsers, startChat } = useChat();
+  const { users, loading, fetchAllUsers, startChat } = useChat();
   const user = useAuth(s => s.user);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    if (debouncedQuery.trim().length >= 2) {
-      searchUsers(debouncedQuery);
+    // Load all users when modal opens, but only if we don't already have users
+    let isMounted = true;
+    
+    if (isOpen) {
+      // Only fetch if we're not already loading and don't have users
+      if (!loading && (!users || users.length === 0)) {
+        console.log("Fetching users on modal open");
+        fetchAllUsers().catch(err => {
+          if (isMounted) {
+            console.error("Error fetching users:", err);
+          }
+        });
+      }
     }
-  }, [debouncedQuery, searchUsers]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, loading, users, fetchAllUsers]);
+  
+  // Filter users based on search query
+  const filteredUsers = users.filter(u => {
+    if (u.uuid === user?.uuid) return false; // Exclude current user
+    
+    if (!searchQuery.trim()) return true; // Show all when no search query
+    
+    // Search by name or email
+    return (
+      u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   const handleStartChat = async (otherUser) => {
     try {
-      await startChat(otherUser);
+      console.log('Starting chat with user:', otherUser);
+      // Check if auth token is available
+      const authData = localStorage.getItem('auth-store');
+      if (authData) {
+        const parsedAuth = JSON.parse(authData);
+        console.log('Auth token available:', !!parsedAuth.state?.token);
+      } else {
+        console.warn('No auth data found in localStorage');
+      }
+      
+      const result = await startChat(otherUser);
+      console.log('Chat started successfully:', result);
       onClose();
       setSearchQuery('');
     } catch (error) {
       console.error('Failed to start chat:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
+      alert('Failed to start chat. Please check console for details.');
     }
   };
 
-  const filteredUsers = users.filter(u => u.uuid !== user?.uuid);
+  // Filtration now happens above
 
   if (!isOpen) return null;
 
   return (
     <>
-      <div style={{ position: 'fixed', top: '0', left: '0', width: '100%', textAlign: 'center', backgroundColor: 'yellow', color: 'black', zIndex: 9999, fontSize: '24px', padding: '10px' }}>
-        MODAL IS TRYING TO RENDER (isOpen is true)
-      </div>
+      {/* Modal content */}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
           {/* Header */}
@@ -80,18 +113,13 @@ export default function NewChatModal({ isOpen, onClose }) {
 
           {/* Results */}
           <div className="flex-1 overflow-y-auto">
-            {searchingUsers ? (
+            {loading ? (
               <div className="flex items-center justify-center p-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500"></div>
               </div>
-            ) : searchQuery.length < 2 ? (
-              <div className="p-8 text-center text-slate-400">
-                <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Type at least 2 characters to search for users</p>
-              </div>
             ) : filteredUsers.length === 0 ? (
               <div className="p-8 text-center text-slate-400">
-                <p>No users found matching "{searchQuery}"</p>
+                <p>{searchQuery ? `No users found matching "${searchQuery}"` : "No users available"}</p>
               </div>
             ) : (
               <div className="divide-y divide-slate-200 dark:divide-slate-700">

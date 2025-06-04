@@ -35,12 +35,12 @@ self.clients.matchAll().then(clients => {
 setTimeout(() => {
   if (!firebaseConfig) {
     firebaseConfig = {
-      apiKey: "DEFAULT_API_KEY",
-      authDomain: "DEFAULT_AUTH_DOMAIN",
-      projectId: "DEFAULT_PROJECT_ID",
-      storageBucket: "DEFAULT_STORAGE_BUCKET",
-      messagingSenderId: "DEFAULT_MESSAGING_SENDER_ID",
-      appId: "DEFAULT_APP_ID"
+      apiKey: "AIzaSyDbcq4vj1qPIUHR4jNq-4HpdqQ94YNTwsc",
+      authDomain: "chatapp5503.firebaseapp.com",
+      projectId: "chatapp5503",
+      storageBucket: "chatapp5503.firebasestorage.app",
+      messagingSenderId: "957776005516",
+      appId: "1:957776005516:web:868e7aadba0f111bf0aea9"
     };
     firebase.initializeApp(firebaseConfig);
 

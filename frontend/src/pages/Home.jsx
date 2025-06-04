@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/store/auth";
+import { useChat } from "@/store/chat";
 import { Button } from "@/components/ui/button";
 //eslint-disable-next-line no-unused-vars
 import {motion} from "framer-motion";
@@ -10,6 +11,20 @@ export default function Home() {
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
   const [selectedChat, setSelectedChat] = useState(null);
+  const { stopMessagePolling, setActiveChat } = useChat();
+  
+  // Handle chat selection
+  const handleSelectChat = (chat) => {
+    setSelectedChat(chat);
+    setActiveChat(chat);
+  };
+  
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      stopMessagePolling();
+    };
+  }, [stopMessagePolling]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -45,7 +60,7 @@ export default function Home() {
             {/* Chat List */}
             <div className="w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-slate-700">
               <ChatList
-                onSelectChat={setSelectedChat}
+                onSelectChat={handleSelectChat}
                 selectedChat={selectedChat?.id}
               />
             </div>

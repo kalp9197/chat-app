@@ -5,13 +5,12 @@ import { requestNotificationPermission, onMessageListener, firebaseConfigForSW }
 
 export const saveFcmToken = async (token) => {
   try {
-    // Your axios baseURL is set to http://localhost:8000/api in .env
-    // So we only need to add the path after /api
-    const response = await axios.post('/v1/notifications/token', { fcm_token: token });
-    console.log('FCM token saved successfully:', response.data);
+    // Your axios baseURL is set to http://localhost:8000/api/v1 in .env
+    // So we only need to add the path after /api/v1
+    await axios.post('/notifications/token', { fcm_token: token });
     return true;
-  } catch (error) {
-    console.error('Error saving FCM token:', error);
+  } catch {
+    // Silent fail for FCM token errors
     return false;
   }
 };
@@ -23,7 +22,6 @@ export const initializeNotifications = async () => {
     try {
 
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      console.log('Service worker registered');
       
 
       if (registration.active) {
@@ -48,16 +46,15 @@ export const initializeNotifications = async () => {
       const token = await requestNotificationPermission();
       
       if (token) {
-        console.log('FCM Token:', token);
 
         await saveFcmToken(token);
         return token;
       }
-    } catch (error) {
-      console.error('Service worker registration failed:', error);
+    } catch {
+      // Silent fail for service worker registration
     }
   } else {
-    console.warn('Push notifications not supported in this browser');
+    // Push notifications not supported
   }
   return null;
 };
@@ -66,24 +63,23 @@ export const initializeNotifications = async () => {
 export const setupForegroundNotifications = (callback) => {
   return onMessageListener()
     .then((payload) => {
-      console.log('Received foreground message:', payload);
       if (callback && typeof callback === 'function') {
         callback(payload);
       }
       return payload;
     })
-    .catch((err) => {
-      console.error('Error receiving message:', err);
+    .catch(() => {
+      // Silent fail for message errors
       return null;
     });
 };
 
 export const triggerTestNotification = async (title, body) => {
   try {
-    await axios.post('/api/notifications/test', { title, body });
+    await axios.post('/notifications/test', { title, body });
     return true;
-  } catch (error) {
-    console.error('Error triggering test notification:', error);
+  } catch {
+    // Silent fail for test notification errors
     return false;
   }
 };
