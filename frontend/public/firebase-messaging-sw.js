@@ -38,7 +38,7 @@ setTimeout(() => {
       apiKey: "AIzaSyDbcq4vj1qPIUHR4jNq-4HpdqQ94YNTwsc",
       authDomain: "chatapp5503.firebaseapp.com",
       projectId: "chatapp5503",
-      storageBucket: "chatapp5503.firebasestorage.app",
+      storageBucket: "chatapp5503.appspot.com",
       messagingSenderId: "957776005516",
       appId: "1:957776005516:web:868e7aadba0f111bf0aea9"
     };
