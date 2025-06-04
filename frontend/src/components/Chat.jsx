@@ -18,7 +18,7 @@ export default function Chat({ chat }) {
   const user = useAuth((s) => s.user);
   const { messages, sendMessage, updateUserStatus, fetchMessages } = useChat();
 
-  // Load messages when chat is selected
+  // load messages on selection
   useEffect(() => {
     if (chat?.id) {
       fetchMessages(chat.id);
@@ -98,7 +98,6 @@ export default function Chat({ chat }) {
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900">
-      {/* Chat header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 flex items-center">
         <Avatar className="h-10 w-10">
           <AvatarImage src={chat.avatar} alt={chat.name} />
@@ -114,7 +113,6 @@ export default function Chat({ chat }) {
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-slate-400">
@@ -154,7 +152,7 @@ export default function Chat({ chat }) {
                         });
                       }
                     } catch {
-                      // Silently handle invalid dates
+                      // ignore bad dates
                     }
                     return formattedTime;
                   })()}
@@ -166,7 +164,6 @@ export default function Chat({ chat }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message input */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <input

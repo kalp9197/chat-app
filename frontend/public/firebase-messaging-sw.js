@@ -46,7 +46,7 @@ setTimeout(() => {
 
     initializeMessaging();
   }
-}, 3000); // Wait 3 seconds for the config before falling back
+}, 3000); // fallback after 3s
 
 
 let messaging = null;
@@ -65,8 +65,8 @@ function initializeMessaging() {
         const notificationTitle = payload.notification?.title || 'New Message';
         const notificationOptions = {
           body: payload.notification?.body || 'You have a new message',
-          icon: '/notification-icon.png', // Replace with your notification icon
-          badge: '/badge-icon.png',       // Replace with your badge icon
+          icon: '/notification-icon.png', // notification icon path
+          badge: '/badge-icon.png',       // badge icon path
           data: payload.data
         };
 

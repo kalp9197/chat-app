@@ -9,7 +9,7 @@ const instance = axios.create({
   withCredentials: true,
 });
 
-// Add a request interceptor to add the auth token
+// attach auth token
 instance.interceptors.request.use(
   (config) => {
     const token = useAuth.getState().token;
@@ -23,7 +23,7 @@ instance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle errors
+// handle auth errors
 instance.interceptors.response.use(
   (response) => response,
   (error) => {

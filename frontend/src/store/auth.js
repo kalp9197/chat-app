@@ -9,7 +9,7 @@ const getStoredAuthState = () => {
       return state;
     }
   } catch {
-    // Silent error handling
+    // ignore errors
   }
   return { user: null, token: null };
 };
@@ -28,7 +28,7 @@ export const useAuth = create(
       logout: () => {
         set({ user: null, token: null, isAuthenticated: false });
       },
-      // Helper method to get current token
+      // get current token
       getToken: () => get().token,
     }),
     { 

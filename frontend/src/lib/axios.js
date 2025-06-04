@@ -8,7 +8,7 @@ const instance = axios.create({
   withCredentials: true,
 });
 
-// Helper function to extract auth token from localStorage
+// get auth token from storage
 const getAuthToken = () => {
   try {
     const rawData = localStorage.getItem('auth-store');
@@ -19,51 +19,46 @@ const getAuthToken = () => {
     
     let token = null;
     
-    // Check state first (Zustand persist pattern)
+    // token in persisted state
     if (parsed.state && parsed.state.token) {
       token = parsed.state.token;
     }
-    // Alternative location
+    // legacy location
     else if (parsed.token) {
       token = parsed.token;
     }
     
     if (!token) return null;
     
-    // Clean the token to ensure it doesn't already have 'Bearer '
+    // strip Bearer prefix
     if (token.startsWith('Bearer ')) {
       token = token.substring(7).trim(); // Remove 'Bearer ' prefix
     }
     
     return token;
   } catch {
-    // Silently handle errors
+    // ignore errors
     return null;
   }
 };
 
-// Request interceptor to add authentication token
+// add auth token
 instance.interceptors.request.use(
   (config) => {
     try {
-      // Get the token directly using our helper
       const token = getAuthToken();
-      
-      // Only proceed with token if we have one
+      // only add header if token exists
       if (token) {
-        // Ensure headers object exists
         config.headers = config.headers || {};
-        
-        // Set Authorization header with proper Bearer format
+        // set Authorization header
         config.headers['Authorization'] = 'Bearer ' + token.trim();
       }
-      
-      // Fix URL if it has double slashes due to baseURL configuration
+      // fix double slash from baseURL
       if (config.url.startsWith('/') && config.baseURL.endsWith('/')) {
         config.url = config.url.substring(1);
       }
     } catch {
-      // Silent fail to prevent request interruption
+      // ignore failure
     }
     
     return config;
@@ -73,17 +68,13 @@ instance.interceptors.request.use(
   }
 );
 
-// Simple response interceptor for error handling
+// handle responses
 instance.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // For 401 errors, you could add auto-redirect logic
-    // if (error.response && error.response.status === 401) {
-    //   window.location.href = '/login';
-    // }
-    
+    // could auto-redirect on 401
     return Promise.reject(error);
   }
 );

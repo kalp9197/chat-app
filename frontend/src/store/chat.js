@@ -22,16 +22,16 @@ export const useChat = create((set, get) => ({
     if (chat) {
       get().fetchMessages(chat.id);
 
-      // Set up polling with a longer interval and smart updates
+      // poll every 10s
       const intervalId = setInterval(() => {
         get().fetchNewMessages(chat.id);
-      }, 10000); // Increased to 10 seconds
+      }, 10000);
 
       set({ messagePollingInterval: intervalId });
     }
   },
   
-  // Cleanly stop message polling
+  // stop polling
   stopMessagePolling: () => {
     const { messagePollingInterval } = get();
     if (messagePollingInterval) {
@@ -40,7 +40,7 @@ export const useChat = create((set, get) => ({
     }
   },
   
-  // Only fetch new messages without replacing the entire message list
+  // fetch new messages only
   fetchNewMessages: async (chatId) => {
     if (!chatId) return;
     
@@ -59,14 +59,14 @@ export const useChat = create((set, get) => ({
         const newMessages = response.data.directMessages || [];
         const currentMessages = get().messages;
         
-        // Only update if there are new messages
+        // update when new messages
         if (newMessages.length > currentMessages.length) {
           set({ messages: newMessages });
         }
       }
     } catch (error) {
       console.error('Error fetching new messages:', error);
-      // Don't update error state to avoid UI disruption
+      // ignore error state
     }
   },
 
@@ -74,17 +74,15 @@ export const useChat = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       const token = useAuth.getState().token;
-      // Using /users endpoint instead since there's no dedicated chats/direct-messages list endpoint
-      // This will fetch all users that can be used to initiate chats
+      // temporary /users endpoint to list chats
       const response = await axios.get("/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.data && response.data.success) {
-        // Convert users to a format that resembles chats for the UI
+        // convert users to chat objects
         const users = response.data.users || [];
-        
-        // Transform users into chat-like objects
+
         const chats = users.map(user => ({
           id: `user-${user.uuid}`,
           name: user.name,
@@ -112,11 +110,11 @@ export const useChat = create((set, get) => ({
   fetchAllUsers: async () => {
     try {
       set({ loading: true, error: null });
-      // Interceptor will automatically handle the token
+      // token via interceptor
       
       const response = await axios.get("/users");
 
-      // Safely extract users from response, defaulting to empty array
+      // get users or []
       const users = response.data?.users || [];
       set({ users });
 
@@ -136,24 +134,24 @@ export const useChat = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      // Extract receiver UUID from chat ID if it starts with 'user-'
+      // extract receiver UUID
       let receiverUuid = chatId;
       if (chatId.startsWith('user-')) {
         receiverUuid = chatId.replace('user-', '');
       }
       
-      // Use the direct-messages endpoint with the receiver UUID
+      // get messages for receiver
       const response = await axios.get(`/direct-messages/${receiverUuid}`);
 
       if (response.data && response.data.success) {
-        // Map the response data to our message format
+        // map to message format
         const messages = response.data.data || [];
         set({
           messages: messages.map((message) => ({
             id: message.id,
             text: message.content,
             sender: message.sender_uuid,
-            // Ensure timestamp is a valid date
+            // validate timestamp
             timestamp: new Date(message.created_at).toISOString(),
           })),
         });
@@ -172,20 +170,20 @@ export const useChat = create((set, get) => ({
 
     if (!user || !content.trim()) return;
     
-    // Extract receiver UUID from chatId if no explicit receiverUuid is provided
+    // derive receiver UUID
     let receiver = receiverUuid;
     if (!receiver && chatId && chatId.startsWith('user-')) {
       receiver = chatId.replace('user-', '');
     }
     
-    // Use the direct-messages endpoint instead of messages
+    // send via direct-messages
     const response = await axios.post(
       "/direct-messages",
       {
         content: content.trim(),
         receiver_uuid: receiver,
       }
-      // No need to specify headers here, interceptor handles it
+      // headers handled by interceptor
     );
 
     return response.data.data;
@@ -195,13 +193,11 @@ export const useChat = create((set, get) => ({
     const user = useAuth.getState().user;
     if (user) {
       try {
-        // For now, silently fail as the backend endpoint doesn't exist yet
-        // We'll need to add this endpoint to the backend
-        // Comment out unused status to fix lint error
+        // backend endpoint missing
         // await axios.post('/users/status', { status });
-        return status; // Return status to avoid unused parameter warning
+        return status; // silence unused param
       } catch {
-        // Silent fail
+        // ignore error
       }
     }
   },
@@ -209,7 +205,7 @@ export const useChat = create((set, get) => ({
   startChat: async (otherUser) => {
     try {
       const user = useAuth.getState().user;
-      const token = useAuth.getState().getToken(); // Use getToken method for better token access
+      const token = useAuth.getState().getToken(); // token from store
 
       if (!user || !otherUser) {
 
@@ -223,7 +219,7 @@ export const useChat = create((set, get) => ({
 
 
 
-      // Check if we already have a chat with this user
+      // reuse existing chat
       const existingChat = get().chats.find(
         (chat) => chat.receiver_uuid === otherUser.uuid
       );
@@ -234,10 +230,8 @@ export const useChat = create((set, get) => ({
         return existingChat;
       }
 
-      // Create a new chat in the backend
-
-
-      // Explicitly add the Authorization header for this critical request
+      // create chat in backend
+      // explicit auth header
       const response = await axios.post(
         "/direct-messages",
         { receiver_uuid: otherUser.uuid },
@@ -249,15 +243,15 @@ export const useChat = create((set, get) => ({
         }
       );
 
-      // Generate a consistent ID format using the user's UUID
+      // id from uuid
       let chatId = `user-${otherUser.uuid}`;
-      
-      // If the backend returns an ID, use that instead
+
+      // use backend id
       if (response.data && response.data.success && response.data.data && response.data.data.id) {
         chatId = response.data.data.id;
       }
 
-      // Create a new chat object for the UI
+      // build chat object
       const newChat = {
         id: chatId,
         name: otherUser.name,
@@ -270,7 +264,7 @@ export const useChat = create((set, get) => ({
         updated_at: new Date().toISOString(),
       };
 
-      // Add to chats list
+      // store chat
       set((state) => ({
         chats: [newChat, ...state.chats],
       }));

@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/store/auth";
 import axios from "@/lib/axios";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
 export default function Login() {
@@ -22,26 +21,25 @@ export default function Login() {
     try {
       const response = await axios.post("/auth/login", { email, password });
       
-      // Extract token from response, supporting different response formats
+      // Support various response formats
       let user = null;
       let token = null;
-      
-      // Check different possible response structures
+
       if (response.data) {
-        // Check if token is directly in response.data
+        // token directly in response.data
         if (response.data.token) {
           token = response.data.token;
         }
-        // Check if token is in response.data.data (nested)
+        // nested token
         else if (response.data.data && response.data.data.token) {
           token = response.data.data.token;
         }
-        // Check if token is in response.data.accessToken
+        // legacy accessToken
         else if (response.data.accessToken) {
           token = response.data.accessToken;
         }
-        
-        // Extract user data
+
+        // extract user
         if (response.data.user) {
           user = response.data.user;
         }
@@ -54,7 +52,6 @@ export default function Login() {
         throw new Error('No token received from server');
       }
       
-      // Call login with extracted user and token
       login(user, token);
       navigate("/");
     } catch (err) {

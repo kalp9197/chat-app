@@ -5,12 +5,11 @@ import { requestNotificationPermission, onMessageListener, firebaseConfigForSW }
 
 export const saveFcmToken = async (token) => {
   try {
-    // Your axios baseURL is set to http://localhost:8000/api/v1 in .env
-    // So we only need to add the path after /api/v1
+    // baseURL already includes /api/v1
     await axios.post('/notifications/token', { fcm_token: token });
     return true;
   } catch {
-    // Silent fail for FCM token errors
+    // ignore token errors
     return false;
   }
 };
@@ -51,10 +50,10 @@ export const initializeNotifications = async () => {
         return token;
       }
     } catch {
-      // Silent fail for service worker registration
+      // ignore SW registration errors
     }
   } else {
-    // Push notifications not supported
+    // push not supported
   }
   return null;
 };
@@ -69,7 +68,7 @@ export const setupForegroundNotifications = (callback) => {
       return payload;
     })
     .catch(() => {
-      // Silent fail for message errors
+      // ignore message errors
       return null;
     });
 };
@@ -79,7 +78,7 @@ export const triggerTestNotification = async (title, body) => {
     await axios.post('/notifications/test', { title, body });
     return true;
   } catch {
-    // Silent fail for test notification errors
+    // ignore test notification errors
     return false;
   }
 };

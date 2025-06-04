@@ -28,22 +28,15 @@ export default function App() {
 
   useEffect(() => {
     if (isAuthenticated && token) {
-      // Ensure we have a valid token before initializing notifications
-      // Initializing notifications
+      // init notifications
       
       const initTimer = setTimeout(() => {
         initializeNotifications()
-          .then(fcmToken => {
-            if (fcmToken) {
-              // Notification system initialized successfully
-            } else {
-              // Failed to initialize notification system
-            }
-          })
+          .then(() => {})
           .catch(() => {
-            // Error initializing notifications
+            // init error
           });
-      }, 2000); // Increased delay to ensure auth is fully established
+      }, 2000); // delay ensures auth
       
       return () => clearTimeout(initTimer);
     }
@@ -52,7 +45,6 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <BrowserRouter>
-        {/* Include the notification banner for foreground notifications */}
         <NotificationBanner />
         
         <Routes>
@@ -80,7 +72,6 @@ export default function App() {
               </AuthRoute>
             }
           />
-          {/* Redirect all other routes to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

@@ -72,7 +72,7 @@ export const useOnlineStatus = (userId) => {
     
     updateStatus(true);
     
-    intervalRef.current = setInterval(() => updateStatus(true), 60000); // Every minute
+    intervalRef.current = setInterval(() => updateStatus(true), 60000); // poll every minute
     
     const handleVisibilityChange = () => {
       updateStatus(!document.hidden);
@@ -81,7 +81,7 @@ export const useOnlineStatus = (userId) => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
-      updateStatus(false); // Set offline when component unmounts
+      updateStatus(false); // set offline on unmount
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
@@ -119,7 +119,7 @@ export const useUserStatus = (userId) => {
     
     fetchStatus();
     
-    intervalRef.current = setInterval(fetchStatus, 15000); // Every 15 seconds
+    intervalRef.current = setInterval(fetchStatus, 15000); // every 15s
     
     return () => {
       if (intervalRef.current) {

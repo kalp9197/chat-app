@@ -39,7 +39,6 @@ export default function ChatList({ onSelectChat, selectedChat }) {
 
   return (
     <div className="h-full flex flex-col border-r">
-      {/* New Chat Modal */}
       <NewChatModal isOpen={showNewChatModal} onClose={() => setShowNewChatModal(false)} />
       
       <div className="p-4 border-b">
