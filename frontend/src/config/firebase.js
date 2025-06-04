@@ -51,10 +51,14 @@ export const requestNotificationPermission = async () => {
   }
 };
 
-export const onMessageListener = () => {
-  return new Promise((resolve) => {
-    onMessage(messaging, (payload) => {
-      resolve(payload);
-    });
+export const onMessageListener = (callback) => {
+  console.log("Setting up foreground message listener...");
+  return onMessage(messaging, (payload) => {
+    console.log("Foreground message received:", payload);
+    if (callback) {
+      callback(payload);
+    }
   });
+  // onMessage returns an unsubscribe function. 
+  // The component using this listener should handle unsubscribing on unmount.
 };

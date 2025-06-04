@@ -80,22 +80,48 @@ const handleGlobalNotification = (payload) => {
   });
 };
 
+// Store the unsubscribe function for the global listener
+let unsubscribeGlobalListener = null;
+
 // Set up a single global message listener
 export const setupGlobalNotificationListener = () => {
-  // We only set this up once
-  if (setupGlobalNotificationListener.initialized) return;
+  // If already initialized and listener exists, don't re-initialize without teardown
+  if (setupGlobalNotificationListener.initialized && unsubscribeGlobalListener) {
+    console.log("Global notification listener is already active.");
+    return;
+  }
 
-  // Set up a single listener for all components
-  onMessageListener()
-    .then(handleGlobalNotification)
-    .catch((error) => {
-      console.error("Error in global message listener:", error);
+  // If a previous listener exists (e.g., from a hot reload or previous init), clean it up
+  if (unsubscribeGlobalListener) {
+    console.log("Cleaning up previous global notification listener.");
+    unsubscribeGlobalListener();
+    unsubscribeGlobalListener = null;
+  }
 
-      // Try to recreate the listener after an error
-      setTimeout(setupGlobalNotificationListener, 5000);
-    });
+  console.log("Setting up global notification listener...");
+  // Pass handleGlobalNotification as the callback directly
+  // onMessageListener from firebase.js now returns the unsubscribe function
+  unsubscribeGlobalListener = onMessageListener(handleGlobalNotification);
 
-  setupGlobalNotificationListener.initialized = true;
+  if (unsubscribeGlobalListener) {
+    console.log("Global notification listener set up successfully.");
+    setupGlobalNotificationListener.initialized = true;
+  } else {
+    // This might occur if onMessageListener itself had an issue setting up (though unlikely with current Firebase SDK)
+    console.error("Failed to set up global notification listener.");
+    setupGlobalNotificationListener.initialized = false;
+  }
+};
+setupGlobalNotificationListener.initialized = false; // Initialize the static property
+
+// Function to tear down the global listener (e.g., on logout)
+export const teardownGlobalNotificationListener = () => {
+  if (unsubscribeGlobalListener) {
+    console.log("Tearing down global notification listener.");
+    unsubscribeGlobalListener();
+    unsubscribeGlobalListener = null;
+    setupGlobalNotificationListener.initialized = false;
+  }
 };
 
 // Each component can register its callback
