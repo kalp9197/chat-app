@@ -1,0 +1,41 @@
+import React, { useEffect } from "react";
+import { useChat } from "@/hooks/useChat";
+
+const UserList = ({ onSelectUser }) => {
+  const { fetchAllUsers, users, loading } = useChat();
+
+  useEffect(() => {
+    fetchAllUsers();
+  }, [fetchAllUsers]);
+
+  if (loading) {
+    return <div className="p-4 text-center text-gray-500">Loading users...</div>;
+  }
+
+  if (!users || users.length === 0) {
+    return <div className="p-4 text-center text-gray-500">No users found</div>;
+  }
+
+  return (
+    <ul className="divide-y overflow-y-auto">
+      {users.map((user) => (
+        <li
+          key={user.uuid}
+          className="p-4 hover:bg-gray-50 cursor-pointer flex items-center"
+          onClick={() => onSelectUser(user)}
+        >
+          <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
+            <img
+              src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+              alt={`${user.name}'s avatar`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <span>{user.name}</span>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+export default UserList; 

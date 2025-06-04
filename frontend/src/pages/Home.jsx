@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/store/auth";
-import { useChat } from "@/store/chat";
+import { useAuth } from "@/hooks/useAuth";
+import { useChat } from "@/hooks/useChat";
 import { Button } from "@/components/ui/button";
-//eslint-disable-next-line no-unused-vars
-import {motion} from "framer-motion";
-import ChatList from "@/components/ChatList";
-import Chat from "@/components/Chat";
+import { motion as Motion } from "framer-motion";
+import ChatList from "@/components/chat/ChatList";
+import Chat from "@/components/chat/Chat";
 
 export default function Home() {
   const user = useAuth((s) => s.user);
@@ -27,7 +26,7 @@ export default function Home() {
   }, [stopMessagePolling]);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Header with logout button */}
       <header className="bg-white dark:bg-slate-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -50,7 +49,7 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -61,17 +60,17 @@ export default function Home() {
             <div className="w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-slate-700">
               <ChatList
                 onSelectChat={handleSelectChat}
-                selectedChat={selectedChat?.id}
+                currentChatId={selectedChat?.id}
               />
             </div>
 
             {/* Chat Window */}
             <div className="flex-1 flex flex-col">
-              <Chat chat={selectedChat} />
+              <Chat chatId={selectedChat?.id} />
             </div>
           </div>
-        </motion.div>
+        </Motion.div>
       </main>
-    </motion.div>
+    </Motion.div>
   );
 }

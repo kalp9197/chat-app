@@ -3,58 +3,36 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "@/pages/Home";
-import { useAuth } from "@/store/auth";
-import NotificationBanner from "@/components/NotificationBanner";
-import { initializeNotifications } from "@/services/notificationService";
-
-function AuthRoute({ children }) {
-  const isAuthenticated = useAuth((s) => s.isAuthenticated);
-
-
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-}
+import AuthRoute from "@/components/auth/AuthRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import NotificationBanner from "@/components/common/NotificationBanner";
+import { useNotification } from "@/hooks/useNotification";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function App() {
-  const isAuthenticated = useAuth((s) => s.isAuthenticated);
-
-
-  const token = useAuth((s) => s.token);
-
+  // Use notification hook to manage notification setup
+  const { initialized, permissionStatus, requestPermission } = useNotification();
+  const isAuthenticated = useAuth(state => state.isAuthenticated);
+  
+  // Request notification permission when user is authenticated
   useEffect(() => {
-    if (isAuthenticated && token) {
-      // Ensure we have a valid token before initializing notifications
-      // Initializing notifications
+    if (isAuthenticated && permissionStatus === 'default' && !initialized) {
+      // Request permission with a short delay after login
+      const permissionTimer = setTimeout(() => {
+        requestPermission();
+      }, 2000);
       
-      const initTimer = setTimeout(() => {
-        initializeNotifications()
-          .then(fcmToken => {
-            if (fcmToken) {
-              // Notification system initialized successfully
-            } else {
-              // Failed to initialize notification system
-            }
-          })
-          .catch(() => {
-            // Error initializing notifications
-          });
-      }, 2000); // Increased delay to ensure auth is fully established
-      
-      return () => clearTimeout(initTimer);
+      return () => clearTimeout(permissionTimer);
     }
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, permissionStatus, initialized, requestPermission]);
 
   return (
     <div className="min-h-screen">
       <BrowserRouter>
         {/* Include the notification banner for foreground notifications */}
         <NotificationBanner />
-        
+
         <Routes>
           <Route
             path="/"

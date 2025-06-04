@@ -1,75 +1,24 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/store/auth";
-import axios from "@/lib/axios";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { useLogin } from "@/hooks/useLogin";
+import { motion as Motion } from "framer-motion";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const login = useAuth((s) => s.login);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const response = await axios.post("/auth/login", { email, password });
-      
-      // Extract token from response, supporting different response formats
-      let user = null;
-      let token = null;
-      
-      // Check different possible response structures
-      if (response.data) {
-        // Check if token is directly in response.data
-        if (response.data.token) {
-          token = response.data.token;
-        }
-        // Check if token is in response.data.data (nested)
-        else if (response.data.data && response.data.data.token) {
-          token = response.data.data.token;
-        }
-        // Check if token is in response.data.accessToken
-        else if (response.data.accessToken) {
-          token = response.data.accessToken;
-        }
-        
-        // Extract user data
-        if (response.data.user) {
-          user = response.data.user;
-        }
-        else if (response.data.data && response.data.data.user) {
-          user = response.data.data.user;
-        }
-      }
-      
-      if (!token) {
-        throw new Error('No token received from server');
-      }
-      
-      // Call login with extracted user and token
-      login(user, token);
-      navigate("/");
-    } catch (err) {
-      setError(
-        err.response?.data?.message || err.message || "Login failed. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    loading,
+    error,
+    handleSubmit
+  } = useLogin();
 
   return (
     <>
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -81,13 +30,13 @@ export default function Login() {
             </h2>
 
             {error && (
-              <motion.div
+              <Motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4"
               >
                 {error}
-              </motion.div>
+              </Motion.div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -147,7 +96,7 @@ export default function Login() {
               </p>
             </form>
           </div>
-        </motion.div>
+        </Motion.div>
       </div>
     </>
   );

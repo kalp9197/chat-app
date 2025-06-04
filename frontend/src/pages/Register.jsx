@@ -1,39 +1,26 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import axios from "@/lib/axios";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { useRegister } from "@/hooks/useRegister";
+import { motion as Motion } from "framer-motion";
 
 export default function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      await axios.post("/auth/register", { name, email, password });
-      navigate("/login");
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    name,
+    setName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    loading,
+    error,
+    handleSubmit
+  } = useRegister();
 
   return (
     <>
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -45,13 +32,13 @@ export default function Register() {
             </h2>
 
             {error && (
-              <motion.div
+              <Motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4"
               >
                 {error}
-              </motion.div>
+              </Motion.div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -64,7 +51,7 @@ export default function Register() {
                 </label>
                 <Input
                   id="name"
-                  placeholder="John Doe"
+                  placeholder="Your Name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
@@ -127,7 +114,7 @@ export default function Register() {
               </p>
             </form>
           </div>
-        </motion.div>
+        </Motion.div>
       </div>
     </>
   );
