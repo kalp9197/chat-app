@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import ChatHeader from "./ChatHeader";
 import ChatMessage from "./ChatMessage";
 import MessageInput from "./MessageInput";
 import EmptyState from "../common/EmptyState";
+import { ArrowDown } from "lucide-react";
 
 const Chat = ({ chatId }) => {
   const user = useAuth((s) => s.user);
@@ -15,26 +16,13 @@ const Chat = ({ chatId }) => {
   const setActiveChat = useChat((s) => s.setActiveChat);
   const chats = useChat((s) => s.chats);
   const stopMessagePolling = useChat((s) => s.stopMessagePolling);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const messagesEndRef = useRef(null);
   const messageContainerRef = useRef(null);
 
-  // Scroll to bottom whenever chatId changes (user selection)
+  // Initial load - find active chat
   useEffect(() => {
-    if (chatId) {
-      // Short delay to ensure messages are loaded and DOM is updated
-      const scrollTimer = setTimeout(() => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-        }
-      }, 300);
-
-      return () => clearTimeout(scrollTimer);
-    }
-  }, [chatId]);
-
-  useEffect(() => {
-    // Find the active chat by ID from our chats list
     if (chatId && !activeChat) {
       const chat = chats.find((c) => c.id === chatId);
       if (chat) {
@@ -43,12 +31,22 @@ const Chat = ({ chatId }) => {
     }
   }, [chatId, chats, activeChat, setActiveChat]);
 
+  // Fetch messages when chat changes
   useEffect(() => {
-    // When chatId changes, we need to fetch messages for this chat
     if (chatId) {
       fetchMessages(chatId);
     }
   }, [chatId, fetchMessages]);
+
+  // Scroll to bottom whenever:
+  // 1. Messages are loaded (new messages array)
+  // 2. Chat ID changes (switching chats)
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      // Force scroll to bottom immediately
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages, chatId]);
 
   // Chat cleanup on unmount
   useEffect(() => {
@@ -57,26 +55,16 @@ const Chat = ({ chatId }) => {
     };
   }, [stopMessagePolling]);
 
-  // Scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (messagesEndRef.current && messageContainerRef.current) {
-      // Check if user is already at the bottom or close to it
-      const container = messageContainerRef.current;
-      const isAtBottom =
-        container.scrollHeight - container.scrollTop - container.clientHeight <
-        100;
-
-      // Always scroll if:
-      // 1. Adding a new message and we're near the bottom
-      // 2. We just switched to this chat and messages were loaded
-      // 3. There are few messages (likely a new conversation)
-      if (isAtBottom || messages.length <= 5) {
-        messagesEndRef.current.scrollIntoView({
-          behavior: messages.length <= 5 ? "auto" : "smooth",
-        });
-      }
+  // Handle scroll position and show/hide scroll button
+  const handleScroll = () => {
+    if (messageContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messageContainerRef.current;
+      const scrollBottom = scrollHeight - scrollTop - clientHeight;
+      
+      // Show button when user has scrolled up more than 100px from bottom
+      setShowScrollButton(scrollBottom > 100);
     }
-  }, [messages]);
+  };
 
   // Function to force scroll to bottom
   const scrollToBottom = () => {
@@ -91,7 +79,7 @@ const Chat = ({ chatId }) => {
     try {
       await sendMessage(message, chatId);
       // Ensure we scroll to bottom after sending
-      setTimeout(scrollToBottom, 100);
+      setTimeout(scrollToBottom, 50);
     } catch {
       // Error handling is managed in the sendMessage function
     }
@@ -114,7 +102,7 @@ const Chat = ({ chatId }) => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gray-100">
       <ChatHeader
         name={activeChat.name}
         avatar={activeChat.avatar}
@@ -123,23 +111,40 @@ const Chat = ({ chatId }) => {
 
       <div
         ref={messageContainerRef}
-        className="flex-grow overflow-y-auto p-4 bg-gray-50 scroll-smooth"
+        onScroll={handleScroll}
+        className="flex-grow overflow-y-auto px-4 py-6 bg-gray-50 scroll-smooth"
       >
-        {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-gray-500">
-              No messages yet. Say hello to start the conversation!
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+        <div className="max-w-3xl mx-auto">
+          {messages.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+                <p className="text-gray-600 mb-2">
+                  No messages yet. Say hello to start the conversation!
+                </p>
+                <div className="text-4xl">👋</div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {messages.map((message) => (
+                <ChatMessage key={message.id} message={message} />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Scroll to bottom button */}
+      {showScrollButton && (
+        <button 
+          onClick={scrollToBottom}
+          className="absolute bottom-20 right-4 rounded-full bg-white shadow-md p-2 hover:bg-gray-100 transition-colors z-10"
+          aria-label="Scroll to bottom"
+        >
+          <ArrowDown size={18} />
+        </button>
+      )}
 
       <MessageInput onSendMessage={handleSendMessage} />
     </div>

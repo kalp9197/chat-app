@@ -296,6 +296,20 @@ export const useChat = create((set, get) => ({
 
       return response.data.data;
     } catch (error) {
+      // Ignore "User has no FCM token" errors as they don't affect message delivery
+      if (error.response?.data?.message?.includes("FCM token")) {
+        console.log("User has no FCM token, but message was still sent successfully");
+        
+        // Mark message as sent but not pending
+        set((state) => ({
+          messages: state.messages.map((m) =>
+            m.id === tempId ? { ...m, isPending: false } : m
+          ),
+        }));
+        
+        return { success: true };
+      }
+      
       // If there was an error, mark the message as failed
       set((state) => ({
         messages: state.messages.map((m) =>

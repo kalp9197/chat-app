@@ -1,20 +1,47 @@
 import React, { useState, useRef, useEffect } from "react";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
+import { Smile, Paperclip, Send } from "lucide-react";
+
+// Optional: A simple error boundary for emoji picker
+function EmojiPickerErrorBoundary({ children }) {
+  const [hasError] = useState(false);
+
+  return hasError ? (
+    <div>Failed to load emoji picker.</div>
+  ) : (
+    <React.Suspense fallback={<div>Loading emoji picker...</div>}>
+      {children}
+    </React.Suspense>
+  );
+}
 
 const MessageInput = ({ onSendMessage }) => {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const inputRef = useRef(null);
+  const emojiPickerRef = useRef(null);
 
-  // Focus input when component mounts
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (inputRef.current) inputRef.current.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (message.trim() && !isSubmitting) {
       setIsSubmitting(true);
       try {
@@ -22,25 +49,40 @@ const MessageInput = ({ onSendMessage }) => {
         setMessage("");
       } finally {
         setIsSubmitting(false);
-        // Focus back on the input after sending
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
+        if (inputRef.current) inputRef.current.focus();
       }
     }
   };
 
   const handleKeyDown = (e) => {
-    // Submit on Enter, but allow Shift+Enter for new line
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
   };
 
+  const handleEmojiSelect = (emoji) => {
+    setMessage((prevMessage) => prevMessage + (emoji.native || ""));
+    setShowEmojiPicker(false);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log("Selected file:", file.name);
+      e.target.value = "";
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="border-t p-4 bg-white">
-      <div className="flex">
+    <form onSubmit={handleSubmit} className="border-t p-3 bg-white">
+      <div className="flex items-center relative max-w-3xl mx-auto bg-gray-50 rounded-full shadow-sm border border-gray-200 px-3 py-1">
+        <label className="cursor-pointer text-gray-500 hover:text-gray-700 transition-colors p-1">
+          <Paperclip className="w-5 h-5" />
+          <input type="file" className="hidden" onChange={handleFileSelect} />
+        </label>
+
         <input
           ref={inputRef}
           type="text"
@@ -49,42 +91,53 @@ const MessageInput = ({ onSendMessage }) => {
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
           disabled={isSubmitting}
-          className="flex-grow rounded-l-lg border border-r-0 border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
+          className="flex-grow bg-transparent border-none px-3 py-1 focus:outline-none disabled:bg-transparent"
           aria-label="Message"
         />
+
+        {/* Emoji picker button */}
+        <button
+          type="button"
+          className="text-gray-500 hover:text-gray-700 transition-colors p-1"
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+        >
+          <Smile className="w-5 h-5" />
+        </button>
+
         <button
           type="submit"
           disabled={!message.trim() || isSubmitting}
-          className="bg-blue-500 text-white rounded-r-lg px-4 py-2 disabled:bg-gray-300 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
+          className={`ml-1 p-2 rounded-full ${
+            message.trim() && !isSubmitting
+              ? "bg-blue-500 hover:bg-blue-600" 
+              : "bg-gray-300"
+          } text-white focus:outline-none transition-colors`}
         >
           {isSubmitting ? (
-            <span className="flex items-center">
-              <svg
-                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Sending
-            </span>
+            <div className="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
-            "Send"
+            <Send size={16} />
           )}
         </button>
+
+        {/* Emoji picker */}
+        {showEmojiPicker && (
+          <div 
+            ref={emojiPickerRef} 
+            className="absolute bottom-12 right-2 z-10 shadow-xl rounded-lg overflow-hidden"
+          >
+            <EmojiPickerErrorBoundary>
+              <Picker
+                data={data}
+                onEmojiSelect={handleEmojiSelect}
+                theme="light"
+                previewPosition="none"
+                perLine={7}
+                emojiButtonSize={32}
+              />
+            </EmojiPickerErrorBoundary>
+          </div>
+        )}
       </div>
     </form>
   );

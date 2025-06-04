@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 const ChatMessage = ({ message }) => {
   const user = useAuth((s) => s.user);
@@ -12,81 +13,72 @@ const ChatMessage = ({ message }) => {
 
   // Extract the sender name
   const senderName = message.sender?.name || message.senderName || "";
+  
+  // Format the timestamp nicely
+  const formattedTime = new Date(
+    message.timestamp || message.created_at || Date.now()
+  ).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 
-  // Status indicator for message sending state
+  // Status indicator for message sending state with icons
   const messageStatus = message.isPending ? (
-    <span className="ml-2 text-xs">sending...</span>
+    <div className="flex items-center text-xs">
+      <Clock size={12} className="mr-1" />
+      <span>Sending</span>
+    </div>
   ) : message.failed ? (
-    <span className="ml-2 text-xs text-red-500">failed</span>
-  ) : null;
+    <div className="flex items-center text-xs text-red-500">
+      <AlertCircle size={12} className="mr-1" />
+      <span>Failed</span>
+    </div>
+  ) : (
+    <div className="flex items-center text-xs">
+      <CheckCircle2 size={12} className="mr-1" />
+    </div>
+  );
 
   return (
     <div
-      className={`flex w-full ${
-        isSentByMe ? "justify-end" : "justify-start"
-      } mb-4`}
-      data-sender={isSentByMe ? "me" : "other"}
+      className={`flex ${isSentByMe ? "justify-end" : "justify-start"} animate-fadeIn mb-2`}
     >
-      {/* Left side avatar for received messages */}
       {!isSentByMe && (
-        <div className="w-8 h-8 rounded-full bg-purple-100 mr-2 flex-shrink-0 self-end overflow-hidden border-2 border-purple-200">
-          <div className="w-full h-full flex items-center justify-center text-purple-600 text-xs font-bold">
-            {senderName.charAt(0)?.toUpperCase() || "?"}
-          </div>
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-purple-100 flex items-center justify-center text-white text-xs font-bold self-end mr-2">
+          {senderName.charAt(0)?.toUpperCase() || "?"}
         </div>
       )}
 
-      {/* Message bubble */}
-      <div
-        className={`
-          relative px-4 py-2 rounded-t-lg
-          ${
-            isSentByMe
-              ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-l-lg rounded-br-none shadow-md"
-              : "bg-white text-gray-800 rounded-r-lg rounded-bl-none border border-gray-200 shadow-sm"
-          }
-          max-w-[70%]
-        `}
-      >
-        {/* Message content */}
-        <p className="text-sm whitespace-pre-wrap break-words">
-          {message.text || message.content || ""}
-        </p>
-
-        {/* Time and status */}
+      <div className={`max-w-[75%]`}>
         <div
-          className={`flex items-center mt-1 text-xs ${
-            isSentByMe ? "text-blue-100" : "text-gray-500"
-          }`}
+          className={`
+            px-3 py-2 rounded-lg shadow-sm
+            ${isSentByMe
+              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+              : "bg-white text-gray-800 border border-gray-200"
+            }
+          `}
         >
-          <span>
-            {new Date(
-              message.timestamp || message.created_at || Date.now()
-            ).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-          {messageStatus}
+          <p className="text-sm whitespace-pre-wrap break-words">
+            {message.text || message.content || ""}
+          </p>
         </div>
-
-        {/* Triangle for speech bubble effect */}
+        
         <div
-          className={`absolute bottom-0 w-3 h-3 
-            ${
-              isSentByMe
-                ? "right-0 transform translate-x-[95%] translate-y-[30%] bg-blue-600 rotate-45"
-                : "left-0 transform -translate-x-[95%] translate-y-[30%] bg-white rotate-45 border-l border-b border-gray-200"
-            }`}
-        />
+          className={`
+            flex items-center mt-1 px-1 text-xs
+            ${isSentByMe ? "justify-end" : "justify-start"}
+            text-gray-500
+          `}
+        >
+          <span>{formattedTime}</span>
+          {isSentByMe && <div className="ml-2">{messageStatus}</div>}
+        </div>
       </div>
 
-      {/* Right side avatar for sent messages */}
       {isSentByMe && (
-        <div className="w-8 h-8 rounded-full bg-blue-100 ml-2 flex-shrink-0 self-end overflow-hidden border-2 border-blue-200">
-          <div className="w-full h-full flex items-center justify-center text-blue-600 text-xs font-bold">
-            {user?.name?.charAt(0)?.toUpperCase() || "M"}
-          </div>
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-blue-100 flex items-center justify-center text-white text-xs font-bold self-end ml-2">
+          {user?.name?.charAt(0)?.toUpperCase() || "M"}
         </div>
       )}
     </div>
