@@ -1,7 +1,27 @@
 import axios from "axios";
 
+// Detect if we're running on mobile or localhost
+const isLocalhost =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+const isMobile =
+  !isLocalhost &&
+  window.location.hostname !== "localhost" &&
+  window.location.hostname !== "127.0.0.1";
+
+// Set the base URL based on the environment
+let baseURL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+
+// If accessing from mobile, use the computer's IP address
+if (isMobile) {
+  // Replace with your computer's local IP address
+  baseURL = "http://192.168.0.6:8000/api/v1";
+  console.log("Using mobile API URL:", baseURL);
+}
+
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },

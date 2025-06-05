@@ -15,7 +15,7 @@ const Chat = ({ chatId }) => {
   const sendMessage = useChat((s) => s.sendMessage);
   const setActiveChat = useChat((s) => s.setActiveChat);
   const chats = useChat((s) => s.chats);
-  const stopMessagePolling = useChat((s) => s.stopMessagePolling);
+  const cleanupNotifications = useChat((s) => s.cleanupNotifications);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const messagesEndRef = useRef(null);
@@ -51,9 +51,9 @@ const Chat = ({ chatId }) => {
   // Chat cleanup on unmount
   useEffect(() => {
     return () => {
-      stopMessagePolling();
+      cleanupNotifications();
     };
-  }, [stopMessagePolling]);
+  }, [cleanupNotifications]);
 
   // Handle scroll position and show/hide scroll button
   const handleScroll = () => {

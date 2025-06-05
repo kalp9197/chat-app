@@ -27,20 +27,25 @@ const NotificationBanner = () => {
   // Handle incoming notifications
   const handleNotification = useCallback(
     (payload) => {
-      if (!payload || !payload.notification) return;
+      if (!payload) return;
 
-      const { title, body, data } = payload.notification;
+      // Extract notification data from payload - FCM can have different formats
+      const title = payload.notification?.title || payload.data?.title || "New notification";
+      const body = payload.notification?.body || payload.data?.body || "";
+      
+      // FCM can place data either directly in payload.data or nested in payload.notification.data
+      const data = payload.data || payload.notification?.data || {};
 
       const newNotification = {
         id: `notification-${Date.now()}`,
-        title: title || "New notification",
-        body: body || "",
-        data: data || {},
+        title: title,
+        body: body,
+        data: data,
         timestamp: new Date(),
       };
 
       // If it's a chat message notification, fetch the updated messages
-      if (data && data.type === "chat_message") {
+      if (data.type === "chat_message") {
         // Refresh chat list to show new messages
         fetchChats();
 
@@ -48,6 +53,9 @@ const NotificationBanner = () => {
         if (data.chatId) {
           fetchMessages(data.chatId);
         }
+        
+        // Add chat navigation URL
+        newNotification.data.url = `/chat/${data.chatId}`;
       }
 
       // Add to queue or show immediately if no current notification

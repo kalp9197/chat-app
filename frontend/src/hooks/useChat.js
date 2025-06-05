@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import axios from "../lib/axios";
 import { useAuth } from "./useAuth";
+import { listenForNotifications } from "../services/notificationService";
 
 export const useChat = create((set, get) => ({
   messages: [],
@@ -9,12 +10,13 @@ export const useChat = create((set, get) => ({
   users: [],
   loading: false,
   error: null,
-  messagePollingInterval: null,
+  notificationUnsubscribe: null,
 
   setActiveChat: (chat) => {
-    const { messagePollingInterval } = get();
-    if (messagePollingInterval) {
-      clearInterval(messagePollingInterval);
+    // Clean up any previous notification listener
+    const { notificationUnsubscribe } = get();
+    if (notificationUnsubscribe) {
+      notificationUnsubscribe();
     }
 
     set({ activeChat: chat, messages: [] });
@@ -22,81 +24,27 @@ export const useChat = create((set, get) => ({
     if (chat) {
       get().fetchMessages(chat.id);
 
-      // Set up immediate polling for new messages
-      const intervalId = setInterval(() => {
-        get().fetchNewMessages(chat.id);
-      }, 3000); // Poll every 3 seconds instead of 10 seconds
+      // Set up notification listener for new messages
+      const unsubscribe = listenForNotifications((payload) => {
+        if (
+          payload?.data?.type === "chat_message" && 
+          payload?.data?.chatId === chat.id
+        ) {
+          // When we receive a notification for this chat, fetch latest messages
+          get().fetchMessages(chat.id);
+        }
+      });
 
-      set({ messagePollingInterval: intervalId });
+      set({ notificationUnsubscribe: unsubscribe });
     }
   },
 
-  // Cleanly stop message polling
-  stopMessagePolling: () => {
-    const { messagePollingInterval } = get();
-    if (messagePollingInterval) {
-      clearInterval(messagePollingInterval);
-      set({ messagePollingInterval: null });
-    }
-  },
-
-  // Only fetch new messages without replacing the entire message list
-  fetchNewMessages: async (chatId) => {
-    if (!chatId) return;
-
-    try {
-      const user = useAuth.getState().user;
-      if (!user) return;
-
-      let receiverUuid = chatId;
-      if (chatId.startsWith("user-")) {
-        receiverUuid = chatId.replace("user-", "");
-      }
-
-      const response = await axios.get(`/direct-messages/${receiverUuid}`);
-
-      if (response.data) {
-        // Handle different response structures by checking what's available
-        let rawMessages = [];
-
-        // Option 1: data is directly in response.data
-        if (Array.isArray(response.data)) {
-          rawMessages = response.data;
-        }
-        // Option 2: data is in response.data.data
-        else if (Array.isArray(response.data.data)) {
-          rawMessages = response.data.data;
-        }
-        // Option 3: data is in response.data.directMessages
-        else if (Array.isArray(response.data.directMessages)) {
-          rawMessages = response.data.directMessages;
-        }
-
-        // Map messages to our format - preserving the original structure for correct sender identification
-        const formattedMessages = rawMessages.map((message) => ({
-          id:
-            message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
-          text: message.content || message.text || "",
-          content: message.content || message.text || "",
-          sender: message.sender || {
-            uuid: message.sender_uuid,
-            name: message.sender_name,
-          },
-          // Keep the original sender object for proper identification
-          senderName: message.sender?.name || message.sender_name || "",
-          timestamp: message.created_at || message.timestamp || Date.now(),
-          // Keep raw data for debugging
-          _raw: message,
-        }));
-
-        // Only update if we have new messages
-        const currentMessages = get().messages;
-        if (formattedMessages.length > currentMessages.length) {
-          set({ messages: formattedMessages });
-        }
-      }
-    } catch {
-      // Silent error handling to prevent UI disruption
+  // Clean up notification listener
+  cleanupNotifications: () => {
+    const { notificationUnsubscribe } = get();
+    if (notificationUnsubscribe) {
+      notificationUnsubscribe();
+      set({ notificationUnsubscribe: null });
     }
   },
 
@@ -211,8 +159,6 @@ export const useChat = create((set, get) => ({
         }));
 
         set({ messages: formattedMessages });
-      } else {
-        set({ messages: [] });
       }
     } catch (error) {
       set({ error: error.message });
@@ -303,6 +249,7 @@ export const useChat = create((set, get) => ({
         // Mark message as sent but not pending
         set((state) => ({
           messages: state.messages.map((m) =>
+            /* eslint-disable */
             m.id === tempId ? { ...m, isPending: false } : m
           ),
         }));

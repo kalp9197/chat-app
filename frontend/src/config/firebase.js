@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,7 +11,31 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const messaging = getMessaging(app);
+let messagingInstance = null;
+
+// Asynchronously check for support and initialize messaging
+const initializeFCM = async () => {
+  if (messagingInstance) return messagingInstance; // Already initialized
+
+  try {
+    const supported = await isSupported();
+    if (supported) {
+      messagingInstance = getMessaging(app);
+      console.log("Firebase Messaging is supported and initialized.");
+    } else {
+      console.log("Firebase Messaging is not supported in this browser.");
+      messagingInstance = null;
+    }
+  } catch (error) {
+    console.error("Error checking FCM support or initializing messaging:", error);
+    messagingInstance = null;
+  }
+  return messagingInstance;
+};
+
+export const getMessagingInstance = async () => {
+  return await initializeFCM();
+};
 
 export const firebaseConfigForSW = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -23,6 +47,11 @@ export const firebaseConfigForSW = {
 };
 
 export const requestNotificationPermission = async () => {
+  const messaging = await getMessagingInstance();
+  if (!messaging) {
+    console.warn("Firebase Messaging not available, cannot request permission.");
+    return null;
+  }
   try {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
@@ -51,7 +80,12 @@ export const requestNotificationPermission = async () => {
   }
 };
 
-export const onMessageListener = (callback) => {
+export const onMessageListener = async (callback) => {
+  const messaging = await getMessagingInstance();
+  if (!messaging) {
+    console.warn("Firebase Messaging not available, cannot set up onMessage listener.");
+    return () => {}; // Return a no-op unsubscriber function
+  }
   console.log("Setting up foreground message listener...");
   return onMessage(messaging, (payload) => {
     console.log("Foreground message received:", payload);

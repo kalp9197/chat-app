@@ -34,16 +34,37 @@ try {
 // Handle background push
 if (messaging) {
   messaging.onBackgroundMessage((payload) => {
-    // Show notification
-    const notificationTitle = payload.notification?.title || "New Message";
+    console.log('[Service Worker] Received background message:', payload);
+    
+    // Extract data properly from either payload format
+    const data = payload.data || {};
+    const notification = payload.notification || {};
+    
+    // Default notification title and body
+    let notificationTitle = notification.title || "New Message";
+    let notificationBody = notification.body || "You have a new message";
+    
+    // Generate URL based on notification type
+    let url = "/";
+    if (data.type === "chat_message" && data.chatId) {
+      url = `/chat/${data.chatId}`;
+    }
+    
+    // Notification options with additional data
     const notificationOptions = {
-      body: payload.notification?.body || "You have a new message",
-      icon: "/notification-icon.png", // Absolute path recommended
+      body: notificationBody,
+      icon: "/notification-icon.png",
       badge: "/badge-icon.png",
-      data: payload.data || {}, // Keep any custom data
-      // Add any additional options here
+      data: {
+        ...data,
+        url: url,
+      },
+      // Show message immediately with high priority
+      tag: data.messageId || `msg-${Date.now()}`, // Use unique tag or group by conversation
+      renotify: true,
+      requireInteraction: true,
     };
-    console.log('[Service Worker] Received background message: ', payload);
+    
     // IMPORTANT: Return the promise from showNotification to ensure the SW stays active.
     return self.registration.showNotification(notificationTitle, notificationOptions)
       .catch(err => {
@@ -66,13 +87,27 @@ self.addEventListener('activate', (event) => {
 // Notification click event - open or focus window, optionally with deep link
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const urlToOpen = event.notification.data?.url || "/"; // Set url in notification payload
+  
+  // Get URL from notification data or fallback to root
+  const notificationData = event.notification.data || {};
+  const urlToOpen = notificationData.url || "/";
 
+  // Handle chat message notifications specially
+  const isChatMessage = notificationData.type === "chat_message";
+  
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // Focus if already open
+      // Try to find an existing client to focus
       for (const client of clientList) {
-        if (client.url === urlToOpen && "focus" in client) {
+        // For chat messages, match any client with the chat path
+        if (isChatMessage && client.url.includes("/chat")) {
+          return client.focus().then(() => {
+            // Navigate to the specific chat if necessary
+            return client.navigate(urlToOpen);
+          });
+        }
+        // For other notifications, exact URL match
+        else if (client.url === urlToOpen && "focus" in client) {
           return client.focus();
         }
       }

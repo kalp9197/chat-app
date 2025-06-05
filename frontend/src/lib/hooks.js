@@ -1,16 +1,18 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "../lib/axios";
+import { listenForNotifications } from "../services/notificationService";
 
 export const useMessages = (chatId) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const intervalRef = useRef(null);
+  const notificationUnsubscribeRef = useRef(null);
 
   const fetchMessages = useCallback(async () => {
     if (!chatId) return;
 
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) return;
 
@@ -37,18 +39,29 @@ export const useMessages = (chatId) => {
   useEffect(() => {
     if (!chatId) return;
 
+    // Initial fetch of messages
     fetchMessages();
+    
+    // Set up FCM notification listener
+    const unsubscribe = listenForNotifications((payload) => {
+      if (payload?.data?.type === "chat_message" && 
+          payload?.data?.chatId === chatId) {
+        // When we receive a message notification for this chat, fetch latest messages
+        fetchMessages();
+      }
+    });
+    
+    notificationUnsubscribeRef.current = unsubscribe;
 
-    intervalRef.current = setInterval(fetchMessages, 3000);
-
+    // Clean up notification listener on unmount
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (notificationUnsubscribeRef.current) {
+        notificationUnsubscribeRef.current();
       }
     };
   }, [chatId, fetchMessages]);
 
-  return { messages, loading, error };
+  return { messages, loading, error, fetchMessages };
 };
 
 export const useOnlineStatus = (userId) => {
@@ -94,7 +107,6 @@ export const useOnlineStatus = (userId) => {
 export const useUserStatus = (userId) => {
   const [isOnline, setIsOnline] = useState(false);
   const [lastSeen, setLastSeen] = useState(null);
-  const intervalRef = useRef(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -118,15 +130,13 @@ export const useUserStatus = (userId) => {
       }
     };
 
+    // Initial fetch
     fetchStatus();
 
-    intervalRef.current = setInterval(fetchStatus, 15000); // Every 15 seconds
+    // The online status will be updated via FCM notifications
+    // No polling needed
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
+    return () => {};
   }, [userId]);
 
   return { isOnline, lastSeen };

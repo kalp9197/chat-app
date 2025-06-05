@@ -60,7 +60,7 @@ export const sendNewMessageNotification = async (message) => {
   try {
     const sender = await prisma.user.findUnique({
       where: { id: message.sender_id },
-      select: { name: true },
+      select: { name: true, uuid: true },
     });
 
     const title = `New message from ${sender.name}`;
@@ -72,7 +72,9 @@ export const sendNewMessageNotification = async (message) => {
     const data = {
       messageId: message.id.toString(),
       senderId: message.sender_id.toString(),
-      type: "new_message",
+      senderUuid: sender.uuid,
+      type: "chat_message",
+      chatId: `user-${sender.uuid}`, // Format to match frontend chat ID format
     };
 
     return await sendNotification(message.receiver_id, title, body, data);
