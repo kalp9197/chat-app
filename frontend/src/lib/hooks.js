@@ -10,22 +10,22 @@ export const useMessages = (chatId) => {
 
   const fetchMessages = useCallback(async () => {
     if (!chatId) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
+    setLoading(true);
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const response = await axios.get(`/api/v1/direct-messages/${chatId}`, {
+      const { data } = await axios.get(`/api/v1/direct-messages/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.data && response.data.data) {
-        const messagesList = response.data.data.map((msg) => ({
-          ...msg,
-          isMe: msg.sender_uuid === localStorage.getItem("userUuid"),
-        }));
-        setMessages(messagesList);
+      if (data?.data) {
+        setMessages(
+          data.data.map((msg) => ({
+            ...msg,
+            isMe: msg.sender_uuid === localStorage.getItem("userUuid"),
+          }))
+        );
       }
       setError(null);
     } catch (err) {
@@ -39,26 +39,18 @@ export const useMessages = (chatId) => {
   useEffect(() => {
     if (!chatId) return;
 
-    // Initial fetch of messages
     fetchMessages();
-    
-    // Set up FCM notification listener
-    const unsubscribe = listenForNotifications((payload) => {
-      if (payload?.data?.type === "chat_message" && 
-          payload?.data?.chatId === chatId) {
-        // When we receive a message notification for this chat, fetch latest messages
+
+    notificationUnsubscribeRef.current = listenForNotifications((payload) => {
+      if (
+        payload?.data?.type === "chat_message" &&
+        payload?.data?.chatId === chatId
+      ) {
         fetchMessages();
       }
     });
-    
-    notificationUnsubscribeRef.current = unsubscribe;
 
-    // Clean up notification listener on unmount
-    return () => {
-      if (notificationUnsubscribeRef.current) {
-        notificationUnsubscribeRef.current();
-      }
-    };
+    return () => notificationUnsubscribeRef.current?.();
   }, [chatId, fetchMessages]);
 
   return { messages, loading, error, fetchMessages };
@@ -77,7 +69,9 @@ export const useOnlineStatus = (userId) => {
         await axios.post(
           "/api/v1/users/status",
           { status },
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
       } catch (err) {
         console.error("Error updating status:", err);
@@ -86,19 +80,14 @@ export const useOnlineStatus = (userId) => {
 
     updateStatus(true);
 
-    intervalRef.current = setInterval(() => updateStatus(true), 60000); // Every minute
+    intervalRef.current = setInterval(() => updateStatus(true), 60000);
 
-    const handleVisibilityChange = () => {
-      updateStatus(!document.hidden);
-    };
-
+    const handleVisibilityChange = () => updateStatus(!document.hidden);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      updateStatus(false); // Set offline when component unmounts
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      updateStatus(false);
+      clearInterval(intervalRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [userId]);
@@ -115,28 +104,22 @@ export const useUserStatus = (userId) => {
 
     const fetchStatus = async () => {
       try {
-        const response = await axios.get(`/api/v1/users/${userId}/status`, {
+        const { data } = await axios.get(`/api/v1/users/${userId}/status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (response.data && response.data.data) {
-          setIsOnline(response.data.data.online);
-          if (response.data.data.last_seen) {
-            setLastSeen(new Date(response.data.data.last_seen));
-          }
+        if (data?.data) {
+          setIsOnline(data.data.online);
+          setLastSeen(
+            data.data.last_seen ? new Date(data.data.last_seen) : null
+          );
         }
       } catch (err) {
         console.error("Error fetching user status:", err);
       }
     };
 
-    // Initial fetch
     fetchStatus();
-
-    // The online status will be updated via FCM notifications
-    // No polling needed
-
-    return () => {};
   }, [userId]);
 
   return { isOnline, lastSeen };

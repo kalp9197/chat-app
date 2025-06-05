@@ -21,79 +21,45 @@ const Chat = ({ chatId }) => {
   const messagesEndRef = useRef(null);
   const messageContainerRef = useRef(null);
 
-  // Initial load - find active chat
+  // Set active chat on load if needed
   useEffect(() => {
     if (chatId && !activeChat) {
       const chat = chats.find((c) => c.id === chatId);
-      if (chat) {
-        setActiveChat(chat);
-      }
+      if (chat) setActiveChat(chat);
     }
   }, [chatId, chats, activeChat, setActiveChat]);
 
-  // Fetch messages when chat changes
   useEffect(() => {
-    if (chatId) {
-      fetchMessages(chatId);
-    }
+    if (chatId) fetchMessages(chatId);
   }, [chatId, fetchMessages]);
 
-  // Scroll to bottom whenever:
-  // 1. Messages are loaded (new messages array)
-  // 2. Chat ID changes (switching chats)
+  // Always scroll to bottom on new messages or chat switch
   useEffect(() => {
-    if (messagesEndRef.current) {
-      // Force scroll to bottom immediately
-      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages, chatId]);
 
-  // Chat cleanup on unmount
-  useEffect(() => {
-    return () => {
-      cleanupNotifications();
-    };
-  }, [cleanupNotifications]);
+  useEffect(() => cleanupNotifications, [cleanupNotifications]);
 
-  // Handle scroll position and show/hide scroll button
+  // Show scroll button if user scrolls up
   const handleScroll = () => {
     if (messageContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = messageContainerRef.current;
-      const scrollBottom = scrollHeight - scrollTop - clientHeight;
-      
-      // Show button when user has scrolled up more than 100px from bottom
-      setShowScrollButton(scrollBottom > 100);
+      const { scrollTop, scrollHeight, clientHeight } =
+        messageContainerRef.current;
+      setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
     }
   };
 
-  // Function to force scroll to bottom
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSendMessage = async (message) => {
-    if (!user || !chatId || message.trim() === "") return;
-
-    try {
-      await sendMessage(message, chatId);
-      // Ensure we scroll to bottom after sending
-      setTimeout(scrollToBottom, 50);
-    } catch {
-      // Error handling is managed in the sendMessage function
-    }
+    if (!user || !chatId || !message.trim()) return;
+    await sendMessage(message, chatId);
+    setTimeout(scrollToBottom, 50);
   };
 
-  if (!chatId) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
-        <EmptyState message="Select a chat to start messaging" icon="💬" />
-      </div>
-    );
-  }
-
-  if (!activeChat) {
+  if (!chatId || !activeChat) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
         <EmptyState message="Select a chat to start messaging" icon="💬" />
@@ -135,9 +101,8 @@ const Chat = ({ chatId }) => {
         </div>
       </div>
 
-      {/* Scroll to bottom button */}
       {showScrollButton && (
-        <button 
+        <button
           onClick={scrollToBottom}
           className="absolute bottom-20 right-4 rounded-full bg-white shadow-md p-2 hover:bg-gray-100 transition-colors z-10"
           aria-label="Scroll to bottom"

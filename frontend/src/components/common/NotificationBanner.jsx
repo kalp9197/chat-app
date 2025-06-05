@@ -10,113 +10,75 @@ const NotificationBanner = () => {
   const navigate = useNavigate();
   const { fetchChats, fetchMessages } = useChat();
 
-  // Handle notifications queue
+  // Show next notification in queue
   useEffect(() => {
     if (notifications.length > 0 && !currentNotification) {
-      // Show the next notification in the queue
-      setCurrentNotification({
-        ...notifications[0],
-        visible: true,
-      });
-
-      // Remove it from the queue
+      setCurrentNotification({ ...notifications[0], visible: true });
       setNotifications((prev) => prev.slice(1));
     }
   }, [notifications, currentNotification]);
 
-  // Handle incoming notifications
+  // Handle incoming notification
   const handleNotification = useCallback(
     (payload) => {
       if (!payload) return;
-
-      // Extract notification data from payload - FCM can have different formats
-      const title = payload.notification?.title || payload.data?.title || "New notification";
+      const title =
+        payload.notification?.title ||
+        payload.data?.title ||
+        "New notification";
       const body = payload.notification?.body || payload.data?.body || "";
-      
-      // FCM can place data either directly in payload.data or nested in payload.notification.data
       const data = payload.data || payload.notification?.data || {};
-
       const newNotification = {
         id: `notification-${Date.now()}`,
-        title: title,
-        body: body,
-        data: data,
+        title,
+        body,
+        data,
         timestamp: new Date(),
       };
 
-      // If it's a chat message notification, fetch the updated messages
+      // For chat message notification, update data
       if (data.type === "chat_message") {
-        // Refresh chat list to show new messages
         fetchChats();
-
-        // If we're already in the relevant chat, refresh the messages
-        if (data.chatId) {
-          fetchMessages(data.chatId);
-        }
-        
-        // Add chat navigation URL
+        if (data.chatId) fetchMessages(data.chatId);
         newNotification.data.url = `/chat/${data.chatId}`;
       }
 
-      // Add to queue or show immediately if no current notification
-      if (currentNotification) {
-        setNotifications((prev) => [...prev, newNotification]);
-      } else {
-        setCurrentNotification({
-          ...newNotification,
-          visible: true,
-        });
-      }
+      currentNotification
+        ? setNotifications((prev) => [...prev, newNotification])
+        : setCurrentNotification({ ...newNotification, visible: true });
     },
     [currentNotification, fetchChats, fetchMessages]
   );
 
-  // Handle navigation when clicking notification
+  // Navigate on click
   const handleNavigate = useCallback(() => {
     if (currentNotification?.data?.url) {
       navigate(currentNotification.data.url);
     }
-
-    // Close notification
     setCurrentNotification((prev) =>
       prev ? { ...prev, visible: false } : null
     );
-
-    // Clear after animation completes
-    setTimeout(() => {
-      setCurrentNotification(null);
-    }, 300);
+    setTimeout(() => setCurrentNotification(null), 300);
   }, [currentNotification, navigate]);
 
-  // Handle closing notification
+  // Close notification
   const handleClose = useCallback((e) => {
     e.stopPropagation();
-
-    // Start hide animation
     setCurrentNotification((prev) =>
       prev ? { ...prev, visible: false } : null
     );
-
-    // Remove after animation completes
-    setTimeout(() => {
-      setCurrentNotification(null);
-    }, 300);
+    setTimeout(() => setCurrentNotification(null), 300);
   }, []);
 
-  // Auto-hide notification after delay
+  // Auto-hide after 5s
   useEffect(() => {
     if (currentNotification?.visible) {
       const timer = setTimeout(() => {
         setCurrentNotification((prev) =>
           prev ? { ...prev, visible: false } : null
         );
-
-        // Clear after animation completes
-        setTimeout(() => {
-          setCurrentNotification(null);
-        }, 300);
+        setTimeout(() => setCurrentNotification(null), 300);
       }, 5000);
-
       return () => clearTimeout(timer);
     }
   }, [currentNotification]);
@@ -124,19 +86,12 @@ const NotificationBanner = () => {
   // Listen for notifications
   useEffect(() => {
     const unsubscribe = listenForNotifications(handleNotification);
-
-    // Clean up listener
     return () => {
-      if (typeof unsubscribe === "function") {
-        unsubscribe();
-      }
+      if (typeof unsubscribe === "function") unsubscribe();
     };
   }, [handleNotification]);
 
-  // If no current notification or it's not visible, don't render anything
-  if (!currentNotification) {
-    return null;
-  }
+  if (!currentNotification) return null;
 
   return (
     <Motion.div

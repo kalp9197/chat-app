@@ -5,24 +5,19 @@ import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 const ChatMessage = ({ message }) => {
   const user = useAuth((s) => s.user);
 
-  // Check if the message was sent by the current user
-  // Messages from backend include sender.uuid whereas our optimistic updates use just sender
+  // Detect message sender (supports backend and optimistic format)
   const isSentByMe =
-    (message.sender?.uuid && message.sender.uuid === user?.uuid) || // Format from backend
-    (message.sender && message.sender === user?.uuid); // Format from optimistic update
+    (message.sender?.uuid && message.sender.uuid === user?.uuid) ||
+    (message.sender && message.sender === user?.uuid);
 
-  // Extract the sender name
   const senderName = message.sender?.name || message.senderName || "";
-  
-  // Format the timestamp nicely
+
+  // Format time
   const formattedTime = new Date(
     message.timestamp || message.created_at || Date.now()
-  ).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  // Status indicator for message sending state with icons
+  // Render message status icon
   const messageStatus = message.isPending ? (
     <div className="flex items-center text-xs">
       <Clock size={12} className="mr-1" />
@@ -41,35 +36,38 @@ const ChatMessage = ({ message }) => {
 
   return (
     <div
-      className={`flex ${isSentByMe ? "justify-end" : "justify-start"} animate-fadeIn mb-2`}
+      className={`flex ${
+        isSentByMe ? "justify-end" : "justify-start"
+      } animate-fadeIn mb-2`}
     >
+      {/* Avatar (other user or me) */}
       {!isSentByMe && (
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-purple-100 flex items-center justify-center text-white text-xs font-bold self-end mr-2">
           {senderName.charAt(0)?.toUpperCase() || "?"}
         </div>
       )}
 
-      <div className={`max-w-[75%]`}>
+      <div className="max-w-[75%]">
         <div
           className={`
-            px-3 py-2 rounded-lg shadow-sm
-            ${isSentByMe
+          px-3 py-2 rounded-lg shadow-sm
+          ${
+            isSentByMe
               ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
               : "bg-white text-gray-800 border border-gray-200"
-            }
-          `}
+          }
+        `}
         >
           <p className="text-sm whitespace-pre-wrap break-words">
             {message.text || message.content || ""}
           </p>
         </div>
-        
         <div
           className={`
-            flex items-center mt-1 px-1 text-xs
-            ${isSentByMe ? "justify-end" : "justify-start"}
-            text-gray-500
-          `}
+          flex items-center mt-1 px-1 text-xs
+          ${isSentByMe ? "justify-end" : "justify-start"}
+          text-gray-500
+        `}
         >
           <span>{formattedTime}</span>
           {isSentByMe && <div className="ml-2">{messageStatus}</div>}

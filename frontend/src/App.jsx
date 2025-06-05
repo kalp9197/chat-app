@@ -11,29 +11,21 @@ import { useNotification } from "@/hooks/useNotification";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function App() {
-  // Use notification hook to manage notification setup
   const { initialized, permissionStatus, requestPermission } =
     useNotification();
   const isAuthenticated = useAuth((state) => state.isAuthenticated);
 
-  // Request notification permission when user is authenticated
   useEffect(() => {
     if (isAuthenticated && permissionStatus === "default" && !initialized) {
-      // Request permission with a short delay after login
-      const permissionTimer = setTimeout(() => {
-        requestPermission();
-      }, 2000);
-
-      return () => clearTimeout(permissionTimer);
+      const timer = setTimeout(requestPermission, 2000);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, permissionStatus, initialized, requestPermission]);
 
   return (
     <div className="min-h-screen">
       <BrowserRouter>
-        {/* Include the notification banner for foreground notifications */}
         <NotificationBanner />
-
         <Routes>
           <Route
             path="/"
@@ -59,7 +51,6 @@ export default function App() {
               </AuthRoute>
             }
           />
-          {/* Redirect all other routes to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

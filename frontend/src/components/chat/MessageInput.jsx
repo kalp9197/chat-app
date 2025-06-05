@@ -3,16 +3,13 @@ import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { Smile, Paperclip, Send } from "lucide-react";
 
-// Optional: A simple error boundary for emoji picker
+// Basic error boundary for emoji picker
 function EmojiPickerErrorBoundary({ children }) {
   const [hasError] = useState(false);
-
   return hasError ? (
     <div>Failed to load emoji picker.</div>
   ) : (
-    <React.Suspense fallback={<div>Loading emoji picker...</div>}>
-      {children}
-    </React.Suspense>
+    <React.Suspense fallback={<div>Loading...</div>}>{children}</React.Suspense>
   );
 }
 
@@ -24,14 +21,15 @@ const MessageInput = ({ onSendMessage }) => {
   const emojiPickerRef = useRef(null);
 
   useEffect(() => {
-    if (inputRef.current) inputRef.current.focus();
+    inputRef.current?.focus();
   }, []);
 
+  // Hide emoji picker when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (e) => {
       if (
         emojiPickerRef.current &&
-        !emojiPickerRef.current.contains(event.target)
+        !emojiPickerRef.current.contains(e.target)
       ) {
         setShowEmojiPicker(false);
       }
@@ -42,15 +40,14 @@ const MessageInput = ({ onSendMessage }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (message.trim() && !isSubmitting) {
-      setIsSubmitting(true);
-      try {
-        await onSendMessage(message);
-        setMessage("");
-      } finally {
-        setIsSubmitting(false);
-        if (inputRef.current) inputRef.current.focus();
-      }
+    if (!message.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onSendMessage(message);
+      setMessage("");
+    } finally {
+      setIsSubmitting(false);
+      inputRef.current?.focus();
     }
   };
 
@@ -62,17 +59,14 @@ const MessageInput = ({ onSendMessage }) => {
   };
 
   const handleEmojiSelect = (emoji) => {
-    setMessage((prevMessage) => prevMessage + (emoji.native || ""));
+    setMessage((msg) => msg + (emoji.native || ""));
     setShowEmojiPicker(false);
-    if (inputRef.current) inputRef.current.focus();
+    inputRef.current?.focus();
   };
 
+  // File input handler (stub for now)
   const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log("Selected file:", file.name);
-      e.target.value = "";
-    }
+    e.target.value = "";
   };
 
   return (
@@ -82,7 +76,6 @@ const MessageInput = ({ onSendMessage }) => {
           <Paperclip className="w-5 h-5" />
           <input type="file" className="hidden" onChange={handleFileSelect} />
         </label>
-
         <input
           ref={inputRef}
           type="text"
@@ -94,8 +87,6 @@ const MessageInput = ({ onSendMessage }) => {
           className="flex-grow bg-transparent border-none px-3 py-1 focus:outline-none disabled:bg-transparent"
           aria-label="Message"
         />
-
-        {/* Emoji picker button */}
         <button
           type="button"
           className="text-gray-500 hover:text-gray-700 transition-colors p-1"
@@ -103,13 +94,12 @@ const MessageInput = ({ onSendMessage }) => {
         >
           <Smile className="w-5 h-5" />
         </button>
-
         <button
           type="submit"
           disabled={!message.trim() || isSubmitting}
           className={`ml-1 p-2 rounded-full ${
             message.trim() && !isSubmitting
-              ? "bg-blue-500 hover:bg-blue-600" 
+              ? "bg-blue-500 hover:bg-blue-600"
               : "bg-gray-300"
           } text-white focus:outline-none transition-colors`}
         >
@@ -119,11 +109,9 @@ const MessageInput = ({ onSendMessage }) => {
             <Send size={16} />
           )}
         </button>
-
-        {/* Emoji picker */}
         {showEmojiPicker && (
-          <div 
-            ref={emojiPickerRef} 
+          <div
+            ref={emojiPickerRef}
             className="absolute bottom-12 right-2 z-10 shadow-xl rounded-lg overflow-hidden"
           >
             <EmojiPickerErrorBoundary>
