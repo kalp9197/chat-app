@@ -46,3 +46,49 @@ model DirectMessage {
   @@index([sender_id, receiver_id, created_at])
   @@index([receiver_id])
 }
+
+// generator client {
+//   provider = "prisma-client-js"
+// }
+
+// datasource db {
+//   provider = "mongodb"
+//   url      = env("DATABASE_URL")
+// }
+
+// model User {
+//   id                String           @id @default(auto()) @map("_id") @db.ObjectId
+//   uuid              String           @unique @default(uuid())
+//   name              String
+//   email             String           @unique
+//   password          String
+//   online            Boolean          @default(false)
+//   last_seen         DateTime?
+//   fcm_token         String?
+//   created_at        DateTime         @default(now())
+//   updated_at        DateTime         @updatedAt
+//   sent_messages     DirectMessage[]  @relation("SentMessages")
+//   received_messages DirectMessage[]  @relation("ReceivedMessages")
+// }
+
+// enum MessageType {
+//   text
+//   image
+//   file
+// }
+
+// model DirectMessage {
+//   id           String      @id @default(auto()) @map("_id") @db.ObjectId
+//   uuid         String      @unique @default(uuid())
+//   sender_id    String      @db.ObjectId
+//   receiver_id  String      @db.ObjectId
+//   content      String
+//   message_type MessageType @default(text)
+//   read         Boolean     @default(false)
+//   edited       Boolean     @default(false)
+//   created_at   DateTime    @default(now())
+//   updated_at   DateTime    @updatedAt
+  
+//   sender   User @relation("SentMessages", fields: [sender_id], references: [id])
+//   receiver User @relation("ReceivedMessages", fields: [receiver_id], references: [id])
+// }

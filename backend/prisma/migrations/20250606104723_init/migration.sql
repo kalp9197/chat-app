@@ -5,9 +5,9 @@ CREATE TABLE `User` (
     `name` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
-    `avatar_url` VARCHAR(512) NULL,
     `online` BOOLEAN NOT NULL DEFAULT false,
     `last_seen` DATETIME(3) NULL,
+    `fcm_token` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
@@ -24,12 +24,10 @@ CREATE TABLE `DirectMessage` (
     `receiver_id` INTEGER NOT NULL,
     `content` TEXT NOT NULL,
     `message_type` ENUM('text', 'image', 'file') NOT NULL DEFAULT 'text',
-    `file_url` VARCHAR(512) NULL,
     `read` BOOLEAN NOT NULL DEFAULT false,
     `edited` BOOLEAN NOT NULL DEFAULT false,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
-    `deleted_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `DirectMessage_uuid_key`(`uuid`),
     INDEX `DirectMessage_sender_id_receiver_id_created_at_idx`(`sender_id`, `receiver_id`, `created_at`),

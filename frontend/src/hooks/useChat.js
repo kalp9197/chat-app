@@ -11,6 +11,8 @@ export const useChat = create((set, get) => ({
   loading: false,
   error: null,
   notificationUnsubscribe: null,
+  currentPage: 0,
+  hasMoreMessages: true,
 
   setActiveChat: (chat) => {
     const { notificationUnsubscribe } = get();
@@ -18,7 +20,12 @@ export const useChat = create((set, get) => ({
       notificationUnsubscribe();
     }
 
-    set({ activeChat: chat, messages: [] });
+    set({ 
+      activeChat: chat, 
+      messages: [],
+      currentPage: 0,
+      hasMoreMessages: true 
+    });
 
     if (chat) {
       get().fetchMessages(chat.id);
@@ -28,7 +35,7 @@ export const useChat = create((set, get) => ({
           payload?.data?.type === "chat_message" &&
           payload?.data?.chatId === chat.id
         ) {
-          get().fetchMessages(chat.id);
+          get().fetchLatestMessages(chat.id);
         }
       });
 
@@ -107,7 +114,8 @@ export const useChat = create((set, get) => ({
         receiverUuid = chatId.replace("user-", "");
       }
 
-      const response = await axios.get(`/direct-messages/${receiverUuid}`);
+      const page = get().currentPage;
+      const response = await axios.get(`/direct-messages/${receiverUuid}?page=${page}`);
 
       if (response.data) {
         let rawMessages = [];
@@ -134,12 +142,123 @@ export const useChat = create((set, get) => ({
           _raw: message,
         }));
 
-        set({ messages: formattedMessages });
+        const hasMore = response.data.pagination?.hasMore ?? false;
+        
+        set({ 
+          messages: formattedMessages,
+          hasMoreMessages: hasMore
+        });
       }
     } catch (error) {
       set({ error: error.message });
     } finally {
       set({ loading: false });
+    }
+  },
+  
+  loadMoreMessages: async (chatId) => {
+    const user = useAuth.getState().user;
+    if (!user || !chatId) return;
+    
+    const currentPage = get().currentPage;
+    const nextPage = currentPage + 1;
+    
+    try {
+      set({ loading: true, error: null });
+
+      let receiverUuid = chatId;
+      if (chatId.startsWith("user-")) {
+        receiverUuid = chatId.replace("user-", "");
+      }
+
+      const response = await axios.get(`/direct-messages/${receiverUuid}?page=${nextPage}`);
+
+      if (response.data) {
+        let rawMessages = [];
+
+        if (Array.isArray(response.data)) {
+          rawMessages = response.data;
+        } else if (Array.isArray(response.data.data)) {
+          rawMessages = response.data.data;
+        } else if (Array.isArray(response.data.directMessages)) {
+          rawMessages = response.data.directMessages;
+        }
+
+        const formattedMessages = rawMessages.map((message) => ({
+          id:
+            message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
+          text: message.content || message.text || "",
+          content: message.content || message.text || "",
+          sender: message.sender || {
+            uuid: message.sender_uuid,
+            name: message.sender_name,
+          },
+          senderName: message.sender?.name || message.sender_name || "",
+          timestamp: message.created_at || message.timestamp || Date.now(),
+          _raw: message,
+        }));
+
+        const hasMore = response.data.pagination?.hasMore ?? false;
+        
+        set((state) => ({
+          messages: [...formattedMessages, ...state.messages],
+          currentPage: nextPage,
+          hasMoreMessages: hasMore
+        }));
+      }
+    } catch (error) {
+      set({ error: error.message });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  
+  fetchLatestMessages: async (chatId) => {
+    const user = useAuth.getState().user;
+    if (!user || !chatId) return;
+    
+    try {
+      let receiverUuid = chatId;
+      if (chatId.startsWith("user-")) {
+        receiverUuid = chatId.replace("user-", "");
+      }
+      
+      const response = await axios.get(`/direct-messages/${receiverUuid}?page=0`);
+      
+      if (response.data) {
+        let rawMessages = [];
+        
+        if (Array.isArray(response.data)) {
+          rawMessages = response.data;
+        } else if (Array.isArray(response.data.data)) {
+          rawMessages = response.data.data;
+        } else if (Array.isArray(response.data.directMessages)) {
+          rawMessages = response.data.directMessages;
+        }
+        
+        const formattedMessages = rawMessages.map((message) => ({
+          id:
+            message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
+          text: message.content || message.text || "",
+          content: message.content || message.text || "",
+          sender: message.sender || {
+            uuid: message.sender_uuid,
+            name: message.sender_name,
+          },
+          senderName: message.sender?.name || message.sender_name || "",
+          timestamp: message.created_at || message.timestamp || Date.now(),
+          _raw: message,
+        }));
+        
+        const hasMore = response.data.pagination?.hasMore ?? true;
+        
+        set((state) => ({
+          messages: formattedMessages,
+          hasMoreMessages: hasMore
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching latest messages:", error);
     }
   },
 

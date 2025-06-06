@@ -37,14 +37,26 @@ export const getMessagesBetweenUsers = async (req, res) => {
   try {
     const sender_id = req.user.id;
     const { receiver_uuid } = req.params;
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 0;
+    const offset = page * limit;
 
-    const messages = await directMessageService.getDirectMessages(
+    const result = await directMessageService.getDirectMessages(
       sender_id,
-      receiver_uuid
+      receiver_uuid,
+      limit,
+      offset
     );
+    
     res.status(HTTP_STATUS.OK).json({
       success: true,
-      data: messages,
+      data: result.messages,
+      pagination: {
+        total: result.totalCount,
+        page,
+        limit,
+        hasMore: offset + result.messages.length < result.totalCount
+      }
     });
   } catch (error) {
     if (error.message === "Receiver not found") {

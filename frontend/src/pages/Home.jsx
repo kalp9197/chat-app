@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useChat } from "@/hooks/useChat";
 import { Button } from "@/components/ui/button";
@@ -10,14 +10,12 @@ export default function Home() {
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
   const [selectedChat, setSelectedChat] = useState(null);
-  const { stopMessagePolling, setActiveChat } = useChat();
+  const { setActiveChat } = useChat();
 
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
     setActiveChat(chat);
   };
-
-  useEffect(() => () => stopMessagePolling(), [stopMessagePolling]);
 
   return (
     <Motion.div
