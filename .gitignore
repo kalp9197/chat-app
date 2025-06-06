@@ -7,4 +7,3 @@ backend/.env
 frontend/.env
 backend/dist
 frontend/dist
-/backend/firebase-admin-key.json
