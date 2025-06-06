@@ -1,17 +1,7 @@
 import axios from "axios";
 
-// Environment detection
-const isLocalhost =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1";
-
-let baseURL =
+const baseURL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
-
-// Use mobile IP when not on localhost
-if (!isLocalhost) {
-  baseURL = "http://192.168.0.6:8000/api/v1";
-}
 
 const instance = axios.create({
   baseURL,
@@ -50,7 +40,12 @@ instance.interceptors.request.use(
       }
 
       // Fix double slash in URLs
-      if (config.url.startsWith("/") && config.baseURL.endsWith("/")) {
+      if (
+        config.url &&
+        config.url.startsWith("/") &&
+        config.baseURL &&
+        config.baseURL.endsWith("/")
+      ) {
         config.url = config.url.substring(1);
       }
     } catch {
