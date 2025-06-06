@@ -10,15 +10,4 @@ export default defineConfig({
       "@": path.resolve("./src"),
     },
   },
-  server: {
-    host: true, // Allows access via local IP
-    port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://192.168.0.6:8000", // Your backend
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      },
-    },
-  },
 });
