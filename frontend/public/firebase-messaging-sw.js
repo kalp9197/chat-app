@@ -7,13 +7,13 @@ importScripts(
 );
 
 const firebaseConfig = {
-  apiKey: __FIREBASE_API_KEY__,
-  authDomain: __FIREBASE_AUTH_DOMAIN__,
-  projectId: __FIREBASE_PROJECT_ID__,
-  storageBucket: __FIREBASE_STORAGE_BUCKET__,
-  messagingSenderId: __FIREBASE_MESSAGING_SENDER_ID__,
-  appId: __FIREBASE_APP_ID__,
-  vapidKey: __FIREBASE_VAPID_KEY__,
+  apiKey: "AIzaSyDbcq4vj1qPIUHR4jNq-4HpdqQ94YNTwsc",
+  authDomain: "chatapp5503.firebaseapp.com",
+  projectId: "chatapp5503",
+  storageBucket: "chatapp5503.appspot.com",
+  messagingSenderId: "957776005516",
+  appId: "1:957776005516:web:868e7aadba0f111bf0aea9",
+  vapidKey: "BAU9dLojWgLiAeaZ2fUYuwUniwbQ_CmElRdu2cSqn4zgvcp7tTq7BqPXd18J1akxmjwnO5YVadnUZI8Sz50ViRI",
 };
 
 if (!firebase.apps.length) {
