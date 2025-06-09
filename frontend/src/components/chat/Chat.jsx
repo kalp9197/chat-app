@@ -47,7 +47,10 @@ const Chat = ({ chatId }) => {
     if (firstLoad && messages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
       setFirstLoad(false);
-    } else if (messages.length > 0 && messages[messages.length - 1]?.sender?.uuid === user?.uuid) {
+    } else if (
+      messages.length > 0 &&
+      messages[messages.length - 1]?.sender?.uuid === user?.uuid
+    ) {
       messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
     }
   }, [messages, firstLoad, user]);
@@ -75,14 +78,19 @@ const Chat = ({ chatId }) => {
   const handleLoadMore = async () => {
     if (hasMoreMessages && !isLoadingMore) {
       setIsLoadingMore(true);
-      
+
       // Save the scroll position relative to the first visible message
-      const firstMessage = messages.length > 0 ? document.getElementById(`message-${messages[0].id}`) : null;
-      const firstMessagePosition = firstMessage ? firstMessage.getBoundingClientRect().top : 0;
-      
+      const firstMessage =
+        messages.length > 0
+          ? document.getElementById(`message-${messages[0].id}`)
+          : null;
+      const firstMessagePosition = firstMessage
+        ? firstMessage.getBoundingClientRect().top
+        : 0;
+
       // Load more messages
       await loadMoreMessages(chatId);
-      
+
       // Wait for DOM update
       setTimeout(() => {
         // Find the previously first message (now it's somewhere in the middle)
@@ -111,6 +119,7 @@ const Chat = ({ chatId }) => {
         name={activeChat.name}
         avatar={activeChat.avatar}
         onScrollToBottom={scrollToBottom}
+        user={activeChat.otherUser}
       />
 
       <div
@@ -131,19 +140,24 @@ const Chat = ({ chatId }) => {
           ) : (
             <div className="space-y-3">
               {hasMoreMessages && (
-                <div className="flex justify-center my-4" ref={loadMoreButtonRef}>
+                <div
+                  className="flex justify-center my-4"
+                  ref={loadMoreButtonRef}
+                >
                   <button
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
-                    className={`px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium shadow-sm border border-gray-200 ${isLoadingMore ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium shadow-sm border border-gray-200 ${
+                      isLoadingMore ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
                     {isLoadingMore ? "Loading..." : "Load More Messages"}
                   </button>
                 </div>
               )}
               {messages.map((message, index) => (
-                <div 
-                  key={message.id} 
+                <div
+                  key={message.id}
                   id={`message-${message.id}`}
                   ref={index === 0 ? firstMessageRef : null}
                 >

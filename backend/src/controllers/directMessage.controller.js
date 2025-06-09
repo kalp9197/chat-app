@@ -47,7 +47,7 @@ export const getMessagesBetweenUsers = async (req, res) => {
       limit,
       offset
     );
-    
+
     res.status(HTTP_STATUS.OK).json({
       success: true,
       data: result.messages,
@@ -55,8 +55,8 @@ export const getMessagesBetweenUsers = async (req, res) => {
         total: result.totalCount,
         page,
         limit,
-        hasMore: offset + result.messages.length < result.totalCount
-      }
+        hasMore: offset + result.messages.length < result.totalCount,
+      },
     });
   } catch (error) {
     if (error.message === "Receiver not found") {

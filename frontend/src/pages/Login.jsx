@@ -39,7 +39,9 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Email
+            </label>
             <Input
               type="email"
               placeholder="your@email.com"
@@ -51,7 +53,9 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Password
+            </label>
             <Input
               type="password"
               placeholder="••••••••"

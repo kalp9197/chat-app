@@ -6,6 +6,7 @@ import {
 } from "../config/firebase";
 
 const notificationCallbacks = new Set();
+const statusCallbacks = new Set(); // For status update callbacks
 
 export const saveFcmToken = async (token) => {
   try {
@@ -59,7 +60,26 @@ export const initializeNotifications = async () => {
 };
 
 const handleGlobalNotification = (payload) => {
+  // Handle user status updates separately
+  if (payload?.data?.type === "user_status") {
+    handleStatusUpdate(payload.data);
+    return;
+  }
+
+  // Handle other notifications
   notificationCallbacks.forEach((cb) => cb(payload));
+};
+
+// Process user status updates
+const handleStatusUpdate = (data) => {
+  const statusData = {
+    userId: data.userId,
+    userUuid: data.userUuid,
+    isOnline: data.isOnline === "true", // Convert string back to boolean
+    lastSeen: data.lastSeen ? new Date(data.lastSeen) : null,
+  };
+
+  statusCallbacks.forEach((cb) => cb(statusData));
 };
 
 let unsubscribeGlobalListener = null;
@@ -84,6 +104,13 @@ export const listenForNotifications = (callback) => {
   if (typeof callback !== "function") return () => {};
   notificationCallbacks.add(callback);
   return () => notificationCallbacks.delete(callback);
+};
+
+// Listen for status updates
+export const listenForStatusUpdates = (callback) => {
+  if (typeof callback !== "function") return () => {};
+  statusCallbacks.add(callback);
+  return () => statusCallbacks.delete(callback);
 };
 
 export const triggerTestNotification = async (title, body) => {

@@ -38,7 +38,12 @@ export const sendDirectMessage = async (messageData) => {
   }
 };
 
-export const getDirectMessages = async (sender_id, receiver_uuid, limit = 10, offset = 0) => {
+export const getDirectMessages = async (
+  sender_id,
+  receiver_uuid,
+  limit = 10,
+  offset = 0
+) => {
   try {
     const receiver = await prisma.user.findUnique({
       where: { uuid: receiver_uuid },
@@ -70,7 +75,7 @@ export const getDirectMessages = async (sender_id, receiver_uuid, limit = 10, of
         },
       },
     });
-    
+
     // Get total count for pagination info
     const totalCount = await prisma.directMessage.count({
       where: {
@@ -80,10 +85,10 @@ export const getDirectMessages = async (sender_id, receiver_uuid, limit = 10, of
         ],
       },
     });
-    
+
     return {
       messages: messages.reverse(), // Reverse to get back to ascending order after getting most recent messages
-      totalCount
+      totalCount,
     };
   } catch (error) {
     console.error("Error getting direct messages:", error);
