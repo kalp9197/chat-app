@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import axios from "../lib/axios";
 import { useAuth } from "./useAuth";
-import { listenForNotifications } from "../services/notificationService";
+import {
+  listenForNotifications,
+  listenForStatusUpdates,
+} from "../services/notificationService";
 
 export const useChat = create((set, get) => ({
   messages: [],
@@ -11,20 +14,27 @@ export const useChat = create((set, get) => ({
   loading: false,
   error: null,
   notificationUnsubscribe: null,
+  statusUnsubscribe: null,
   currentPage: 0,
   hasMoreMessages: true,
 
   setActiveChat: (chat) => {
-    const { notificationUnsubscribe } = get();
+    const { notificationUnsubscribe, statusUnsubscribe } = get();
+
+    // Cleanup existing subscriptions
     if (notificationUnsubscribe) {
       notificationUnsubscribe();
     }
 
-    set({ 
-      activeChat: chat, 
+    if (statusUnsubscribe) {
+      statusUnsubscribe();
+    }
+
+    set({
+      activeChat: chat,
       messages: [],
       currentPage: 0,
-      hasMoreMessages: true 
+      hasMoreMessages: true,
     });
 
     if (chat) {
@@ -41,13 +51,26 @@ export const useChat = create((set, get) => ({
 
       set({ notificationUnsubscribe: unsubscribe });
     }
+
+    // Always listen for status updates regardless of active chat
+    const newStatusUnsubscribe = listenForStatusUpdates((statusData) => {
+      get().updateUserStatus(statusData);
+    });
+
+    set({ statusUnsubscribe: newStatusUnsubscribe });
   },
 
   cleanupNotifications: () => {
-    const { notificationUnsubscribe } = get();
+    const { notificationUnsubscribe, statusUnsubscribe } = get();
+
     if (notificationUnsubscribe) {
       notificationUnsubscribe();
       set({ notificationUnsubscribe: null });
+    }
+
+    if (statusUnsubscribe) {
+      statusUnsubscribe();
+      set({ statusUnsubscribe: null });
     }
   },
 
@@ -115,7 +138,9 @@ export const useChat = create((set, get) => ({
       }
 
       const page = get().currentPage;
-      const response = await axios.get(`/direct-messages/${receiverUuid}?page=${page}`);
+      const response = await axios.get(
+        `/direct-messages/${receiverUuid}?page=${page}`
+      );
 
       if (response.data) {
         let rawMessages = [];
@@ -143,10 +168,10 @@ export const useChat = create((set, get) => ({
         }));
 
         const hasMore = response.data.pagination?.hasMore ?? false;
-        
-        set({ 
+
+        set({
           messages: formattedMessages,
-          hasMoreMessages: hasMore
+          hasMoreMessages: hasMore,
         });
       }
     } catch (error) {
@@ -155,14 +180,14 @@ export const useChat = create((set, get) => ({
       set({ loading: false });
     }
   },
-  
+
   loadMoreMessages: async (chatId) => {
     const user = useAuth.getState().user;
     if (!user || !chatId) return;
-    
+
     const currentPage = get().currentPage;
     const nextPage = currentPage + 1;
-    
+
     try {
       set({ loading: true, error: null });
 
@@ -171,7 +196,9 @@ export const useChat = create((set, get) => ({
         receiverUuid = chatId.replace("user-", "");
       }
 
-      const response = await axios.get(`/direct-messages/${receiverUuid}?page=${nextPage}`);
+      const response = await axios.get(
+        `/direct-messages/${receiverUuid}?page=${nextPage}`
+      );
 
       if (response.data) {
         let rawMessages = [];
@@ -199,11 +226,11 @@ export const useChat = create((set, get) => ({
         }));
 
         const hasMore = response.data.pagination?.hasMore ?? false;
-        
+
         set((state) => ({
           messages: [...formattedMessages, ...state.messages],
           currentPage: nextPage,
-          hasMoreMessages: hasMore
+          hasMoreMessages: hasMore,
         }));
       }
     } catch (error) {
@@ -212,22 +239,24 @@ export const useChat = create((set, get) => ({
       set({ loading: false });
     }
   },
-  
+
   fetchLatestMessages: async (chatId) => {
     const user = useAuth.getState().user;
     if (!user || !chatId) return;
-    
+
     try {
       let receiverUuid = chatId;
       if (chatId.startsWith("user-")) {
         receiverUuid = chatId.replace("user-", "");
       }
-      
-      const response = await axios.get(`/direct-messages/${receiverUuid}?page=0`);
-      
+
+      const response = await axios.get(
+        `/direct-messages/${receiverUuid}?page=0`
+      );
+
       if (response.data) {
         let rawMessages = [];
-        
+
         if (Array.isArray(response.data)) {
           rawMessages = response.data;
         } else if (Array.isArray(response.data.data)) {
@@ -235,7 +264,7 @@ export const useChat = create((set, get) => ({
         } else if (Array.isArray(response.data.directMessages)) {
           rawMessages = response.data.directMessages;
         }
-        
+
         const formattedMessages = rawMessages.map((message) => ({
           id:
             message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
@@ -249,13 +278,12 @@ export const useChat = create((set, get) => ({
           timestamp: message.created_at || message.timestamp || Date.now(),
           _raw: message,
         }));
-        
+
         const hasMore = response.data.pagination?.hasMore ?? true;
-        
-        set((state) => ({
+        set({
           messages: formattedMessages,
-          hasMoreMessages: hasMore
-        }));
+          hasMoreMessages: hasMore,
+        });
       }
     } catch (error) {
       console.error("Error fetching latest messages:", error);
@@ -352,15 +380,40 @@ export const useChat = create((set, get) => ({
     }
   },
 
-  updateUserStatus: async (status) => {
-    const user = useAuth.getState().user;
-    if (user) {
-      try {
-        return status;
-      } catch {
-        // Silent fail
-      }
-    }
+  updateUserStatus: (statusData) => {
+    set((state) => {
+      // Update in users list
+      const updatedUsers = state.users.map((user) => {
+        if (user.uuid === statusData.userUuid) {
+          return {
+            ...user,
+            online: statusData.isOnline,
+            last_seen: statusData.lastSeen,
+          };
+        }
+        return user;
+      });
+
+      // Update in chats list
+      const updatedChats = state.chats.map((chat) => {
+        if (chat.receiver_uuid === statusData.userUuid) {
+          return {
+            ...chat,
+            otherUser: {
+              ...chat.otherUser,
+              online: statusData.isOnline,
+              last_seen: statusData.lastSeen,
+            },
+          };
+        }
+        return chat;
+      });
+
+      return {
+        users: updatedUsers,
+        chats: updatedChats,
+      };
+    });
   },
 
   startChat: async (otherUser) => {

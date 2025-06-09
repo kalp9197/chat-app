@@ -13,7 +13,8 @@ const firebaseConfig = {
   storageBucket: "chatapp5503.appspot.com",
   messagingSenderId: "957776005516",
   appId: "1:957776005516:web:868e7aadba0f111bf0aea9",
-  vapidKey: "BAU9dLojWgLiAeaZ2fUYuwUniwbQ_CmElRdu2cSqn4zgvcp7tTq7BqPXd18J1akxmjwnO5YVadnUZI8Sz50ViRI",
+  vapidKey:
+    "BAU9dLojWgLiAeaZ2fUYuwUniwbQ_CmElRdu2cSqn4zgvcp7tTq7BqPXd18J1akxmjwnO5YVadnUZI8Sz50ViRI",
 };
 
 if (!firebase.apps.length) {

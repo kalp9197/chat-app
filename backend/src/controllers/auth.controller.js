@@ -1,4 +1,5 @@
 import * as authService from "../services/auth.service.js";
+import * as userService from "../services/user.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
 export const register = async (req, res) => {
@@ -14,7 +15,6 @@ export const register = async (req, res) => {
     }
 
     const user = await authService.createUser({ name, email, password });
-    // eslint-disable-next-line no-unused-vars
     const { password: _, ...userWithoutPassword } = user;
 
     return res.status(HTTP_STATUS.CREATED).json({
@@ -52,14 +52,35 @@ export const login = async (req, res) => {
       });
     }
 
+    // Set user as online
+    await userService.updateUserStatus(user.id, true);
+
     const token = authService.generateToken({ id: user.id, email: user.email });
-    // eslint-disable-next-line no-unused-vars
     const { password: _, ...userWithoutPassword } = user;
 
     return res.status(HTTP_STATUS.OK).json({
       message: "Login successful",
       success: true,
       data: { user: userWithoutPassword, token },
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message, success: false });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Set user as offline and update last_seen
+    await userService.updateUserStatus(userId, false);
+
+    return res.status(HTTP_STATUS.OK).json({
+      message: "Logout successful",
+      success: true,
     });
   } catch (error) {
     console.log(error.message);
