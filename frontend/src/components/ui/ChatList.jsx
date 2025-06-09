@@ -106,11 +106,6 @@ export default function ChatList({ onSelectChat, selectedChat }) {
                         {chat.lastMessage || "No messages yet"}
                       </p>
                     </div>
-                    {chat.unread > 0 && (
-                      <span className="bg-indigo-500 text-white text-xs font-medium rounded-full h-5 w-5 flex items-center justify-center">
-                        {chat.unread}
-                      </span>
-                    )}
                   </div>
                 </div>
               ))

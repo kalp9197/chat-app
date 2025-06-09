@@ -52,9 +52,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Set user as online
-    await userService.updateUserStatus(user.id, true);
-
     const token = authService.generateToken({ id: user.id, email: user.email });
     const { password: _, ...userWithoutPassword } = user;
 
@@ -62,25 +59,6 @@ export const login = async (req, res) => {
       message: "Login successful",
       success: true,
       data: { user: userWithoutPassword, token },
-    });
-  } catch (error) {
-    console.log(error.message);
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
-  }
-};
-
-export const logout = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    // Set user as offline and update last_seen
-    await userService.updateUserStatus(userId, false);
-
-    return res.status(HTTP_STATUS.OK).json({
-      message: "Logout successful",
-      success: true,
     });
   } catch (error) {
     console.log(error.message);

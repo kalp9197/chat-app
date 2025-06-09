@@ -3,7 +3,6 @@ import axios from "../lib/axios";
 import { useAuth } from "./useAuth";
 import {
   listenForNotifications,
-  listenForStatusUpdates,
 } from "../services/notificationService";
 
 export const useChat = create((set, get) => ({
@@ -14,20 +13,15 @@ export const useChat = create((set, get) => ({
   loading: false,
   error: null,
   notificationUnsubscribe: null,
-  statusUnsubscribe: null,
   currentPage: 0,
   hasMoreMessages: true,
 
   setActiveChat: (chat) => {
-    const { notificationUnsubscribe, statusUnsubscribe } = get();
+    const { notificationUnsubscribe } = get();
 
     // Cleanup existing subscriptions
     if (notificationUnsubscribe) {
       notificationUnsubscribe();
-    }
-
-    if (statusUnsubscribe) {
-      statusUnsubscribe();
     }
 
     set({
@@ -51,26 +45,14 @@ export const useChat = create((set, get) => ({
 
       set({ notificationUnsubscribe: unsubscribe });
     }
-
-    // Always listen for status updates regardless of active chat
-    const newStatusUnsubscribe = listenForStatusUpdates((statusData) => {
-      get().updateUserStatus(statusData);
-    });
-
-    set({ statusUnsubscribe: newStatusUnsubscribe });
   },
 
   cleanupNotifications: () => {
-    const { notificationUnsubscribe, statusUnsubscribe } = get();
+    const { notificationUnsubscribe } = get();
 
     if (notificationUnsubscribe) {
       notificationUnsubscribe();
       set({ notificationUnsubscribe: null });
-    }
-
-    if (statusUnsubscribe) {
-      statusUnsubscribe();
-      set({ statusUnsubscribe: null });
     }
   },
 
@@ -93,7 +75,7 @@ export const useChat = create((set, get) => ({
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`,
           receiver_uuid: user.uuid,
           otherUser: user,
-          last_message: "",
+          last_message: "", // Will be populated by fetchMessages or a dedicated last_message fetch
           updated_at: user.updated_at || new Date().toISOString(),
         }));
 
@@ -164,7 +146,7 @@ export const useChat = create((set, get) => ({
           },
           senderName: message.sender?.name || message.sender_name || "",
           timestamp: message.created_at || message.timestamp || Date.now(),
-          _raw: message,
+          _raw: message, // Keep raw message for debugging or other uses
         }));
 
         const hasMore = response.data.pagination?.hasMore ?? false;
@@ -251,7 +233,7 @@ export const useChat = create((set, get) => ({
       }
 
       const response = await axios.get(
-        `/direct-messages/${receiverUuid}?page=0`
+        `/direct-messages/${receiverUuid}?page=0` // Always fetch page 0 for latest
       );
 
       if (response.data) {
@@ -279,10 +261,10 @@ export const useChat = create((set, get) => ({
           _raw: message,
         }));
 
-        const hasMore = response.data.pagination?.hasMore ?? true;
+        const hasMore = response.data.pagination?.hasMore ?? true; // Default to true if not specified
         set({
           messages: formattedMessages,
-          hasMoreMessages: hasMore,
+          hasMoreMessages: hasMore, // Update based on actual pagination info
         });
       }
     } catch (error) {
@@ -300,8 +282,15 @@ export const useChat = create((set, get) => ({
       receiver = chatId.replace("user-", "");
     }
 
+    if (!receiver) {
+      console.error("sendMessage: receiverUuid is required.");
+      return null;
+    }
+
+    let tempId; 
     try {
-      const tempId = `temp-${Date.now()}`;
+      tempId = `temp-${Date.now()}`;
+
       const tempMessage = {
         id: tempId,
         text: content.trim(),
@@ -349,29 +338,19 @@ export const useChat = create((set, get) => ({
           ),
         }));
       } else {
+        // Handle case where message sending might have succeeded but no data returned (or an error status without data.data)
         set((state) => ({
           messages: state.messages.map((m) =>
-            m.id === tempId ? { ...m, isPending: false } : m
+            m.id === tempId ? { ...m, isPending: false, failed: !response.data?.success } : m
           ),
         }));
       }
 
-      return response.data.data;
+      return response.data?.data; // Return the message data if available
     } catch (error) {
-      if (error.response?.data?.message?.includes("FCM token")) {
-        set((state) => ({
-          messages: state.messages.map((m) =>
-            /* eslint-disable */
-            m.id === tempId ? { ...m, isPending: false } : m
-          ),
-        }));
-
-        return { success: true };
-      }
-
+      console.error("Error sending message:", error);
       set((state) => ({
         messages: state.messages.map((m) =>
-          /* eslint-disable */
           m.id === tempId ? { ...m, isPending: false, failed: true } : m
         ),
         error: error.message,
@@ -380,55 +359,22 @@ export const useChat = create((set, get) => ({
     }
   },
 
-  updateUserStatus: (statusData) => {
-    set((state) => {
-      // Update in users list
-      const updatedUsers = state.users.map((user) => {
-        if (user.uuid === statusData.userUuid) {
-          return {
-            ...user,
-            online: statusData.isOnline,
-            last_seen: statusData.lastSeen,
-          };
-        }
-        return user;
-      });
-
-      // Update in chats list
-      const updatedChats = state.chats.map((chat) => {
-        if (chat.receiver_uuid === statusData.userUuid) {
-          return {
-            ...chat,
-            otherUser: {
-              ...chat.otherUser,
-              online: statusData.isOnline,
-              last_seen: statusData.lastSeen,
-            },
-          };
-        }
-        return chat;
-      });
-
-      return {
-        users: updatedUsers,
-        chats: updatedChats,
-      };
-    });
-  },
-
   startChat: async (otherUser) => {
+    const user = useAuth.getState().user;
+    const token = useAuth.getState().token; // Correctly get token
+
+    if (!user || !otherUser) {
+      console.error("startChat: user and otherUser must be defined.");
+      return null;
+    }
+
+    if (!token) {
+      console.error("startChat: auth token is missing.");
+      return null;
+    }
+
     try {
-      const user = useAuth.getState().user;
-      const token = useAuth.getState().getToken();
-
-      if (!user || !otherUser) {
-        return null;
-      }
-
-      if (!token) {
-        return null;
-      }
-
+      // Check if a chat with this user already exists
       const existingChat = get().chats.find(
         (chat) => chat.receiver_uuid === otherUser.uuid
       );
@@ -438,41 +384,33 @@ export const useChat = create((set, get) => ({
         return existingChat;
       }
 
-      const response = await axios.post(
-        "/direct-messages",
-        { receiver_uuid: otherUser.uuid },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // If no existing chat, create a new one via the backend (optional, depends on backend logic)
+      // For now, we'll assume the backend handles chat creation implicitly or this is just for UI state
+      // If an API call is needed to create/retrieve a chat, it would go here.
+      // For example: const response = await axios.post("/chats", { userId: otherUser.uuid }, { headers: { Authorization: `Bearer ${token}` } });
+      // const chatData = response.data.data;
 
-      if (response.data && response.data.success) {
-        const newChat = {
-          id: `user-${otherUser.uuid}`,
-          name: otherUser.name,
-          avatar:
-            otherUser.avatar ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.name}`,
-          receiver_uuid: otherUser.uuid,
-          otherUser,
-          last_message: "",
-          updated_at: new Date().toISOString(),
-        };
+      const newChat = {
+        id: `user-${otherUser.uuid}`, // Use a consistent ID format
+        name: otherUser.name,
+        avatar:
+          otherUser.avatar ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.name}`,
+        receiver_uuid: otherUser.uuid,
+        otherUser: otherUser, // Store the full otherUser object
+        last_message: "",
+        updated_at: new Date().toISOString(),
+      };
 
-        set((state) => ({
-          chats: [...state.chats, newChat],
-        }));
+      set((state) => ({
+        chats: [...state.chats, newChat].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)),
+      }));
+      get().setActiveChat(newChat);
+      return newChat;
 
-        get().setActiveChat(newChat);
-
-        return newChat;
-      }
-
-      return null;
     } catch (error) {
+      console.error("Error starting chat:", error);
+      set({ error: error.message });
       return null;
     }
   },

@@ -15,7 +15,6 @@ router.post(
   validate(Validation.loginValidation),
   authController.login
 );
-router.post("/logout", authMiddleware, authController.logout);
 router.get("/check-auth", authMiddleware, authController.checkAuth);
 
 export default router;
