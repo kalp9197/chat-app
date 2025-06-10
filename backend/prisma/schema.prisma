@@ -13,59 +13,70 @@ enum MessageType {
   file
 }
 
+enum GroupRole {
+  admin
+  member
+}
+
 model User {
-  id                String         @id @default(auto()) @map("_id") @db.ObjectId
-  uuid              String         @unique @default(uuid())
-  name              String
-  email             String         @unique
-  password          String
-  fcm_token         String?
-  created_at        DateTime       @default(now())
-  updated_at        DateTime       @updatedAt
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  uuid       String   @unique @default(uuid())
+  email      String   @unique
+  name       String
+  password   String
+  fcm_token  String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   memberships       GroupMembership[]
-  messages_sent     Message[]      @relation("MessagesSent")
-  messages_received Message[]      @relation("MessagesReceived")
+  messages_sent     Message[]         @relation("MessagesSent")
+  messages_received Message[]         @relation("MessagesReceived")
+
+  @@map("User")
 }
 
 model Group {
-  id           String            @id @default(auto()) @map("_id") @db.ObjectId
-  uuid         String            @unique @default(uuid())
-  name         String
-  created_at   DateTime          @default(now())
-  updated_at   DateTime          @updatedAt
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  uuid       String   @unique @default(uuid())
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  memberships  GroupMembership[]
-  messages     Message[]         @relation("GroupMessages")
+  memberships GroupMembership[]
+  messages    Message[]         @relation("GroupMessages")
+
+  @@map("Group")
 }
 
 model GroupMembership {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  uuid       String   @unique @default(uuid())
-  user_uuid  String
-  group_uuid String
-  role       String   // e.g., "admin", "member"
-  joined_at  DateTime @default(now())
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  uuid      String    @unique @default(uuid())
+  user_id   String    @db.ObjectId
+  group_id  String    @db.ObjectId
+  role      GroupRole @default(member)
+  joined_at DateTime  @default(now())
 
-  user       User     @relation(fields: [user_uuid], references: [uuid])
-  group      Group    @relation(fields: [group_uuid], references: [uuid])
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
 
-  @@unique([user_uuid, group_uuid])
+  @@unique([user_id, group_id])
+  @@map("GroupMembership")
 }
 
 model Message {
   id           String      @id @default(auto()) @map("_id") @db.ObjectId
   uuid         String      @unique @default(uuid())
-  sender_uuid  String
-  receiver_uuid String?    // nullable: set for direct messages
-  group_uuid   String?    // nullable: set for group messages
+  sender_id    String      @db.ObjectId
+  receiver_id  String?     @db.ObjectId
+  group_id     String?     @db.ObjectId
   content      String
   message_type MessageType @default(text)
   created_at   DateTime    @default(now())
   updated_at   DateTime    @updatedAt
 
-  // Relations:
-  sender   User   @relation("MessagesSent", fields: [sender_uuid], references: [uuid])
-  receiver User?  @relation("MessagesReceived", fields: [receiver_uuid], references: [uuid])
-  group    Group? @relation("GroupMessages", fields: [group_uuid], references: [uuid])
+  sender   User   @relation("MessagesSent", fields: [sender_id], references: [id], onDelete: Cascade)
+  receiver User?  @relation("MessagesReceived", fields: [receiver_id], references: [id], onDelete: Cascade)
+  group    Group? @relation("GroupMessages", fields: [group_id], references: [id], onDelete: Cascade)
+
+  @@map("Message")
 }

@@ -18,8 +18,6 @@ export const getAllUsers = async (currentUserId) => {
         uuid: true,
         name: true,
         email: true,
-        online: true,
-        last_seen: true,
       },
     });
     return users;

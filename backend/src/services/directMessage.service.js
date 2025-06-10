@@ -17,7 +17,7 @@ export const sendDirectMessage = async (messageData) => {
       throw new Error("Receiver not found");
     }
 
-    const message = await prisma.directMessage.create({
+    const message = await prisma.message.create({
       data: {
         sender_id: messageData.sender_id,
         receiver_id: receiver.id,
@@ -67,7 +67,7 @@ export const getDirectMessages = async (
       throw new Error("Receiver not found");
     }
 
-    const messages = await prisma.directMessage.findMany({
+    const messages = await prisma.message.findMany({
       where: {
         OR: [
           { sender_id: sender_id, receiver_id: receiver.id },
@@ -90,7 +90,7 @@ export const getDirectMessages = async (
     });
 
     // Get total count for pagination info
-    const totalCount = await prisma.directMessage.count({
+    const totalCount = await prisma.message.count({
       where: {
         OR: [
           { sender_id: sender_id, receiver_id: receiver.id },
