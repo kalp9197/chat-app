@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import axios from "../lib/axios";
 
 const getStoredAuthState = () => {
   try {
@@ -26,14 +25,7 @@ export const useAuth = create(
       login: (user, token) => {
         set({ user, token, isAuthenticated: true });
       },
-      logout: async () => {
-        try {
-          // Call backend logout endpoint
-          await axios.post("/auth/logout");
-        } catch (error) {
-          console.error("Error during logout:", error);
-        }
-
+      logout: () => {
         set({ user: null, token: null, isAuthenticated: false });
       },
       // Helper method to get current token
