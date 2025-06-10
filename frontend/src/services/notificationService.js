@@ -59,7 +59,6 @@ export const initializeNotifications = async () => {
 };
 
 const handleGlobalNotification = (payload) => {
-
   // Handle other notifications
   notificationCallbacks.forEach((cb) => cb(payload));
 };

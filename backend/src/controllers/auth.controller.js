@@ -1,5 +1,4 @@
 import * as authService from "../services/auth.service.js";
-import * as userService from "../services/user.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
 export const register = async (req, res) => {

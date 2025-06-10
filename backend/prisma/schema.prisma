@@ -1,185 +1,3 @@
-// generator client {
-//   provider = "prisma-client-js"
-// }
-
-// datasource db {
-//   provider = "mysql"
-//   url = env("DATABASE_URL")
-// }
-
-// model User {
-//   id                Int              @id @default(autoincrement())
-//   uuid              String           @unique @default(uuid())
-//   name              String
-//   email             String           @unique
-//   password          String
-//   online            Boolean          @default(false)
-//   last_seen         DateTime?
-//   fcm_token         String?          
-//   created_at        DateTime         @default(now())
-//   updated_at        DateTime         @updatedAt
-//   sent_messages     DirectMessage[]  @relation("SentMessages")
-//   received_messages DirectMessage[]  @relation("ReceivedMessages")
-// }
-
-// enum MessageType {
-//   text
-//   image
-//   file
-// }
-
-// model DirectMessage {
-//   id           Int        @id @default(autoincrement())
-//   uuid         String     @unique @default(uuid())
-//   sender_id    Int
-//   receiver_id  Int
-//   content      String     @db.Text
-//   message_type MessageType @default(text)
-//   read         Boolean    @default(false)
-//   edited       Boolean    @default(false)
-//   created_at   DateTime   @default(now())
-//   updated_at   DateTime   @updatedAt
-
-//   sender   User @relation("SentMessages", fields: [sender_id], references: [id])
-//   receiver User @relation("ReceivedMessages", fields: [receiver_id], references: [id])
-
-//   @@index([sender_id, receiver_id, created_at])
-//   @@index([receiver_id])
-// }
-
-// generator client {
-//   provider = "prisma-client-js"
-// }
-
-// datasource db {
-//   provider = "mongodb"
-//   url      = env("DATABASE_URL")
-// }
-
-// model User {
-//   id                String           @id @default(auto()) @map("_id") @db.ObjectId
-//   uuid              String           @unique @default(uuid())
-//   name              String
-//   email             String           @unique
-//   password          String
-//   online            Boolean          @default(false)
-//   last_seen         DateTime?
-//   fcm_token         String?
-//   created_at        DateTime         @default(now())
-//   updated_at        DateTime         @updatedAt
-//   sent_messages     DirectMessage[]  @relation("SentMessages")
-//   received_messages DirectMessage[]  @relation("ReceivedMessages")
-// }
-
-// enum MessageType {
-//   text
-//   image
-//   file
-// }
-
-// model DirectMessage {
-//   id           String      @id @default(auto()) @map("_id") @db.ObjectId
-//   uuid         String      @unique @default(uuid())
-//   sender_id    String      @db.ObjectId
-//   receiver_id  String      @db.ObjectId
-//   content      String
-//   message_type MessageType @default(text)
-//   read         Boolean     @default(false)
-//   edited       Boolean     @default(false)
-//   created_at   DateTime    @default(now())
-//   updated_at   DateTime    @updatedAt
-  
-//   sender   User @relation("SentMessages", fields: [sender_id], references: [id])
-//   receiver User @relation("ReceivedMessages", fields: [receiver_id], references: [id])
-// // }
-// generator client {
-//   provider = "prisma-client-js"
-// }
-
-// datasource db {
-//   provider = "mongodb"
-//   url      = env("DATABASE_URL")
-// }
-
-// model User {
-//   id                String           @id @default(auto()) @map("_id") @db.ObjectId
-//   uuid              String           @unique @default(uuid())
-//   name              String
-//   email             String           @unique
-//   password          String
-//   online            Boolean          @default(false)
-//   last_seen         DateTime?
-//   fcm_token         String?
-//   created_at        DateTime         @default(now())
-//   updated_at        DateTime         @updatedAt
-
-//   sent_messages     DirectMessage[]  @relation("SentMessages")
-//   received_messages DirectMessage[]  @relation("ReceivedMessages")
-
-//   // Group functionality
-//   memberships       GroupMembership[]
-//   group_messages    GroupMessage[]
-// }
-
-// enum MessageType {
-//   text
-//   image
-//   file
-// }
-
-// model DirectMessage {
-//   id           String      @id @default(auto()) @map("_id") @db.ObjectId
-//   uuid         String      @unique @default(uuid())
-//   sender_id    String      @db.ObjectId
-//   receiver_id  String      @db.ObjectId
-//   content      String
-//   message_type MessageType @default(text)
-//   // read         Boolean     @default(false)
-//   // edited       Boolean     @default(false)
-//   created_at   DateTime    @default(now())
-//   updated_at   DateTime    @updatedAt
-
-//   sender   User @relation("SentMessages", fields: [sender_id], references: [id])
-//   receiver User @relation("ReceivedMessages", fields: [receiver_id], references: [id])
-// }
-
-// model Group {
-//   id           String            @id @default(auto()) @map("_id") @db.ObjectId
-//   uuid         String            @unique @default(uuid())
-//   name         String
-//   created_at   DateTime          @default(now())
-//   updated_at   DateTime          @updatedAt
-//   memberships  GroupMembership[]
-//   messages     GroupMessage[]
-// }
-
-// model GroupMembership {
-//   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-//   user_id    String   @db.ObjectId
-//   group_id   String   @db.ObjectId
-//   role       String   // e.g., "admin", "member"
-//   joined_at  DateTime @default(now())
-
-//   user       User     @relation(fields: [user_id], references: [id])
-//   group      Group    @relation(fields: [group_id], references: [id])
-
-//   @@unique([user_id, group_id]) // Prevent duplicate memberships
-// }
-
-// model GroupMessage {
-//   id           String      @id @default(auto()) @map("_id") @db.ObjectId
-//   uuid         String      @unique @default(uuid())
-//   group_id     String      @db.ObjectId
-//   sender_id    String      @db.ObjectId
-//   content      String
-//   message_type MessageType @default(text)
-//   // edited       Boolean     @default(false)
-//   created_at   DateTime    @default(now())
-//   updated_at   DateTime    @updatedAt
-
-//   group   Group @relation(fields: [group_id], references: [id])
-//   sender  User  @relation(fields: [sender_id], references: [id])
-// }
 generator client {
   provider = "prisma-client-js"
 }
@@ -201,8 +19,6 @@ model User {
   name              String
   email             String         @unique
   password          String
-  online            Boolean        @default(false)
-  last_seen         DateTime?
   fcm_token         String?
   created_at        DateTime       @default(now())
   updated_at        DateTime       @updatedAt
@@ -225,32 +41,31 @@ model Group {
 
 model GroupMembership {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  user_id    String   @db.ObjectId
-  group_id   String   @db.ObjectId
+  uuid       String   @unique @default(uuid())
+  user_uuid  String
+  group_uuid String
   role       String   // e.g., "admin", "member"
   joined_at  DateTime @default(now())
 
-  user       User     @relation(fields: [user_id], references: [id])
-  group      Group    @relation(fields: [group_id], references: [id])
+  user       User     @relation(fields: [user_uuid], references: [uuid])
+  group      Group    @relation(fields: [group_uuid], references: [uuid])
 
-  @@unique([user_id, group_id])
+  @@unique([user_uuid, group_uuid])
 }
 
 model Message {
   id           String      @id @default(auto()) @map("_id") @db.ObjectId
   uuid         String      @unique @default(uuid())
-  sender_id    String      @db.ObjectId
-  receiver_id  String?     @db.ObjectId  // nullable: set for direct messages
-  group_id     String?     @db.ObjectId  // nullable: set for group messages
+  sender_uuid  String
+  receiver_uuid String?    // nullable: set for direct messages
+  group_uuid   String?    // nullable: set for group messages
   content      String
   message_type MessageType @default(text)
-  read         Boolean?    // for direct messages, nullable for group
-  edited       Boolean     @default(false)
   created_at   DateTime    @default(now())
   updated_at   DateTime    @updatedAt
 
   // Relations:
-  sender   User   @relation("MessagesSent", fields: [sender_id], references: [id])
-  receiver User?  @relation("MessagesReceived", fields: [receiver_id], references: [id])
-  group    Group? @relation("GroupMessages", fields: [group_id], references: [id])
+  sender   User   @relation("MessagesSent", fields: [sender_uuid], references: [uuid])
+  receiver User?  @relation("MessagesReceived", fields: [receiver_uuid], references: [uuid])
+  group    Group? @relation("GroupMessages", fields: [group_uuid], references: [uuid])
 }

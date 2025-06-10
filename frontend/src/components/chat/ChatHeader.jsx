@@ -2,7 +2,6 @@ import React from "react";
 import { ArrowDown } from "lucide-react";
 
 const ChatHeader = ({ name, avatar, onScrollToBottom }) => {
-
   return (
     <div className="flex items-center p-3 border-b bg-white shadow-sm">
       <div className="flex items-center flex-grow">

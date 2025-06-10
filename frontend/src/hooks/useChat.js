@@ -1,9 +1,7 @@
 import { create } from "zustand";
 import axios from "../lib/axios";
 import { useAuth } from "./useAuth";
-import {
-  listenForNotifications,
-} from "../services/notificationService";
+import { listenForNotifications } from "../services/notificationService";
 
 export const useChat = create((set, get) => ({
   messages: [],
@@ -287,7 +285,7 @@ export const useChat = create((set, get) => ({
       return null;
     }
 
-    let tempId; 
+    let tempId;
     try {
       tempId = `temp-${Date.now()}`;
 
@@ -341,7 +339,9 @@ export const useChat = create((set, get) => ({
         // Handle case where message sending might have succeeded but no data returned (or an error status without data.data)
         set((state) => ({
           messages: state.messages.map((m) =>
-            m.id === tempId ? { ...m, isPending: false, failed: !response.data?.success } : m
+            m.id === tempId
+              ? { ...m, isPending: false, failed: !response.data?.success }
+              : m
           ),
         }));
       }
@@ -403,11 +403,12 @@ export const useChat = create((set, get) => ({
       };
 
       set((state) => ({
-        chats: [...state.chats, newChat].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)),
+        chats: [...state.chats, newChat].sort(
+          (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+        ),
       }));
       get().setActiveChat(newChat);
       return newChat;
-
     } catch (error) {
       console.error("Error starting chat:", error);
       set({ error: error.message });

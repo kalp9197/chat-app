@@ -17,7 +17,6 @@ const getStoredAuthState = () => {
 
 const initialState = getStoredAuthState();
 
-
 export const useAuth = create(
   persist(
     (set, get) => ({
