@@ -1,6 +1,7 @@
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 import * as notificationService from "../services/notification.service.js";
 
+// Save FCM token
 export const saveUserToken = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -27,6 +28,7 @@ export const saveUserToken = async (req, res) => {
   }
 };
 
+// Send test notification
 export const sendTestNotification = async (req, res) => {
   try {
     const userId = req.user.id;

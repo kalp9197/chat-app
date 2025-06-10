@@ -1,5 +1,10 @@
 import { prisma } from "../config/database.config.js";
 
+/**
+ * Get all users
+ * @param {number} currentUserId
+ * @returns {Promise<Object[]>} //return users
+ */
 export const getAllUsers = async (currentUserId) => {
   try {
     const users = await prisma.user.findMany({

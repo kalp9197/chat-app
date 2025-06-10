@@ -1,6 +1,7 @@
 import * as userService from "../services/user.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
+// Get all users
 export const getUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;

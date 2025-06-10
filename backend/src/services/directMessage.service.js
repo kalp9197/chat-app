@@ -1,6 +1,11 @@
 import { prisma } from "../config/database.config.js";
 import * as notificationService from "./notification.service.js";
 
+/**
+ * Send a new direct message
+ * @param {Object} messageData //message data
+ * @returns {Promise<Object>} //return message
+ */
 export const sendDirectMessage = async (messageData) => {
   try {
     const receiver = await prisma.user.findUnique({
@@ -38,6 +43,14 @@ export const sendDirectMessage = async (messageData) => {
   }
 };
 
+/**
+ * Get direct messages between users
+ * @param {number} sender_id //sender id
+ * @param {string} receiver_uuid //receiver uuid
+ * @param {number} [limit=10] //limit
+ * @param {number} [offset=0] //offset
+ * @returns {Promise<{ messages: Object[], totalCount: number }>} //return messages and total count
+ */
 export const getDirectMessages = async (
   sender_id,
   receiver_uuid,

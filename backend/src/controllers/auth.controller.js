@@ -1,6 +1,7 @@
 import * as authService from "../services/auth.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
+// Register a new user
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -28,6 +29,7 @@ export const register = async (req, res) => {
   }
 };
 
+// Login an existing user
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -67,6 +69,7 @@ export const login = async (req, res) => {
   }
 };
 
+// Check if the user is authenticated
 export const checkAuth = async (req, res) => {
   try {
     const user = req.user;

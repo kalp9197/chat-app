@@ -1,6 +1,12 @@
 import { prisma } from "../config/database.config.js";
 import { messaging } from "../config/firebase.config.js";
 
+/**
+ * Save FCM token for a user
+ * @param {number} userId //user id
+ * @param {string} fcmToken //FCM token
+ * @returns {Promise<boolean>} //return true if success
+ */
 export const saveFcmToken = async (userId, fcmToken) => {
   try {
     await prisma.user.update({
@@ -14,6 +20,14 @@ export const saveFcmToken = async (userId, fcmToken) => {
   }
 };
 
+/**
+ * Send a notification to a user
+ * @param {number} receiverId //user id
+ * @param {string} title //notification title
+ * @param {string} body //notification body
+ * @param {Object} data //notification data
+ * @returns {Promise<boolean>} //return true if success
+ */
 export const sendNotification = async (receiverId, title, body, data = {}) => {
   try {
     const user = await prisma.user.findUnique({
@@ -56,6 +70,11 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
   }
 };
 
+/**
+ * Send a new message notification
+ * @param {Object} message
+ * @returns {Promise<boolean>}
+ */
 export const sendNewMessageNotification = async (message) => {
   try {
     const sender = await prisma.user.findUnique({
