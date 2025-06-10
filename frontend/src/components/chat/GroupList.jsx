@@ -1,30 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useGroups } from "@/hooks/useGroups";
-import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/common/EmptyState";
 import { motion as Motion } from "framer-motion";
 
 const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
-  const { groups, fetchGroups, deleteGroup } = useGroups();
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { groups, fetchGroups, loading, error } = useGroups();
 
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
 
-  const handleDeleteGroup = async (uuid, e) => {
-    e.stopPropagation();
-    if (isDeleting) return;
-    
-    if (confirm("Are you sure you want to delete this group?")) {
-      setIsDeleting(true);
-      try {
-        await deleteGroup(uuid);
-      } finally {
-        setIsDeleting(false);
-      }
-    }
-  };
+  if (loading) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        <div className="animate-pulse">Loading groups...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-500">
+        Error loading groups: {error}
+        <button 
+          onClick={fetchGroups}
+          className="block mx-auto mt-2 text-blue-500 hover:underline"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -39,19 +45,28 @@ const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
           <ul className="divide-y">
             {groups.map((group) => (
               <Motion.li
-                key={group.id}
+                key={group.id || group.uuid}
                 whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.03)" }}
                 className={`p-4 cursor-pointer ${
-                  currentGroupId === group.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                  currentGroupId === group.id
+                    ? "bg-blue-50 dark:bg-blue-900/20"
+                    : ""
                 }`}
                 onClick={() => onSelectGroup(group)}
               >
                 <div className="flex items-center">
                   <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                     <img
-                      src={group.avatar}
-                      alt={`${group.name} group avatar`}
+                      src={
+                        group.avatar || 
+                        `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || 'group'}`
+                      }
+                      alt={`${group.name || 'Group'} avatar`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || 'fallback'}`;
+                      }}
                     />
                   </div>
                   <div className="flex-grow">
@@ -70,4 +85,4 @@ const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
   );
 };
 
-export default GroupList; 
+export default GroupList;

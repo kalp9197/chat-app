@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useChat } from "@/hooks/useChat";
-import { useGroups } from "@/hooks/useGroups";
 import { Button } from "@/components/ui/button";
 import EmptyState from "../common/EmptyState";
 import UserList from "./UserList";
@@ -11,8 +10,8 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
   const fetchChats = useChat((s) => s.fetchChats);
   const chats = useChat((s) => s.chats);
   const startChat = useChat((s) => s.startChat);
-  const [showUsersList, setShowUsersList] = useState(false);
-  const [showGroupsList, setShowGroupsList] = useState(false);
+  const [setShowUsersList] = useState(false);
+  const [setShowGroupsList] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentView, setCurrentView] = useState("direct"); // direct, users, groups
 
@@ -29,7 +28,7 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
     setShowUsersList(false);
     setCurrentView("direct");
   };
-  
+
   const handleSelectGroup = (group) => {
     onSelectChat(group);
     setShowGroupsList(false);
@@ -62,20 +61,28 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
       <div className="p-4 border-b">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">
-            {currentView === "direct" ? "DMs" : "Groups"}
+            {currentView === "direct" ? "Chats" : "Groups"}
           </h2>
           <div className="flex space-x-2">
             <Button
-              onClick={() => currentView === "direct" ? setCurrentView("users") : setShowCreateModal(true)}
+              onClick={() =>
+                currentView === "direct"
+                  ? setCurrentView("users")
+                  : setShowCreateModal(true)
+              }
               variant="outline"
               size="sm"
-              className={currentView === "direct" ? "text-blue-500 border-blue-500" : "text-green-600 border-green-600"}
+              className={
+                currentView === "direct"
+                  ? "text-blue-500 border-blue-500"
+                  : "text-green-600 border-green-600"
+              }
             >
               {currentView === "direct" ? "New Chat" : "New Group"}
             </Button>
           </div>
         </div>
-        
+
         <div className="flex border-b">
           <button
             className={`px-4 py-2 text-sm font-medium ${
@@ -85,7 +92,7 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
             }`}
             onClick={() => setCurrentView("direct")}
           >
-            DMs
+            Chats
           </button>
           <button
             className={`px-4 py-2 text-sm font-medium ${
@@ -114,7 +121,9 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
                 <li
                   key={chat.id}
                   className={`p-4 hover:bg-gray-50 dark:hover:bg-slate-700/30 cursor-pointer ${
-                    currentChatId === chat.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                    currentChatId === chat.id
+                      ? "bg-blue-50 dark:bg-blue-900/20"
+                      : ""
                   }`}
                   onClick={() => onSelectChat(chat)}
                 >
@@ -138,14 +147,14 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
             </ul>
           )
         ) : (
-          <GroupList 
-            onSelectGroup={handleSelectGroup} 
+          <GroupList
+            onSelectGroup={handleSelectGroup}
             currentGroupId={currentChatId}
             onCreateGroup={() => setShowCreateModal(true)}
           />
         )}
       </div>
-      
+
       {showCreateModal && (
         <CreateGroupModal onClose={() => setShowCreateModal(false)} />
       )}

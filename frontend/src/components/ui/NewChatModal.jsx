@@ -3,8 +3,8 @@ import { Search, X, MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useChat } from "@/store/chat";
-import { useAuth } from "@/store/auth";
+import { useChat } from "@/hooks/useChat";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function NewChatModal({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,23 +14,14 @@ export default function NewChatModal({ isOpen, onClose }) {
 
   useEffect(() => {
     // Load all users when modal opens, but only if we don't already have users
-    let isMounted = true;
-
     if (isOpen) {
       // Only fetch if we're not already loading and don't have users
       if (!loading && (!users || users.length === 0)) {
-        console.log("Fetching users on modal open");
-        fetchAllUsers().catch((err) => {
-          if (isMounted) {
-            console.error("Error fetching users:", err);
-          }
+        fetchAllUsers().catch(() => {
+          // Error handled by the hook
         });
       }
     }
-
-    return () => {
-      isMounted = false;
-    };
   }, [isOpen, loading, users, fetchAllUsers]);
 
   // Filter users based on search query
@@ -48,31 +39,13 @@ export default function NewChatModal({ isOpen, onClose }) {
 
   const handleStartChat = async (otherUser) => {
     try {
-      console.log("Starting chat with user:", otherUser);
-      // Check if auth token is available
-      const authData = localStorage.getItem("auth-store");
-      if (authData) {
-        const parsedAuth = JSON.parse(authData);
-        console.log("Auth token available:", !!parsedAuth.state?.token);
-      } else {
-        console.warn("No auth data found in localStorage");
-      }
-
-      const result = await startChat(otherUser);
-      console.log("Chat started successfully:", result);
+      await startChat(otherUser);
       onClose();
       setSearchQuery("");
-    } catch (error) {
-      console.error("Failed to start chat:", error);
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-      }
-      alert("Failed to start chat. Please check console for details.");
+    } catch {
+      alert("Failed to start chat. Please try again.");
     }
   };
-
-  // Filtration now happens above
 
   if (!isOpen) return null;
 

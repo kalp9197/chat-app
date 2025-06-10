@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import axios from "../lib/axios";
 import { useAuth } from "./useAuth";
 import { listenForNotifications } from "../services/notificationService";
 
@@ -57,14 +56,10 @@ export const useChat = create((set, get) => ({
   fetchChats: async () => {
     try {
       set({ loading: true, error: null });
-      const token = useAuth.getState().token;
-      const response = await axios.get("/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { getAllUsers } = await import("@/services/userService");
+      const users = await getAllUsers();
 
-      if (response.data && response.data.success) {
-        const users = response.data.users || [];
-
+      if (users && users.length > 0) {
         const chats = users.map((user) => ({
           id: `user-${user.uuid}`,
           name: user.name,
@@ -93,12 +88,13 @@ export const useChat = create((set, get) => ({
   fetchAllUsers: async () => {
     try {
       set({ loading: true, error: null });
-      const response = await axios.get("/users");
-      const users = response.data?.users || [];
+      const { getAllUsers } = await import("@/services/userService");
+      const users = await getAllUsers();
+      
       set({ users });
       return users;
     } catch (error) {
-      set({ error: error.message });
+      set({ error: error.message || "Failed to fetch users" });
       return [];
     } finally {
       set({ loading: false });
@@ -118,9 +114,9 @@ export const useChat = create((set, get) => ({
       }
 
       const page = get().currentPage;
-      const response = await axios.get(
-        `/direct-messages/${receiverUuid}?page=${page}`
-      );
+      const { getMessagesBetweenUsers } = await import("@/services/messageService");
+      const messages = await getMessagesBetweenUsers(receiverUuid, page);
+      const response = { data: { data: messages } };
 
       if (response.data) {
         let rawMessages = [];
@@ -176,9 +172,9 @@ export const useChat = create((set, get) => ({
         receiverUuid = chatId.replace("user-", "");
       }
 
-      const response = await axios.get(
-        `/direct-messages/${receiverUuid}?page=${nextPage}`
-      );
+      const { getMessagesBetweenUsers } = await import("@/services/messageService");
+      const messages = await getMessagesBetweenUsers(receiverUuid, nextPage);
+      const response = { data: { data: messages } };
 
       if (response.data) {
         let rawMessages = [];
@@ -230,9 +226,9 @@ export const useChat = create((set, get) => ({
         receiverUuid = chatId.replace("user-", "");
       }
 
-      const response = await axios.get(
-        `/direct-messages/${receiverUuid}?page=0` // Always fetch page 0 for latest
-      );
+      const { getMessagesBetweenUsers } = await import("@/services/messageService");
+      const messages = await getMessagesBetweenUsers(receiverUuid, 0); // Always fetch page 0 for latest
+      const response = { data: { data: messages } };
 
       if (response.data) {
         let rawMessages = [];
@@ -266,7 +262,7 @@ export const useChat = create((set, get) => ({
         });
       }
     } catch (error) {
-      console.error("Error fetching latest messages:", error);
+      set({ error: error.message });
     }
   },
 
@@ -281,7 +277,7 @@ export const useChat = create((set, get) => ({
     }
 
     if (!receiver) {
-      console.error("sendMessage: receiverUuid is required.");
+      set({ error: "Recipient ID is required." });
       return null;
     }
 
@@ -307,10 +303,8 @@ export const useChat = create((set, get) => ({
         messages: [...state.messages, tempMessage],
       }));
 
-      const response = await axios.post("/direct-messages", {
-        content: content.trim(),
-        receiver_uuid: receiver,
-      });
+      const { sendMessage } = await import("@/services/messageService");
+      const response = { data: { data: await sendMessage(receiver, content.trim()) } };
 
       if (response.data && response.data.data) {
         const serverMessage = response.data.data;
@@ -348,7 +342,6 @@ export const useChat = create((set, get) => ({
 
       return response.data?.data; // Return the message data if available
     } catch (error) {
-      console.error("Error sending message:", error);
       set((state) => ({
         messages: state.messages.map((m) =>
           m.id === tempId ? { ...m, isPending: false, failed: true } : m
@@ -361,15 +354,15 @@ export const useChat = create((set, get) => ({
 
   startChat: async (otherUser) => {
     const user = useAuth.getState().user;
-    const token = useAuth.getState().token; // Correctly get token
+    const token = useAuth.getState().token;
 
     if (!user || !otherUser) {
-      console.error("startChat: user and otherUser must be defined.");
+      set({ error: "User information missing." });
       return null;
     }
 
     if (!token) {
-      console.error("startChat: auth token is missing.");
+      set({ error: "Authentication token missing." });
       return null;
     }
 
@@ -410,7 +403,6 @@ export const useChat = create((set, get) => ({
       get().setActiveChat(newChat);
       return newChat;
     } catch (error) {
-      console.error("Error starting chat:", error);
       set({ error: error.message });
       return null;
     }

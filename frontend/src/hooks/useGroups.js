@@ -3,23 +3,23 @@ import * as groupService from "@/services/groupService";
 
 export const useGroups = create((set) => ({
   groups: [],
-  activeGroup: null,
   loading: false,
   error: null,
-
+  
   fetchGroups: async () => {
     try {
       set({ loading: true, error: null });
       const groups = await groupService.getAllGroups();
       
-      set({ 
-        groups: groups.map(group => ({
-          ...group,
-          id: `group-${group.uuid}`, // Prefix ID to differentiate from direct chats
-          avatar: group.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name}`,
-        }))
-      });
-      return groups;
+      // Transform groups to include id and avatar
+      const formattedGroups = groups.map(group => ({
+        ...group,
+        id: `group-${group.uuid}`,  // Add id field
+        avatar: group.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name}`
+      }));
+      
+      set({ groups: formattedGroups });
+      return formattedGroups;
     } catch (error) {
       set({ error: error.message });
       return [];
@@ -27,43 +27,21 @@ export const useGroups = create((set) => ({
       set({ loading: false });
     }
   },
-
-  getGroup: async (uuid) => {
-    if (!uuid) return null;
-    
-    try {
-      set({ loading: true, error: null });
-      const group = await groupService.getGroupByUuid(uuid);
-      return {
-        ...group,
-        id: `group-${group.uuid}`,
-        avatar: group.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name}`,
-      };
-    } catch (error) {
-      set({ error: error.message });
-      return null;
-    } finally {
-      set({ loading: false });
-    }
-  },
-
-  setActiveGroup: (group) => {
-    set({ activeGroup: group });
-  },
-
+  
   createGroup: async (name) => {
     try {
       set({ loading: true, error: null });
       const newGroup = await groupService.createGroup(name);
       
+      // Add id and avatar to new group
       const formattedGroup = {
         ...newGroup,
         id: `group-${newGroup.uuid}`,
-        avatar: newGroup.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${newGroup.name}`,
+        avatar: newGroup.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${newGroup.name}`
       };
-
-      set((state) => ({
-        groups: [...state.groups, formattedGroup]
+      
+      set(state => ({ 
+        groups: [...state.groups, formattedGroup] 
       }));
       
       return formattedGroup;
@@ -74,25 +52,23 @@ export const useGroups = create((set) => ({
       set({ loading: false });
     }
   },
-
-  updateGroup: async (uuid, groupData) => {
+  
+  updateGroup: async (uuid, data) => {
     try {
       set({ loading: true, error: null });
-      const updatedGroup = await groupService.updateGroup(uuid, groupData);
+      const updatedGroup = await groupService.updateGroup(uuid, data);
       
+      // Add id and avatar to updated group
       const formattedGroup = {
         ...updatedGroup,
         id: `group-${updatedGroup.uuid}`,
-        avatar: updatedGroup.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${updatedGroup.name}`,
+        avatar: updatedGroup.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${updatedGroup.name}`
       };
-
-      set((state) => ({
-        groups: state.groups.map(g => 
-          g.uuid === uuid ? formattedGroup : g
-        ),
-        activeGroup: state.activeGroup?.uuid === uuid 
-          ? formattedGroup 
-          : state.activeGroup
+      
+      set(state => ({
+        groups: state.groups.map(group => 
+          group.uuid === uuid ? formattedGroup : group
+        )
       }));
       
       return formattedGroup;
@@ -103,19 +79,14 @@ export const useGroups = create((set) => ({
       set({ loading: false });
     }
   },
-
+  
   deleteGroup: async (uuid) => {
     try {
       set({ loading: true, error: null });
       await groupService.deleteGroup(uuid);
-      
-      set((state) => ({
-        groups: state.groups.filter(g => g.uuid !== uuid),
-        activeGroup: state.activeGroup?.uuid === uuid 
-          ? null 
-          : state.activeGroup
+      set(state => ({
+        groups: state.groups.filter(group => group.uuid !== uuid)
       }));
-      
       return true;
     } catch (error) {
       set({ error: error.message });

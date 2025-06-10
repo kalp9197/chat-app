@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import axios from "../lib/axios";
 import { listenForNotifications } from "../services/notificationService";
+import { getMessagesBetweenUsers } from "../services/messageService";
 
 export const useMessages = (chatId) => {
   const [messages, setMessages] = useState([]);
@@ -10,18 +10,14 @@ export const useMessages = (chatId) => {
 
   const fetchMessages = useCallback(async () => {
     if (!chatId) return;
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
+    
     setLoading(true);
     try {
-      const { data } = await axios.get(`/api/v1/direct-messages/${chatId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (data?.data) {
+      const messagesData = await getMessagesBetweenUsers(chatId);
+      
+      if (messagesData) {
         setMessages(
-          data.data.map((msg) => ({
+          messagesData.map((msg) => ({
             ...msg,
             isMe: msg.sender_uuid === localStorage.getItem("userUuid"),
           }))
@@ -29,7 +25,6 @@ export const useMessages = (chatId) => {
       }
       setError(null);
     } catch (err) {
-      console.error("Error fetching messages:", err);
       setError(err.message);
     } finally {
       setLoading(false);

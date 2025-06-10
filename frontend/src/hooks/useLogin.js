@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./useAuth";
-import axios from "@/lib/axios";
+import { loginUser } from "@/services/authService";
 
 export function useLogin() {
   const [email, setEmail] = useState("");
@@ -16,27 +16,27 @@ export function useLogin() {
     setLoading(true);
     setError("");
     try {
-      const response = await axios.post("/auth/login", { email, password });
+      const response = await loginUser(email, password);
 
       // Extract token from different response formats
       let user = null;
       let token = null;
 
-      if (response.data) {
+      if (response) {
         // Check token location
-        if (response.data.token) {
+        if (response.token) {
+          token = response.token;
+        } else if (response.data && response.data.token) {
           token = response.data.token;
-        } else if (response.data.data && response.data.data.token) {
-          token = response.data.data.token;
-        } else if (response.data.accessToken) {
-          token = response.data.accessToken;
+        } else if (response.accessToken) {
+          token = response.accessToken;
         }
 
         // Extract user data
-        if (response.data.user) {
+        if (response.user) {
+          user = response.user;
+        } else if (response.data && response.data.user) {
           user = response.data.user;
-        } else if (response.data.data && response.data.data.user) {
-          user = response.data.data.user;
         }
       }
 
