@@ -1,20 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useChat } from "@/hooks/useChat";
+import { useGroups } from "@/hooks/useGroups";
 import { Button } from "@/components/ui/button";
 import { motion as Motion } from "framer-motion";
 import ChatList from "@/components/chat/ChatList";
 import Chat from "@/components/chat/Chat";
+import GroupDetails from "@/components/chat/GroupDetails";
 
 export default function Home() {
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
   const [selectedChat, setSelectedChat] = useState(null);
   const { setActiveChat } = useChat();
+  const { fetchGroups, setActiveGroup } = useGroups();
+  
+  useEffect(() => {
+    // Fetch all groups on component mount
+    fetchGroups();
+  }, [fetchGroups]);
 
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
-    setActiveChat(chat);
+    
+    // Check if this is a group chat or direct chat
+    if (chat && chat.id && chat.id.startsWith('group-')) {
+      // It's a group
+      setActiveGroup(chat);
+    } else {
+      // It's a direct chat
+      setActiveChat(chat);
+    }
   };
 
   return (
@@ -58,7 +74,18 @@ export default function Home() {
               />
             </div>
             <div className="flex-1 flex flex-col">
-              <Chat chatId={selectedChat?.id} />
+              {selectedChat?.id?.startsWith('group-') ? (
+                <div className="flex flex-col h-full">
+                  <GroupDetails group={selectedChat} />
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className="text-gray-500 italic">
+                      Group chat functionality coming soon...
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <Chat chatId={selectedChat?.id} />
+              )}
             </div>
           </div>
         </Motion.div>

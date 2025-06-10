@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useChat } from "@/store/chat";
-import { useAuth } from "@/store/auth";
+import { useChat } from "@/hooks/useChat";
+import { useAuth } from "@/hooks/useAuth";
 import NewChatModal from "./NewChatModal";
 
 export default function ChatList({ onSelectChat, selectedChat }) {
@@ -106,11 +106,6 @@ export default function ChatList({ onSelectChat, selectedChat }) {
                         {chat.lastMessage || "No messages yet"}
                       </p>
                     </div>
-                    {chat.unread > 0 && (
-                      <span className="bg-indigo-500 text-white text-xs font-medium rounded-full h-5 w-5 flex items-center justify-center">
-                        {chat.unread}
-                      </span>
-                    )}
                   </div>
                 </div>
               ))

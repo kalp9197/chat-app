@@ -1,7 +1,7 @@
 import * as authService from "../services/auth.service.js";
-import * as userService from "../services/user.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
+// Register a new user
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -29,6 +29,7 @@ export const register = async (req, res) => {
   }
 };
 
+// Login an existing user
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -52,9 +53,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Set user as online
-    await userService.updateUserStatus(user.id, true);
-
     const token = authService.generateToken({ id: user.id, email: user.email });
     const { password: _, ...userWithoutPassword } = user;
 
@@ -71,25 +69,7 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    // Set user as offline and update last_seen
-    await userService.updateUserStatus(userId, false);
-
-    return res.status(HTTP_STATUS.OK).json({
-      message: "Logout successful",
-      success: true,
-    });
-  } catch (error) {
-    console.log(error.message);
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
-  }
-};
-
+// Check if the user is authenticated
 export const checkAuth = async (req, res) => {
   try {
     const user = req.user;

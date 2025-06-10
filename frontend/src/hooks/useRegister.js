@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "@/lib/axios";
+import { registerUser } from "@/services/authService";
 
 export function useRegister() {
   const [email, setEmail] = useState("");
@@ -15,7 +15,7 @@ export function useRegister() {
     setLoading(true);
     setError("");
     try {
-      await axios.post("/auth/register", { name, email, password });
+      await registerUser(name, email, password);
       navigate("/login");
     } catch (err) {
       setError(
