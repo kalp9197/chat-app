@@ -14,7 +14,7 @@ export default function Home() {
   const [selectedChat, setSelectedChat] = useState(null);
   const { setActiveChat } = useChat();
   const { fetchGroups, setActiveGroup } = useGroups();
-  
+
   useEffect(() => {
     // Fetch all groups on component mount
     fetchGroups();
@@ -22,9 +22,9 @@ export default function Home() {
 
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
-    
+
     // Check if this is a group chat or direct chat
-    if (chat && chat.id && chat.id.startsWith('group-')) {
+    if (chat && chat.id && chat.id.startsWith("group-")) {
       // It's a group
       setActiveGroup(chat);
     } else {
@@ -74,7 +74,7 @@ export default function Home() {
               />
             </div>
             <div className="flex-1 flex flex-col">
-              {selectedChat?.id?.startsWith('group-') ? (
+              {selectedChat?.id?.startsWith("group-") ? (
                 <div className="flex flex-col h-full">
                   <GroupDetails group={selectedChat} />
                   <div className="flex-1 flex items-center justify-center">

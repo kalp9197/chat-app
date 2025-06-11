@@ -22,7 +22,7 @@ const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
     return (
       <div className="p-4 text-center text-red-500">
         Error loading groups: {error}
-        <button 
+        <button
           onClick={fetchGroups}
           className="block mx-auto mt-2 text-blue-500 hover:underline"
         >
@@ -58,14 +58,14 @@ const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
                   <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                     <img
                       src={
-                        group.avatar || 
-                        `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || 'group'}`
+                        group.avatar ||
+                        `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || "group"}`
                       }
-                      alt={`${group.name || 'Group'} avatar`}
+                      alt={`${group.name || "Group"} avatar`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || 'fallback'}`;
+                        e.target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || "fallback"}`;
                       }}
                     />
                   </div>

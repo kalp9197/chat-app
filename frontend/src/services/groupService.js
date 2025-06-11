@@ -13,8 +13,8 @@ export const getGroupByUuid = async (uuid) => {
 };
 
 // Create a new group
-export const createGroup = async (name) => {
-  const response = await axios.post("/groups", { name });
+export const createGroup = async (name, members = []) => {
+  const response = await axios.post("/groups", { name, members });
   return response.data.data;
 };
 
@@ -28,4 +28,10 @@ export const updateGroup = async (uuid, groupData) => {
 export const deleteGroup = async (uuid) => {
   await axios.delete(`/groups/${uuid}`);
   return true;
-}; 
+};
+
+// Add members to group
+export const addGroupMembers = async (uuid, members) => {
+  const response = await axios.post(`/groups/${uuid}/members`, { members });
+  return response.data.data;
+};

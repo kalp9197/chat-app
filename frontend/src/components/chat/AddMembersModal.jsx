@@ -1,51 +1,41 @@
 import { useState, useEffect } from "react";
-import { useGroups } from "@/hooks/useGroups";
-import { getAllUsers } from "@/services/userService";
 import { Button } from "@/components/ui/button";
 import { motion as Motion } from "framer-motion";
+import { getAllUsers } from "@/services/userService";
+import { useGroups } from "@/hooks/useGroups";
 
-const CreateGroupModal = ({ onClose }) => {
-  const { createGroup } = useGroups();
-  const [name, setName] = useState("");
-  const [selectedUsers, setSelectedUsers] = useState([]);
+const AddMembersModal = ({ groupUuid, onClose }) => {
+  const { addMembers } = useGroups();
+
   const [allUsers, setAllUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetch = async () => {
       const users = await getAllUsers();
       setAllUsers(users);
     };
-    fetchUsers();
+    fetch();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!name.trim()) {
-      setError("Group name is required");
-      return;
-    }
     if (selectedUsers.length === 0) {
-      setError("Select at least one member");
+      setError("Select at least one user");
       return;
     }
-
-    setIsLoading(true);
+    setLoading(true);
     setError("");
-
     try {
-      const newGroup = await createGroup(name.trim(), selectedUsers);
-      if (newGroup) {
-        onClose();
-      } else {
-        setError("Failed to create group. Please try again.");
-      }
-    } catch (error) {
-      setError(error.message || "An error occurred. Please try again.");
+      const members = selectedUsers.map((u) => ({ uuid: u.uuid }));
+      const res = await addMembers(groupUuid, members);
+      if (res) onClose();
+    } catch (err) {
+      setError(err.message || "Error");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -62,32 +52,11 @@ const CreateGroupModal = ({ onClose }) => {
         className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-semibold mb-4">Create New Group</h2>
-
+        <h2 className="text-xl font-semibold mb-4">Add Members</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Group Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600"
-              placeholder="Enter group name"
-              autoFocus
-            />
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-          </div>
-
-          {/* Member selector */}
-          <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Select Members
+              Select Users
             </label>
             <ul className="border rounded-md max-h-60 overflow-y-auto bg-white dark:bg-slate-700">
               {allUsers.map((user) => (
@@ -115,17 +84,17 @@ const CreateGroupModal = ({ onClose }) => {
             {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
           </div>
 
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              disabled={isLoading}
+              disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Group"}
+            <Button type="submit" disabled={loading}>
+              {loading ? "Adding..." : "Add"}
             </Button>
           </div>
         </form>
@@ -134,4 +103,4 @@ const CreateGroupModal = ({ onClose }) => {
   );
 };
 
-export default CreateGroupModal;
+export default AddMembersModal;

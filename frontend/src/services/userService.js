@@ -3,7 +3,7 @@ import axios from "@/lib/axios";
 // Get all users
 export const getAllUsers = async () => {
   const response = await axios.get("/users");
-  
+
   // Handle different possible response structures
   if (Array.isArray(response.data)) {
     return response.data;
@@ -12,7 +12,7 @@ export const getAllUsers = async () => {
   } else if (response.data.data && Array.isArray(response.data.data)) {
     return response.data.data;
   }
-  
+
   // If none of the above, return empty array
   return [];
-}; 
+};

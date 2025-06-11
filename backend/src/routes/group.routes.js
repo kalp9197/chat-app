@@ -31,4 +31,12 @@ router.put(
 // Delete group by GroupUuid
 router.delete("/:uuid", authMiddleware, groupController.deleteGroupByUuid);
 
+// Add members to group
+router.post(
+  "/:uuid/members",
+  authMiddleware,
+  validate(Validation.validateAddMembers),
+  groupController.addGroupMembers
+);
+
 export default router;

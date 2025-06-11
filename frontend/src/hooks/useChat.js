@@ -90,7 +90,7 @@ export const useChat = create((set, get) => ({
       set({ loading: true, error: null });
       const { getAllUsers } = await import("@/services/userService");
       const users = await getAllUsers();
-      
+
       set({ users });
       return users;
     } catch (error) {
@@ -114,7 +114,9 @@ export const useChat = create((set, get) => ({
       }
 
       const page = get().currentPage;
-      const { getMessagesBetweenUsers } = await import("@/services/messageService");
+      const { getMessagesBetweenUsers } = await import(
+        "@/services/messageService"
+      );
       const messages = await getMessagesBetweenUsers(receiverUuid, page);
       const response = { data: { data: messages } };
 
@@ -172,7 +174,9 @@ export const useChat = create((set, get) => ({
         receiverUuid = chatId.replace("user-", "");
       }
 
-      const { getMessagesBetweenUsers } = await import("@/services/messageService");
+      const { getMessagesBetweenUsers } = await import(
+        "@/services/messageService"
+      );
       const messages = await getMessagesBetweenUsers(receiverUuid, nextPage);
       const response = { data: { data: messages } };
 
@@ -226,7 +230,9 @@ export const useChat = create((set, get) => ({
         receiverUuid = chatId.replace("user-", "");
       }
 
-      const { getMessagesBetweenUsers } = await import("@/services/messageService");
+      const { getMessagesBetweenUsers } = await import(
+        "@/services/messageService"
+      );
       const messages = await getMessagesBetweenUsers(receiverUuid, 0); // Always fetch page 0 for latest
       const response = { data: { data: messages } };
 
@@ -304,7 +310,9 @@ export const useChat = create((set, get) => ({
       }));
 
       const { sendMessage } = await import("@/services/messageService");
-      const response = { data: { data: await sendMessage(receiver, content.trim()) } };
+      const response = {
+        data: { data: await sendMessage(receiver, content.trim()) },
+      };
 
       if (response.data && response.data.data) {
         const serverMessage = response.data.data;

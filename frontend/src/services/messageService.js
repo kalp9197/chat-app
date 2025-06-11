@@ -5,13 +5,15 @@ export const sendMessage = async (receiverUuid, content) => {
 
   const response = await axios.post("/direct-messages", {
     content: content.trim(),
-    receiver_uuid: receiverUuid
+    receiver_uuid: receiverUuid,
   });
 
   return response.data.data;
 };
 
 export const getMessagesBetweenUsers = async (receiverUuid, page = 0) => {
-  const response = await axios.get(`/direct-messages/${receiverUuid}?page=${page}`);
+  const response = await axios.get(
+    `/direct-messages/${receiverUuid}?page=${page}`
+  );
   return response.data.data || [];
 };

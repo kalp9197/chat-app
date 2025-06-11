@@ -4,10 +4,10 @@ import { HTTP_STATUS } from "../constants/statusCodes.js";
 // Controller to create a new group.
 export const createGroup = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, members } = req.body;
     const creatorId = req.user.id; // from authMiddleware
 
-    const newGroup = await groupService.createGroup(name, creatorId);
+    const newGroup = await groupService.createGroup(name, creatorId, members);
 
     res.status(HTTP_STATUS.CREATED).json({
       message: "Group created successfully.",
@@ -76,6 +76,29 @@ export const deleteGroupByUuid = async (req, res) => {
     const { uuid } = req.params;
     await groupService.deleteGroupByUuid(uuid);
     res.status(HTTP_STATUS.NO_CONTENT).send();
+  } catch (error) {
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: error.message,
+      success: false,
+    });
+  }
+};
+
+// Controller to add members to group
+export const addGroupMembers = async (req, res) => {
+  try {
+    const { uuid } = req.params;
+    const { members } = req.body;
+
+    const updatedMemberships = await groupService.addMembersToGroup(
+      uuid,
+      members
+    );
+
+    res.status(HTTP_STATUS.OK).json({
+      message: "Members added successfully.",
+      data: updatedMemberships,
+    });
   } catch (error) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       message: error.message,

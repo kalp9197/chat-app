@@ -2,16 +2,18 @@ import { useState } from "react";
 import { useGroups } from "@/hooks/useGroups";
 import { Button } from "@/components/ui/button";
 import EditGroupModal from "./EditGroupModal";
+import AddMembersModal from "./AddMembersModal";
 import { Pencil, Trash2 } from "lucide-react";
 
 const GroupDetails = ({ group }) => {
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const { deleteGroup } = useGroups();
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const handleDelete = async () => {
     if (isDeleting) return;
-    
+
     if (confirm("Are you sure you want to delete this group?")) {
       setIsDeleting(true);
       try {
@@ -21,7 +23,7 @@ const GroupDetails = ({ group }) => {
       }
     }
   };
-  
+
   if (!group) return null;
 
   return (
@@ -36,11 +38,21 @@ const GroupDetails = ({ group }) => {
         </div>
         <div>
           <h2 className="font-semibold">{group.name}</h2>
-          <p className="text-sm text-gray-500">{group.memberCount || 0} members</p>
+          <p className="text-sm text-gray-500">
+            {group.memberCount || 0} members
+          </p>
         </div>
       </div>
-      
+
       <div className="flex space-x-2">
+        <Button
+          onClick={() => setShowAddModal(true)}
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-full"
+        >
+          +
+        </Button>
         <Button
           onClick={() => setShowEditModal(true)}
           variant="ghost"
@@ -59,15 +71,18 @@ const GroupDetails = ({ group }) => {
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      
+
       {showEditModal && (
-        <EditGroupModal 
-          group={group} 
-          onClose={() => setShowEditModal(false)} 
+        <EditGroupModal group={group} onClose={() => setShowEditModal(false)} />
+      )}
+      {showAddModal && (
+        <AddMembersModal
+          groupUuid={group.uuid}
+          onClose={() => setShowAddModal(false)}
         />
       )}
     </div>
   );
 };
 
-export default GroupDetails; 
+export default GroupDetails;

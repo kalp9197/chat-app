@@ -10,11 +10,11 @@ export const useMessages = (chatId) => {
 
   const fetchMessages = useCallback(async () => {
     if (!chatId) return;
-    
+
     setLoading(true);
     try {
       const messagesData = await getMessagesBetweenUsers(chatId);
-      
+
       if (messagesData) {
         setMessages(
           messagesData.map((msg) => ({
