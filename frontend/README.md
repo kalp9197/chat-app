@@ -1,7 +1,6 @@
 # 🚀 Chat App - Frontend
 
 <div align="center">
-  <img src="https://via.placeholder.com/150x150?text=Frontend" alt="Frontend Logo" width="150" height="150" />
   <p><em>Modern React frontend with Vite, Tailwind CSS, and real-time messaging capabilities</em></p>
 </div>
 
