@@ -1,7 +1,6 @@
 # 🚀 Chat App - Backend
 
 <div align="center">
-  <img src="https://via.placeholder.com/150x150?text=Backend" alt="Backend Logo" width="150" height="150" />
   <p><em>Node.js backend with Express, Prisma, and MongoDB following the Controller-Service-Repository pattern</em></p>
 </div>
 
