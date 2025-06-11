@@ -1,25 +1,26 @@
 import { create } from "zustand";
 import * as groupService from "@/services/groupService";
 
+const formatGroup = (group) => ({
+  ...group,
+  id: `group-${group.uuid}`,
+  avatar:
+    group.avatar ||
+    `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name}`,
+  memberCount: group.memberCount ?? group.memberships?.length ?? 0,
+});
+
 export const useGroups = create((set) => ({
   groups: [],
   loading: false,
   error: null,
+  activeGroup: null,
 
   fetchGroups: async () => {
+    set({ loading: true, error: null });
     try {
-      set({ loading: true, error: null });
       const groups = await groupService.getAllGroups();
-
-      // Transform groups to include id and avatar
-      const formattedGroups = groups.map((group) => ({
-        ...group,
-        id: `group-${group.uuid}`, // Add id field
-        avatar:
-          group.avatar ||
-          `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name}`,
-      }));
-
+      const formattedGroups = groups.map(formatGroup);
       set({ groups: formattedGroups });
       return formattedGroups;
     } catch (error) {
@@ -31,23 +32,11 @@ export const useGroups = create((set) => ({
   },
 
   createGroup: async (name, members = []) => {
+    set({ loading: true, error: null });
     try {
-      set({ loading: true, error: null });
       const newGroup = await groupService.createGroup(name, members);
-
-      // Add id and avatar to new group
-      const formattedGroup = {
-        ...newGroup,
-        id: `group-${newGroup.uuid}`,
-        avatar:
-          newGroup.avatar ||
-          `https://api.dicebear.com/7.x/identicon/svg?seed=${newGroup.name}`,
-      };
-
-      set((state) => ({
-        groups: [...state.groups, formattedGroup],
-      }));
-
+      const formattedGroup = formatGroup(newGroup);
+      set((state) => ({ groups: [...state.groups, formattedGroup] }));
       return formattedGroup;
     } catch (error) {
       set({ error: error.message });
@@ -58,24 +47,23 @@ export const useGroups = create((set) => ({
   },
 
   updateGroup: async (uuid, data) => {
+    set({ loading: true, error: null });
     try {
-      set({ loading: true, error: null });
       const updatedGroup = await groupService.updateGroup(uuid, data);
+      const formattedGroup = formatGroup(updatedGroup);
 
-      // Add id and avatar to updated group
-      const formattedGroup = {
-        ...updatedGroup,
-        id: `group-${updatedGroup.uuid}`,
-        avatar:
-          updatedGroup.avatar ||
-          `https://api.dicebear.com/7.x/identicon/svg?seed=${updatedGroup.name}`,
-      };
-
-      set((state) => ({
-        groups: state.groups.map((group) =>
+      set((state) => {
+        const groups = state.groups.map((group) =>
           group.uuid === uuid ? formattedGroup : group
-        ),
-      }));
+        );
+        return {
+          groups,
+          activeGroup:
+            state.activeGroup?.uuid === uuid
+              ? formattedGroup
+              : state.activeGroup,
+        };
+      });
 
       return formattedGroup;
     } catch (error) {
@@ -87,11 +75,13 @@ export const useGroups = create((set) => ({
   },
 
   deleteGroup: async (uuid) => {
+    set({ loading: true, error: null });
     try {
-      set({ loading: true, error: null });
       await groupService.deleteGroup(uuid);
       set((state) => ({
         groups: state.groups.filter((group) => group.uuid !== uuid),
+        activeGroup:
+          state.activeGroup?.uuid === uuid ? null : state.activeGroup,
       }));
       return true;
     } catch (error) {
@@ -103,18 +93,39 @@ export const useGroups = create((set) => ({
   },
 
   addMembers: async (uuid, members) => {
+    set({ loading: true, error: null });
     try {
-      set({ loading: true, error: null });
-      const memberships = await groupService.addGroupMembers(uuid, members);
+      const updatedGroup = await groupService.addGroupMembers(uuid, members);
+      let formattedGroup = formatGroup(updatedGroup);
 
-      // update group in store (memberCount etc.)
-      set((state) => ({
-        groups: state.groups.map((g) =>
-          g.uuid === uuid ? { ...g, memberCount: memberships.length } : g
-        ),
-      }));
+      set((state) => {
+        const existingGroup = state.groups.find((g) => g.uuid === uuid);
+        // Preserve name and avatar if missing in the response to prevent blank UI
+        if (existingGroup) {
+          if (!formattedGroup.name)
+            formattedGroup = { ...formattedGroup, name: existingGroup.name };
+          if (!formattedGroup.avatar)
+            formattedGroup = {
+              ...formattedGroup,
+              avatar: existingGroup.avatar,
+            };
+        }
 
-      return memberships;
+        const groupExists = !!existingGroup;
+        const groups = groupExists
+          ? state.groups.map((g) => (g.uuid === uuid ? formattedGroup : g))
+          : [...state.groups, formattedGroup];
+
+        return {
+          groups,
+          activeGroup:
+            state.activeGroup?.uuid === uuid
+              ? formattedGroup
+              : state.activeGroup,
+        };
+      });
+
+      return formattedGroup;
     } catch (error) {
       set({ error: error.message });
       return null;
@@ -122,4 +133,6 @@ export const useGroups = create((set) => ({
       set({ loading: false });
     }
   },
+
+  setActiveGroup: (group) => set({ activeGroup: group }),
 }));

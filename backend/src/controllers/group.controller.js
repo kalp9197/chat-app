@@ -1,108 +1,92 @@
 import * as groupService from "../services/group.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
-// Controller to create a new group.
 export const createGroup = async (req, res) => {
   try {
     const { name, members } = req.body;
-    const creatorId = req.user.id; // from authMiddleware
+    const data = await groupService.createGroup(name, req.user.id, members);
 
-    const newGroup = await groupService.createGroup(name, creatorId, members);
-
-    res.status(HTTP_STATUS.CREATED).json({
-      message: "Group created successfully.",
-      data: newGroup,
+    return res.status(HTTP_STATUS.CREATED).json({
+      message: "Group created successfully",
+      data,
     });
   } catch (error) {
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      message: error.message,
-      success: false,
-    });
+    return res
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message, success: false });
   }
 };
 
-// Controller to get all groups for the logged-in user.
 export const getAllGroups = async (req, res) => {
   try {
-    const userId = req.user.id; // from authMiddleware
-    const groups = await groupService.getAllGroupsForUser(userId);
-    res.status(HTTP_STATUS.OK).json({ data: groups });
+    const data = await groupService.getAllGroupsForUser(req.user.id);
+    return res.status(HTTP_STATUS.OK).json({ data });
   } catch (error) {
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      message: error.message,
-      success: false,
-    });
+    return res
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message, success: false });
   }
 };
 
-// Controller to get a single group by its UUID.
 export const getGroupByUuid = async (req, res) => {
   try {
-    const { uuid } = req.params;
-    const userId = req.user.id;
-    const group = await groupService.getGroupByUuid(uuid, userId);
-    res.status(HTTP_STATUS.OK).json({ data: group });
+    const data = await groupService.getGroupByUuid(
+      req.params.uuid,
+      req.user.id
+    );
+    return res.status(HTTP_STATUS.OK).json({ data });
   } catch (error) {
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      message: error.message,
-      success: false,
-    });
+    return res
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message, success: false });
   }
 };
 
-// Controller to update a group's details.
 export const updateGroupByUuid = async (req, res) => {
   try {
-    const { uuid } = req.params;
-    const groupData = req.body;
-
-    const updatedGroup = await groupService.updateGroupByUuid(uuid, groupData);
-
-    res.status(HTTP_STATUS.OK).json({
-      message: "Group updated successfully.",
-      data: updatedGroup,
-    });
-  } catch (error) {
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      message: error.message,
-      success: false,
-    });
-  }
-};
-
-// Controller to delete a group.
-export const deleteGroupByUuid = async (req, res) => {
-  try {
-    const { uuid } = req.params;
-    await groupService.deleteGroupByUuid(uuid);
-    res.status(HTTP_STATUS.NO_CONTENT).send();
-  } catch (error) {
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      message: error.message,
-      success: false,
-    });
-  }
-};
-
-// Controller to add members to group
-export const addGroupMembers = async (req, res) => {
-  try {
-    const { uuid } = req.params;
-    const { members } = req.body;
-
-    const updatedMemberships = await groupService.addMembersToGroup(
-      uuid,
-      members
+    const data = await groupService.updateGroupByUuid(
+      req.params.uuid,
+      req.body,
+      req.user.id
     );
 
-    res.status(HTTP_STATUS.OK).json({
-      message: "Members added successfully.",
-      data: updatedMemberships,
+    return res.status(HTTP_STATUS.OK).json({
+      message: "Group updated successfully",
+      data,
     });
   } catch (error) {
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      message: error.message,
-      success: false,
+    return res
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message, success: false });
+  }
+};
+
+export const deleteGroupByUuid = async (req, res) => {
+  try {
+    await groupService.deleteGroupByUuid(req.params.uuid);
+    return res.status(HTTP_STATUS.NO_CONTENT).send();
+  } catch (error) {
+    return res
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message, success: false });
+  }
+};
+
+export const addGroupMembers = async (req, res) => {
+  try {
+    const data = await groupService.addMembersToGroup(
+      req.params.uuid,
+      req.body.members,
+      req.user.id
+    );
+
+    return res.status(HTTP_STATUS.OK).json({
+      message: "Members added successfully",
+      data,
     });
+  } catch (error) {
+    return res
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message, success: false });
   }
 };

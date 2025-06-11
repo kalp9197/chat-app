@@ -4,21 +4,52 @@ import { getAllUsers } from "@/services/userService";
 import { Button } from "@/components/ui/button";
 import { motion as Motion } from "framer-motion";
 
+const UserRow = ({ user, selected, onToggle, onRoleChange }) => (
+  <li className="px-3 py-2 flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={selected}
+      onChange={(e) => onToggle(user, e.target.checked)}
+    />
+    <span className="flex-1">{user.name}</span>
+    {selected && (
+      <select
+        className="border rounded px-1 py-0.5 text-xs"
+        value={user.role || "member"}
+        onChange={(e) => onRoleChange(user.uuid, e.target.value)}
+      >
+        <option value="member">Member</option>
+        <option value="admin">Admin</option>
+      </select>
+    )}
+  </li>
+);
+
 const CreateGroupModal = ({ onClose }) => {
   const { createGroup } = useGroups();
   const [name, setName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const users = await getAllUsers();
-      setAllUsers(users);
-    };
-    fetchUsers();
+    getAllUsers().then(setAllUsers);
   }, []);
+
+  const handleToggle = (user, checked) => {
+    if (checked) {
+      setSelectedUsers((prev) => [...prev, { ...user, role: "member" }]);
+    } else {
+      setSelectedUsers((prev) => prev.filter((u) => u.uuid !== user.uuid));
+    }
+  };
+
+  const handleRoleChange = (uuid, role) => {
+    setSelectedUsers((prev) =>
+      prev.map((u) => (u.uuid === uuid ? { ...u, role } : u))
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,25 +58,25 @@ const CreateGroupModal = ({ onClose }) => {
       setError("Group name is required");
       return;
     }
-    if (selectedUsers.length === 0) {
+    if (!selectedUsers.length) {
       setError("Select at least one member");
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     setError("");
 
     try {
-      const newGroup = await createGroup(name.trim(), selectedUsers);
-      if (newGroup) {
-        onClose();
-      } else {
-        setError("Failed to create group. Please try again.");
-      }
+      const members = selectedUsers.map((u) => ({
+        uuid: u.uuid,
+        role: u.role,
+      }));
+      const newGroup = await createGroup(name.trim(), members);
+      if (newGroup) onClose();
     } catch (error) {
-      setError(error.message || "An error occurred. Please try again.");
+      setError(error.message || "Failed to create group");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -66,66 +97,47 @@ const CreateGroupModal = ({ onClose }) => {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Group Name
-            </label>
+            <label className="block text-sm font-medium mb-1">Group Name</label>
             <input
               type="text"
-              id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700"
               placeholder="Enter group name"
               autoFocus
             />
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
           </div>
 
-          {/* Member selector */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium mb-1">
               Select Members
             </label>
-            <ul className="border rounded-md max-h-60 overflow-y-auto bg-white dark:bg-slate-700">
+            <ul className="border rounded-md max-h-60 overflow-y-auto">
               {allUsers.map((user) => (
-                <li
+                <UserRow
                   key={user.uuid}
-                  className="px-3 py-2 flex items-center gap-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!selectedUsers.find((u) => u.uuid === user.uuid)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedUsers([...selectedUsers, user]);
-                      } else {
-                        setSelectedUsers(
-                          selectedUsers.filter((u) => u.uuid !== user.uuid)
-                        );
-                      }
-                    }}
-                  />
-                  <span>{user.name}</span>
-                </li>
+                  user={user}
+                  selected={selectedUsers.some((u) => u.uuid === user.uuid)}
+                  onToggle={handleToggle}
+                  onRoleChange={handleRoleChange}
+                />
               ))}
             </ul>
-            {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
           </div>
 
-          <div className="flex justify-end space-x-2">
+          {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              disabled={isLoading}
+              disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Group"}
+            <Button type="submit" disabled={loading}>
+              {loading ? "Creating..." : "Create Group"}
             </Button>
           </div>
         </form>

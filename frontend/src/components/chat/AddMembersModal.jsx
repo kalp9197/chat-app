@@ -4,36 +4,76 @@ import { motion as Motion } from "framer-motion";
 import { getAllUsers } from "@/services/userService";
 import { useGroups } from "@/hooks/useGroups";
 
-const AddMembersModal = ({ groupUuid, onClose }) => {
-  const { addMembers } = useGroups();
+const UserRow = ({ user, selected, onToggle, onRoleChange }) => (
+  <li className="px-3 py-2 flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={selected}
+      onChange={(e) => onToggle(user, e.target.checked)}
+    />
+    <span className="flex-1">{user.name}</span>
+    {selected && (
+      <select
+        className="border rounded px-1 py-0.5 text-xs"
+        value={user.role || "member"}
+        onChange={(e) => onRoleChange(user.uuid, e.target.value)}
+      >
+        <option value="member">Member</option>
+        <option value="admin">Admin</option>
+      </select>
+    )}
+  </li>
+);
 
+const AddMembersModal = ({ groupUuid, existingMembers = [], onClose }) => {
+  const { addMembers } = useGroups();
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchUsers = async () => {
       const users = await getAllUsers();
-      setAllUsers(users);
+      const existingUuids = new Set(existingMembers.map((m) => m.user.uuid));
+      setAllUsers(users.filter((u) => !existingUuids.has(u.uuid)));
     };
-    fetch();
-  }, []);
+    fetchUsers();
+  }, [existingMembers]);
+
+  const handleToggle = (user, checked) => {
+    if (checked) {
+      setSelectedUsers((prev) => [...prev, { ...user, role: "member" }]);
+    } else {
+      setSelectedUsers((prev) => prev.filter((u) => u.uuid !== user.uuid));
+    }
+  };
+
+  const handleRoleChange = (uuid, role) => {
+    setSelectedUsers((prev) =>
+      prev.map((u) => (u.uuid === uuid ? { ...u, role } : u))
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedUsers.length === 0) {
+    if (!selectedUsers.length) {
       setError("Select at least one user");
       return;
     }
+
     setLoading(true);
     setError("");
+
     try {
-      const members = selectedUsers.map((u) => ({ uuid: u.uuid }));
+      const members = selectedUsers.map((u) => ({
+        uuid: u.uuid,
+        role: u.role,
+      }));
       const res = await addMembers(groupUuid, members);
       if (res) onClose();
     } catch (err) {
-      setError(err.message || "Error");
+      setError(err.message || "Error adding members");
     } finally {
       setLoading(false);
     }
@@ -53,32 +93,21 @@ const AddMembersModal = ({ groupUuid, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-semibold mb-4">Add Members</h2>
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium mb-2">
               Select Users
             </label>
-            <ul className="border rounded-md max-h-60 overflow-y-auto bg-white dark:bg-slate-700">
+            <ul className="border rounded-md max-h-60 overflow-y-auto">
               {allUsers.map((user) => (
-                <li
+                <UserRow
                   key={user.uuid}
-                  className="px-3 py-2 flex items-center gap-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!selectedUsers.find((u) => u.uuid === user.uuid)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedUsers([...selectedUsers, user]);
-                      } else {
-                        setSelectedUsers(
-                          selectedUsers.filter((u) => u.uuid !== user.uuid)
-                        );
-                      }
-                    }}
-                  />
-                  <span>{user.name}</span>
-                </li>
+                  user={user}
+                  selected={selectedUsers.some((u) => u.uuid === user.uuid)}
+                  onToggle={handleToggle}
+                  onRoleChange={handleRoleChange}
+                />
               ))}
             </ul>
             {error && <p className="text-sm text-red-600 mt-1">{error}</p>}

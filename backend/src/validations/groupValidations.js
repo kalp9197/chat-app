@@ -13,6 +13,10 @@ export const validateCreateGroup = [
   body("members.*.uuid")
     .isUUID()
     .withMessage("Each member must have a valid uuid."),
+  body("members.*.role")
+    .optional()
+    .isIn(["admin", "member"])
+    .withMessage("Role must be either 'admin' or 'member'."),
 ];
 
 export const validateUpdateGroup = [
@@ -28,6 +32,49 @@ export const validateUpdateGroup = [
     .optional()
     .isUUID()
     .withMessage("Each member must have a valid uuid."),
+  body("members.*.role")
+    .optional()
+    .isIn(["admin", "member"])
+    .withMessage("Role must be either 'admin' or 'member'."),
+
+  body("removeMembers")
+    .optional()
+    .isArray()
+    .withMessage("removeMembers must be an array."),
+  body("removeMembers.*.uuid")
+    .optional()
+    .isUUID()
+    .withMessage("Each removeMember must have a valid uuid."),
+  body("removeMembers.*.role")
+    .optional()
+    .isIn(["admin", "member"])
+    .withMessage("Role must be either 'admin' or 'member'."),
+
+  body("addMembers")
+    .optional()
+    .isArray()
+    .withMessage("addMembers must be an array."),
+  body("addMembers.*.uuid")
+    .optional()
+    .isUUID()
+    .withMessage("Each addMember must have a valid uuid."),
+  body("addMembers.*.role")
+    .optional()
+    .isIn(["admin", "member"])
+    .withMessage("Role must be either 'admin' or 'member'."),
+
+  body("roleUpdates")
+    .optional()
+    .isArray()
+    .withMessage("roleUpdates must be an array."),
+  body("roleUpdates.*.uuid")
+    .optional()
+    .isUUID()
+    .withMessage("Each roleUpdates item must have a valid uuid."),
+  body("roleUpdates.*.role")
+    .optional()
+    .isIn(["admin", "member"])
+    .withMessage("Role must be either 'admin' or 'member'."),
 ];
 
 export const validateAddMembers = [
@@ -37,4 +84,8 @@ export const validateAddMembers = [
   body("members.*.uuid")
     .isUUID()
     .withMessage("Each member must have a valid uuid."),
+  body("members.*.role")
+    .optional()
+    .isIn(["admin", "member"])
+    .withMessage("Role must be either 'admin' or 'member'."),
 ];

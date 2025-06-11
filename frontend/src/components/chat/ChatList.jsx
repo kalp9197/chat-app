@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useChat } from "@/hooks/useChat";
 import { Button } from "@/components/ui/button";
 import EmptyState from "../common/EmptyState";
@@ -7,16 +7,11 @@ import GroupList from "./GroupList";
 import CreateGroupModal from "./CreateGroupModal";
 
 const ChatList = ({ onSelectChat, currentChatId }) => {
-  const fetchChats = useChat((s) => s.fetchChats);
-  const chats = useChat((s) => s.chats);
-  const startChat = useChat((s) => s.startChat);
-  const [setShowUsersList] = useState(false);
-  const [setShowGroupsList] = useState(false);
+  const { fetchChats, chats, startChat } = useChat();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [currentView, setCurrentView] = useState("direct"); // direct, users, groups
+  const [currentView, setCurrentView] = useState("direct");
 
   useEffect(() => {
-    // Fetch chats when component mounts
     fetchChats();
   }, [fetchChats]);
 
@@ -24,17 +19,14 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
     const chat = await startChat(user);
     if (chat) {
       onSelectChat(chat);
+      setCurrentView("direct");
     }
-    setShowUsersList(false);
-    setCurrentView("direct");
   };
 
   const handleSelectGroup = (group) => {
     onSelectChat(group);
-    setShowGroupsList(false);
   };
 
-  // Sort chats by most recently updated
   const sortedChats = [...chats].sort(
     (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
   );
@@ -63,47 +55,33 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
           <h2 className="text-lg font-semibold">
             {currentView === "direct" ? "Chats" : "Groups"}
           </h2>
-          <div className="flex space-x-2">
-            <Button
-              onClick={() =>
-                currentView === "direct"
-                  ? setCurrentView("users")
-                  : setShowCreateModal(true)
-              }
-              variant="outline"
-              size="sm"
-              className={
-                currentView === "direct"
-                  ? "text-blue-500 border-blue-500"
-                  : "text-green-600 border-green-600"
-              }
-            >
-              {currentView === "direct" ? "New Chat" : "New Group"}
-            </Button>
-          </div>
+          <Button
+            onClick={() =>
+              currentView === "direct"
+                ? setCurrentView("users")
+                : setShowCreateModal(true)
+            }
+            variant="outline"
+            size="sm"
+          >
+            {currentView === "direct" ? "New Chat" : "New Group"}
+          </Button>
         </div>
 
         <div className="flex border-b">
-          <button
-            className={`px-4 py-2 text-sm font-medium ${
-              currentView === "direct"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setCurrentView("direct")}
-          >
-            Chats
-          </button>
-          <button
-            className={`px-4 py-2 text-sm font-medium ${
-              currentView === "groups"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setCurrentView("groups")}
-          >
-            Groups
-          </button>
+          {["direct", "groups"].map((view) => (
+            <button
+              key={view}
+              className={`px-4 py-2 text-sm font-medium ${
+                currentView === view
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              onClick={() => setCurrentView(view)}
+            >
+              {view === "direct" ? "Chats" : "Groups"}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -127,14 +105,12 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
                   }`}
                   onClick={() => onSelectChat(chat)}
                 >
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-                      <img
-                        src={chat.avatar}
-                        alt={`${chat.name}'s avatar`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={chat.avatar}
+                      alt={chat.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
                     <div className="flex-grow">
                       <h3 className="text-base font-medium">{chat.name}</h3>
                       <p className="text-sm text-gray-500 truncate">
