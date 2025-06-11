@@ -1,5 +1,12 @@
 import { groupRepository, userRepository } from "../repositories/index.js";
 
+/**
+ * Create a new group
+ * @param {string} name
+ * @param {number} creatorId
+ * @param {Object[]} members
+ * @returns {Promise<Object>} //return group
+ */
 export const createGroup = async (name, creatorId, members = []) => {
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
   const users = await groupRepository.getUsersByUuids(memberUuids);
@@ -14,10 +21,21 @@ export const createGroup = async (name, creatorId, members = []) => {
   return groupRepository.createGroupWithMembers(name, memberships);
 };
 
+/**
+ * Get all groups for a user
+ * @param {number} userId
+ * @returns {Promise<Object[]>} //return groups
+ */
 export const getAllGroupsForUser = async (userId) => {
   return groupRepository.findGroupsForUser(userId);
 };
 
+/**
+ * Get a group by uuid
+ * @param {string} groupUuid
+ * @param {number} userId
+ * @returns {Promise<Object>} //return group
+ */
 export const getGroupByUuid = async (groupUuid, userId) => {
   const group = await groupRepository.findGroupByUuid(groupUuid, userId);
 
@@ -26,8 +44,16 @@ export const getGroupByUuid = async (groupUuid, userId) => {
   return { ...group, memberCount: group.memberships.length };
 };
 
+/**
+ * Update a group by uuid
+ * @param {string} groupUuid
+ * @param {Object} updates
+ * @param {number} requesterId
+ * @returns {Promise<Object>} //return updated group
+ */
 export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
-  const group = await groupRepository.getGroupById(groupUuid);
+  const groupRecord = await groupRepository.getGroupByUuid(groupUuid);
+  const group = groupRecord;
 
   if (!group) throw new Error("Group not found");
 
@@ -70,7 +96,7 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
   // Update roles
   for (const { uuid, role } of roleUpdates) {
     if (uuid && role) {
-      const user = await userRepository.findUserById(uuid);
+      const user = await userRepository.findUserByUuid(uuid);
       if (user) {
         await groupRepository.updateMembershipRole(group.id, user.id, role);
       }
@@ -80,19 +106,33 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
   return groupRepository.getGroupWithMembers(group.id);
 };
 
+/**
+ * Delete a group by uuid
+ * @param {string} groupUuid
+ * @returns {Promise<void>}
+ */
 export const deleteGroupByUuid = async (groupUuid) => {
-  const group = await groupRepository.getGroupById(groupUuid);
+  const groupRecord2 = await groupRepository.getGroupByUuid(groupUuid);
+  const group = groupRecord2;
   if (!group) throw new Error("Group not found");
 
   await groupRepository.deleteGroupByUuid(groupUuid);
 };
 
+/**
+ * Add members to a group
+ * @param {string} groupUuid
+ * @param {Object[]} members
+ * @param {number} requesterId
+ * @returns {Promise<Object>} //return updated group
+ */
 export const addMembersToGroup = async (
   groupUuid,
   members = [],
   requesterId
 ) => {
-  const group = await groupRepository.getGroupById(groupUuid);
+  const groupRecord3 = await groupRepository.getGroupByUuid(groupUuid);
+  const group = groupRecord3;
 
   if (!group) throw new Error("Group not found");
 

@@ -27,3 +27,15 @@ export const findUserById = async (userId) => {
     },
   });
 };
+
+export const findUserByUuid = async (userUuid) => {
+  return prisma.user.findUnique({
+    where: { uuid: userUuid },
+    select: {
+      id: true,
+      uuid: true,
+      name: true,
+      email: true,
+    },
+  });
+};

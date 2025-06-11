@@ -84,6 +84,13 @@ export const getGroupById = async (groupId) => {
   });
 };
 
+export const getGroupByUuid = async (groupUuid) => {
+  return prisma.group.findUnique({
+    where: { uuid: groupUuid },
+    select: { id: true },
+  });
+};
+
 export const updateGroupName = async (groupId, name) => {
   return prisma.group.update({
     where: { id: groupId },

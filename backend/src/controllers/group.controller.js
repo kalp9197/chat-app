@@ -1,6 +1,7 @@
 import * as groupService from "../services/group.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
+// Create a new group
 export const createGroup = async (req, res) => {
   try {
     const { name, members } = req.body;
@@ -17,6 +18,7 @@ export const createGroup = async (req, res) => {
   }
 };
 
+// Get all groups for a user
 export const getAllGroups = async (req, res) => {
   try {
     const data = await groupService.getAllGroupsForUser(req.user.id);
@@ -28,6 +30,7 @@ export const getAllGroups = async (req, res) => {
   }
 };
 
+// Get a group by uuid
 export const getGroupByUuid = async (req, res) => {
   try {
     const data = await groupService.getGroupByUuid(
@@ -42,6 +45,7 @@ export const getGroupByUuid = async (req, res) => {
   }
 };
 
+// Update a group by uuid
 export const updateGroupByUuid = async (req, res) => {
   try {
     const data = await groupService.updateGroupByUuid(
@@ -61,6 +65,7 @@ export const updateGroupByUuid = async (req, res) => {
   }
 };
 
+// Delete a group by uuid
 export const deleteGroupByUuid = async (req, res) => {
   try {
     await groupService.deleteGroupByUuid(req.params.uuid);
@@ -72,6 +77,7 @@ export const deleteGroupByUuid = async (req, res) => {
   }
 };
 
+// Add members to a group
 export const addGroupMembers = async (req, res) => {
   try {
     const data = await groupService.addMembersToGroup(
