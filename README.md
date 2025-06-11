@@ -1,10 +1,13 @@
 # 🚀 Chat App
 
 <div align="center">
-  <img src="https://via.placeholder.com/200x200?text=Chat+App" alt="Chat App Logo" width="200" height="200" />
   <p><em>Modern real-time chat application with direct messaging and group chat capabilities</em></p>
 
-<a href="https://chatapp-5503.vercel.app/">Live Website</a>
+## Live Application
+
+Access the live deployment here: [https://chat-app-gmm5.vercel.app/](https://chat-app-gmm5.vercel.app/)
+
+
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
