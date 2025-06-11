@@ -1,28 +1,8 @@
-import { prisma } from "../config/database.config.js";
-
-const getUsersByUuids = async (uuids) => {
-  return prisma.user.findMany({
-    where: { uuid: { in: uuids } },
-    select: { id: true, uuid: true, name: true, email: true },
-  });
-};
-
-const getGroupWithMembers = async (groupId) => {
-  return prisma.group.findUnique({
-    where: { id: groupId },
-    include: {
-      memberships: {
-        include: {
-          user: { select: { uuid: true, name: true, email: true } },
-        },
-      },
-    },
-  });
-};
+import { groupRepository, userRepository } from "../repositories/index.js";
 
 export const createGroup = async (name, creatorId, members = []) => {
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
-  const users = await getUsersByUuids(memberUuids);
+  const users = await groupRepository.getUsersByUuids(memberUuids);
 
   const memberships = [
     { user_id: creatorId, role: "admin" },
@@ -31,60 +11,15 @@ export const createGroup = async (name, creatorId, members = []) => {
       .map((u) => ({ user_id: u.id, role: "member" })),
   ];
 
-  return prisma.group.create({
-    data: {
-      name,
-      memberships: { create: memberships },
-    },
-    include: {
-      memberships: {
-        include: {
-          user: { select: { uuid: true, name: true, email: true } },
-        },
-      },
-    },
-  });
+  return groupRepository.createGroupWithMembers(name, memberships);
 };
 
 export const getAllGroupsForUser = async (userId) => {
-  return prisma.group.findMany({
-    where: {
-      memberships: { some: { user_id: userId } },
-    },
-    include: {
-      memberships: {
-        include: {
-          user: { select: { uuid: true, name: true } },
-        },
-      },
-      messages: {
-        orderBy: { created_at: "desc" },
-        take: 1,
-      },
-    },
-  });
+  return groupRepository.findGroupsForUser(userId);
 };
 
 export const getGroupByUuid = async (groupUuid, userId) => {
-  const group = await prisma.group.findFirst({
-    where: {
-      uuid: groupUuid,
-      memberships: { some: { user_id: userId } },
-    },
-    include: {
-      memberships: {
-        include: {
-          user: { select: { uuid: true, name: true, email: true } },
-        },
-      },
-      messages: {
-        orderBy: { created_at: "asc" },
-        include: {
-          sender: { select: { uuid: true, name: true, email: true } },
-        },
-      },
-    },
-  });
+  const group = await groupRepository.findGroupByUuid(groupUuid, userId);
 
   if (!group) throw new Error("Group not found or access denied");
 
@@ -92,16 +27,14 @@ export const getGroupByUuid = async (groupUuid, userId) => {
 };
 
 export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
-  const group = await prisma.group.findUnique({
-    where: { uuid: groupUuid },
-    select: { id: true },
-  });
+  const group = await groupRepository.getGroupById(groupUuid);
 
   if (!group) throw new Error("Group not found");
 
-  const membership = await prisma.groupMembership.findFirst({
-    where: { group_id: group.id, user_id: requesterId },
-  });
+  const membership = await groupRepository.findGroupMembership(
+    group.id,
+    requesterId
+  );
 
   if (membership?.role !== "admin") {
     throw new Error("Admin access required");
@@ -116,22 +49,17 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
 
   // Update name
   if (name?.trim()) {
-    await prisma.group.update({
-      where: { id: group.id },
-      data: { name: name.trim() },
-    });
+    await groupRepository.updateGroupName(group.id, name.trim());
   }
 
   // Remove members
   if (removeMembers.length) {
     const uuids = removeMembers.map((m) => m.uuid).filter(Boolean);
-    const users = await getUsersByUuids(uuids);
-    await prisma.groupMembership.deleteMany({
-      where: {
-        group_id: group.id,
-        user_id: { in: users.map((u) => u.id) },
-      },
-    });
+    const users = await groupRepository.getUsersByUuids(uuids);
+    await groupRepository.deleteMemberships(
+      group.id,
+      users.map((u) => u.id)
+    );
   }
 
   // Add members
@@ -142,27 +70,21 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
   // Update roles
   for (const { uuid, role } of roleUpdates) {
     if (uuid && role) {
-      const user = await prisma.user.findUnique({
-        where: { uuid },
-        select: { id: true },
-      });
+      const user = await userRepository.findUserById(uuid);
       if (user) {
-        await prisma.groupMembership.updateMany({
-          where: { group_id: group.id, user_id: user.id },
-          data: { role },
-        });
+        await groupRepository.updateMembershipRole(group.id, user.id, role);
       }
     }
   }
 
-  return getGroupWithMembers(group.id);
+  return groupRepository.getGroupWithMembers(group.id);
 };
 
 export const deleteGroupByUuid = async (groupUuid) => {
-  const group = await prisma.group.findUnique({ where: { uuid: groupUuid } });
+  const group = await groupRepository.getGroupById(groupUuid);
   if (!group) throw new Error("Group not found");
 
-  await prisma.group.delete({ where: { uuid: groupUuid } });
+  await groupRepository.deleteGroupByUuid(groupUuid);
 };
 
 export const addMembersToGroup = async (
@@ -170,17 +92,15 @@ export const addMembersToGroup = async (
   members = [],
   requesterId
 ) => {
-  const group = await prisma.group.findUnique({
-    where: { uuid: groupUuid },
-    select: { id: true },
-  });
+  const group = await groupRepository.getGroupById(groupUuid);
 
   if (!group) throw new Error("Group not found");
 
   if (requesterId) {
-    const membership = await prisma.groupMembership.findFirst({
-      where: { group_id: group.id, user_id: requesterId },
-    });
+    const membership = await groupRepository.findGroupMembership(
+      group.id,
+      requesterId
+    );
     if (membership?.role !== "admin") {
       throw new Error("Admin access required");
     }
@@ -189,13 +109,13 @@ export const addMembersToGroup = async (
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
   if (!memberUuids.length) return { memberships: [], memberCount: 0 };
 
-  const users = await getUsersByUuids(memberUuids);
+  const users = await groupRepository.getUsersByUuids(memberUuids);
 
   // Get existing members
-  const existing = await prisma.groupMembership.findMany({
-    where: { group_id: group.id, user_id: { in: users.map((u) => u.id) } },
-    select: { user_id: true },
-  });
+  const existing = await groupRepository.findMemberships(
+    group.id,
+    users.map((u) => u.id)
+  );
 
   const existingIds = new Set(existing.map((m) => m.user_id));
   const newUsers = users.filter((u) => !existingIds.has(u.id));
@@ -205,16 +125,16 @@ export const addMembersToGroup = async (
       members.map((m) => [m.uuid, m.role === "admin" ? "admin" : "member"])
     );
 
-    await prisma.groupMembership.createMany({
-      data: newUsers.map((u) => ({
-        user_id: u.id,
-        group_id: group.id,
-        role: roleMap[u.uuid] || "member",
-      })),
-    });
+    const newMemberships = newUsers.map((u) => ({
+      user_id: u.id,
+      group_id: group.id,
+      role: roleMap[u.uuid] || "member",
+    }));
+
+    await groupRepository.createMemberships(newMemberships);
   }
 
-  const updatedGroup = await getGroupWithMembers(group.id);
+  const updatedGroup = await groupRepository.getGroupWithMembers(group.id);
   const memberships = updatedGroup.memberships.map((m) => ({
     uuid: m.user.uuid,
     name: m.user.name,

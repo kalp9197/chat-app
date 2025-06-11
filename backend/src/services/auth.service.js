@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "../config/database.config.js";
+import { authRepository } from "../repositories/index.js";
 import { JWT_SECRET } from "../constants/env.js";
 
 // Hash password
@@ -22,12 +22,10 @@ export const generateToken = (payload) =>
 export const createUser = async (userData) => {
   try {
     const hashedPassword = await hashPassword(userData.password);
-    return prisma.user.create({
-      data: {
-        ...userData,
-        password: hashedPassword,
-        uuid: uuidv4(),
-      },
+    return authRepository.createUser({
+      ...userData,
+      password: hashedPassword,
+      uuid: uuidv4(),
     });
   } catch (error) {
     throw new Error("Failed to create user", error);
@@ -36,7 +34,7 @@ export const createUser = async (userData) => {
 
 // Find user by email
 export const findUserByEmail = async (email) =>
-  prisma.user.findUnique({ where: { email } });
+  authRepository.findUserByEmail(email);
 
 // Verify token
 export const verifyToken = (token) => jwt.verify(token, JWT_SECRET);

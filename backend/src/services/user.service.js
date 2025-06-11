@@ -1,4 +1,4 @@
-import { prisma } from "../config/database.config.js";
+import { userRepository } from "../repositories/index.js";
 
 /**
  * Get all users
@@ -7,19 +7,7 @@ import { prisma } from "../config/database.config.js";
  */
 export const getAllUsers = async (currentUserId) => {
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        id: {
-          not: currentUserId,
-        },
-      },
-      select: {
-        id: true,
-        uuid: true,
-        name: true,
-        email: true,
-      },
-    });
+    const users = await userRepository.findAllUsersExcept(currentUserId);
     return users;
     // eslint-disable-next-line no-unused-vars
   } catch (error) {

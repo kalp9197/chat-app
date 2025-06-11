@@ -1,5 +1,5 @@
-import { prisma } from "../config/database.config.js";
 import * as notificationService from "./notification.service.js";
+import { directMessageRepository } from "../repositories/index.js";
 
 /**
  * Send a new direct message
@@ -8,30 +8,19 @@ import * as notificationService from "./notification.service.js";
  */
 export const sendDirectMessage = async (messageData) => {
   try {
-    const receiver = await prisma.user.findUnique({
-      where: { uuid: messageData.receiver_uuid },
-      select: { id: true },
-    });
+    const receiver = await directMessageRepository.findUserByUuid(
+      messageData.receiver_uuid
+    );
 
     if (!receiver) {
       throw new Error("Receiver not found");
     }
 
-    const message = await prisma.message.create({
-      data: {
-        sender_id: messageData.sender_id,
-        receiver_id: receiver.id,
-        content: messageData.content,
-        message_type: messageData.message_type || "text",
-      },
-      include: {
-        sender: {
-          select: { id: true, uuid: true, name: true },
-        },
-        receiver: {
-          select: { id: true, uuid: true, name: true },
-        },
-      },
+    const message = await directMessageRepository.createMessage({
+      sender_id: messageData.sender_id,
+      receiver_id: receiver.id,
+      content: messageData.content,
+      message_type: messageData.message_type || "text",
     });
 
     await notificationService.sendNewMessageNotification(message);
@@ -58,46 +47,25 @@ export const getDirectMessages = async (
   offset = 0
 ) => {
   try {
-    const receiver = await prisma.user.findUnique({
-      where: { uuid: receiver_uuid },
-      select: { id: true },
-    });
+    const receiver =
+      await directMessageRepository.findUserByUuid(receiver_uuid);
 
     if (!receiver) {
       throw new Error("Receiver not found");
     }
 
-    const messages = await prisma.message.findMany({
-      where: {
-        OR: [
-          { sender_id: sender_id, receiver_id: receiver.id },
-          { sender_id: receiver.id, receiver_id: sender_id },
-        ],
-      },
-      orderBy: {
-        created_at: "desc",
-      },
-      skip: offset,
-      take: limit,
-      include: {
-        sender: {
-          select: { id: true, uuid: true, name: true },
-        },
-        receiver: {
-          select: { id: true, uuid: true, name: true },
-        },
-      },
-    });
+    const messages = await directMessageRepository.findMessages(
+      sender_id,
+      receiver.id,
+      limit,
+      offset
+    );
 
     // Get total count for pagination info
-    const totalCount = await prisma.message.count({
-      where: {
-        OR: [
-          { sender_id: sender_id, receiver_id: receiver.id },
-          { sender_id: receiver.id, receiver_id: sender_id },
-        ],
-      },
-    });
+    const totalCount = await directMessageRepository.countMessages(
+      sender_id,
+      receiver.id
+    );
 
     return {
       messages: messages.reverse(), // Reverse to get back to ascending order after getting most recent messages

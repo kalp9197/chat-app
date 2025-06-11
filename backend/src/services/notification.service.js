@@ -1,4 +1,4 @@
-import { prisma } from "../config/database.config.js";
+import { notificationRepository } from "../repositories/index.js";
 import { messaging } from "../config/firebase.config.js";
 
 /**
@@ -9,10 +9,7 @@ import { messaging } from "../config/firebase.config.js";
  */
 export const saveFcmToken = async (userId, fcmToken) => {
   try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { fcm_token: fcmToken },
-    });
+    await notificationRepository.updateUserFcmToken(userId, fcmToken);
     return true;
   } catch (error) {
     console.error("Error saving FCM token:", error);
@@ -30,10 +27,7 @@ export const saveFcmToken = async (userId, fcmToken) => {
  */
 export const sendNotification = async (receiverId, title, body, data = {}) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: receiverId },
-      select: { fcm_token: true },
-    });
+    const user = await notificationRepository.findUserWithFcmToken(receiverId);
 
     if (!user || !user.fcm_token) {
       console.log("User has no FCM token");
@@ -77,10 +71,9 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
  */
 export const sendNewMessageNotification = async (message) => {
   try {
-    const sender = await prisma.user.findUnique({
-      where: { id: message.sender_id },
-      select: { name: true, uuid: true },
-    });
+    const sender = await notificationRepository.findUserWithName(
+      message.sender_id
+    );
 
     const title = `New message from ${sender.name}`;
     const body =
