@@ -100,15 +100,18 @@ const AddMembersModal = ({ groupUuid, existingMembers = [], onClose }) => {
               Select Users
             </label>
             <ul className="border rounded-md max-h-60 overflow-y-auto">
-              {allUsers.map((user) => (
-                <UserRow
-                  key={user.uuid}
-                  user={user}
-                  selected={selectedUsers.some((u) => u.uuid === user.uuid)}
-                  onToggle={handleToggle}
-                  onRoleChange={handleRoleChange}
-                />
-              ))}
+              {allUsers.map((user) => {
+                const selected = selectedUsers.find((u) => u.uuid === user.uuid);
+                return (
+                  <UserRow
+                    key={user.uuid}
+                    user={{ ...user, role: selected?.role || "member" }}
+                    selected={!!selected}
+                    onToggle={handleToggle}
+                    onRoleChange={handleRoleChange}
+                  />
+                );
+              })}
             </ul>
             {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
           </div>

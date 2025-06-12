@@ -1,30 +1,44 @@
-import { groupRepository, userRepository } from "../repositories/index.js";
+import { groupRepository } from "../repositories/index.js";
 
 /**
  * Create a new group
  * @param {string} name
  * @param {number} creatorId
  * @param {Object[]} members
- * @returns {Promise<Object>} //return group
+ * @returns {Promise<Object>}
  */
 export const createGroup = async (name, creatorId, members = []) => {
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
-  const users = await groupRepository.getUsersByUuids(memberUuids);
+
+  // Build role map from incoming members array (uuid -> role)
+  const roleMap = Object.fromEntries(
+    members.map((m) => [m.uuid, m.role === "admin" ? "admin" : "member"])
+  );
+
+  // Get users outside transaction for better performance
+  const users =
+    memberUuids.length > 0
+      ? await groupRepository.bulkUserOperations(memberUuids)
+      : [];
 
   const memberships = [
     { user_id: creatorId, role: "admin" },
     ...users
       .filter((u) => u.id !== creatorId)
-      .map((u) => ({ user_id: u.id, role: "member" })),
+      .map((u) => ({
+        user_id: u.id,
+        role: roleMap[u.uuid] || "member",
+      })),
   ];
 
+  // Use transaction for group creation
   return groupRepository.createGroupWithMembers(name, memberships);
 };
 
 /**
  * Get all groups for a user
  * @param {number} userId
- * @returns {Promise<Object[]>} //return groups
+ * @returns {Promise<Object[]>}
  */
 export const getAllGroupsForUser = async (userId) => {
   return groupRepository.findGroupsForUser(userId);
@@ -34,7 +48,7 @@ export const getAllGroupsForUser = async (userId) => {
  * Get a group by uuid
  * @param {string} groupUuid
  * @param {number} userId
- * @returns {Promise<Object>} //return group
+ * @returns {Promise<Object>}
  */
 export const getGroupByUuid = async (groupUuid, userId) => {
   const group = await groupRepository.findGroupByUuid(groupUuid, userId);
@@ -45,25 +59,21 @@ export const getGroupByUuid = async (groupUuid, userId) => {
 };
 
 /**
- * Update a group by uuid
+ * Update a group by uuid - Transaction version
  * @param {string} groupUuid
  * @param {Object} updates
  * @param {number} requesterId
- * @returns {Promise<Object>} //return updated group
+ * @returns {Promise<Object>}
  */
 export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
-  const groupRecord = await groupRepository.getGroupByUuid(groupUuid);
-  const group = groupRecord;
-
-  if (!group) throw new Error("Group not found");
-
-  const membership = await groupRepository.findGroupMembership(
-    group.id,
+  // Validate access first (outside transaction)
+  const group = await groupRepository.validateGroupAndAdminAccess(
+    groupUuid,
     requesterId
   );
 
-  if (membership?.role !== "admin") {
-    throw new Error("Admin access required");
+  if (!group) {
+    throw new Error("Group not found or admin access required");
   }
 
   const {
@@ -73,108 +83,161 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
     roleUpdates = [],
   } = updates;
 
-  // Update name
-  if (name?.trim()) {
-    await groupRepository.updateGroupName(group.id, name.trim());
+  // Prepare data outside transaction
+  let removeUserIds = [];
+  let addMemberships = [];
+  let processedRoleUpdates = [];
+
+  // Process all user lookups in parallel outside transaction
+  const allUuids = [
+    ...removeMembers.map((m) => m.uuid),
+    ...addMembers.map((m) => m.uuid),
+    ...roleUpdates.map((r) => r.uuid),
+  ].filter(Boolean);
+
+  let allUsers = [];
+  if (allUuids.length > 0) {
+    allUsers = await groupRepository.bulkUserOperations([...new Set(allUuids)]);
   }
 
-  // Remove members
-  if (removeMembers.length) {
-    const uuids = removeMembers.map((m) => m.uuid).filter(Boolean);
-    const users = await groupRepository.getUsersByUuids(uuids);
-    await groupRepository.deleteMemberships(
-      group.id,
-      users.map((u) => u.id)
-    );
+  const userMap = Object.fromEntries(allUsers.map((u) => [u.uuid, u]));
+
+  // Process remove members
+  if (removeMembers.length > 0) {
+    removeUserIds = removeMembers
+      .map((m) => userMap[m.uuid]?.id)
+      .filter(Boolean);
   }
 
-  // Add members
-  if (addMembers.length) {
-    await addMembersToGroup(groupUuid, addMembers, requesterId);
-  }
+  // Process add members - check existing memberships
+  if (addMembers.length > 0) {
+    const addUuids = addMembers.map((m) => m.uuid).filter(Boolean);
+    if (addUuids.length > 0) {
+      const { users: usersToAdd, existingMemberships } =
+        await groupRepository.getExistingMembershipsTransaction(
+          group.id,
+          addUuids
+        );
 
-  // Update roles
-  for (const { uuid, role } of roleUpdates) {
-    if (uuid && role) {
-      const user = await userRepository.findUserByUuid(uuid);
-      if (user) {
-        await groupRepository.updateMembershipRole(group.id, user.id, role);
-      }
+      const existingUserIds = new Set(
+        existingMemberships.map((m) => m.user.id)
+      );
+      const roleMap = Object.fromEntries(
+        addMembers.map((m) => [m.uuid, m.role === "admin" ? "admin" : "member"])
+      );
+
+      addMemberships = usersToAdd
+        .filter((u) => !existingUserIds.has(u.id))
+        .map((u) => ({
+          user_id: u.id,
+          group_id: group.id,
+          role: roleMap[u.uuid] || "member",
+        }));
     }
   }
 
-  return groupRepository.getGroupWithMembers(group.id);
+  // Process role updates
+  if (roleUpdates.length > 0) {
+    processedRoleUpdates = roleUpdates
+      .filter((r) => r.uuid && r.role && userMap[r.uuid])
+      .map((r) => ({ userId: userMap[r.uuid].id, role: r.role }));
+  }
+
+  // Execute all updates in a single transaction
+  return groupRepository.updateGroupTransaction(group.id, {
+    name: name?.trim(),
+    removeUserIds,
+    addMemberships,
+    roleUpdates: processedRoleUpdates,
+  });
 };
 
 /**
  * Delete a group by uuid
  * @param {string} groupUuid
+ * @param {number} requesterId
  * @returns {Promise<void>}
  */
-export const deleteGroupByUuid = async (groupUuid) => {
-  const groupRecord2 = await groupRepository.getGroupByUuid(groupUuid);
-  const group = groupRecord2;
-  if (!group) throw new Error("Group not found");
+export const deleteGroupByUuid = async (groupUuid, requesterId) => {
+  // Validate admin access before deletion
+  const group = await groupRepository.validateGroupAndAdminAccess(
+    groupUuid,
+    requesterId
+  );
 
+  if (!group) {
+    throw new Error("Group not found or admin access required");
+  }
+
+  // Use transaction for deletion
   await groupRepository.deleteGroupByUuid(groupUuid);
 };
 
 /**
- * Add members to a group
+ * Add members to a group - Transaction version
  * @param {string} groupUuid
  * @param {Object[]} members
  * @param {number} requesterId
- * @returns {Promise<Object>} //return updated group
+ * @returns {Promise<Object>}
  */
 export const addMembersToGroup = async (
   groupUuid,
   members = [],
   requesterId
 ) => {
-  const groupRecord3 = await groupRepository.getGroupByUuid(groupUuid);
-  const group = groupRecord3;
+  if (!members.length) return { memberships: [], memberCount: 0 };
 
-  if (!group) throw new Error("Group not found");
+  // Validate access first
+  const group = await groupRepository.validateGroupAndAdminAccess(
+    groupUuid,
+    requesterId
+  );
 
-  if (requesterId) {
-    const membership = await groupRepository.findGroupMembership(
-      group.id,
-      requesterId
-    );
-    if (membership?.role !== "admin") {
-      throw new Error("Admin access required");
-    }
+  if (!group) {
+    throw new Error("Group not found or admin access required");
   }
 
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
   if (!memberUuids.length) return { memberships: [], memberCount: 0 };
 
-  const users = await groupRepository.getUsersByUuids(memberUuids);
-
-  // Get existing members
-  const existing = await groupRepository.findMemberships(
-    group.id,
-    users.map((u) => u.id)
-  );
-
-  const existingIds = new Set(existing.map((m) => m.user_id));
-  const newUsers = users.filter((u) => !existingIds.has(u.id));
-
-  if (newUsers.length) {
-    const roleMap = Object.fromEntries(
-      members.map((m) => [m.uuid, m.role === "admin" ? "admin" : "member"])
+  // Get users and existing memberships in transaction
+  const { users, existingMemberships } =
+    await groupRepository.getExistingMembershipsTransaction(
+      group.id,
+      memberUuids
     );
 
-    const newMemberships = newUsers.map((u) => ({
-      user_id: u.id,
-      group_id: group.id,
-      role: roleMap[u.uuid] || "member",
-    }));
+  const existingUserIds = new Set(existingMemberships.map((m) => m.user.id));
+  const newUsers = users.filter((u) => !existingUserIds.has(u.id));
 
-    await groupRepository.createMemberships(newMemberships);
+  if (newUsers.length === 0) {
+    // No new users to add, return current group
+    const currentGroup = await groupRepository.getGroupWithMembers(group.id);
+    const memberships = currentGroup.memberships.map((m) => ({
+      uuid: m.user.uuid,
+      name: m.user.name,
+      email: m.user.email,
+      role: m.role,
+    }));
+    return { memberships, memberCount: memberships.length };
   }
 
-  const updatedGroup = await groupRepository.getGroupWithMembers(group.id);
+  const roleMap = Object.fromEntries(
+    members.map((m) => [m.uuid, m.role === "admin" ? "admin" : "member"])
+  );
+
+  const newMemberships = newUsers.map((u) => ({
+    user_id: u.id,
+    group_id: group.id,
+    role: roleMap[u.uuid] || "member",
+  }));
+
+  // Add members in transaction and return updated group
+  const updatedGroup = await groupRepository.addMembersTransaction(
+    group.id,
+    newMemberships
+  );
+
   const memberships = updatedGroup.memberships.map((m) => ({
     uuid: m.user.uuid,
     name: m.user.name,

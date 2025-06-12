@@ -60,7 +60,11 @@ export const updateGroupByUuid = async (req, res) => {
     });
   } catch (error) {
     return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .status(
+        error.message === "Group must have at least one admin"
+          ? HTTP_STATUS.BAD_REQUEST
+          : HTTP_STATUS.INTERNAL_SERVER_ERROR
+      )
       .json({ message: error.message, success: false });
   }
 };
@@ -68,8 +72,11 @@ export const updateGroupByUuid = async (req, res) => {
 // Delete a group by uuid
 export const deleteGroupByUuid = async (req, res) => {
   try {
-    await groupService.deleteGroupByUuid(req.params.uuid);
-    return res.status(HTTP_STATUS.NO_CONTENT).send();
+    await groupService.deleteGroupByUuid(req.params.uuid, req.user.id);
+    return res.status(HTTP_STATUS.NO_CONTENT).json({
+      message: "Group deleted successfully",
+      success: true,
+    });
   } catch (error) {
     return res
       .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)

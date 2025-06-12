@@ -137,7 +137,7 @@ const EditGroupModal = ({ group, onClose }) => {
               {members.map((member) => (
                 <MemberRow
                   key={member.uuid}
-                  member={member}
+                  member={{ ...member, newRole: member.newRole }}
                   removeMode={removeMode}
                   onToggleRemove={handleToggleRemove}
                   onRoleChange={handleRoleChange}
