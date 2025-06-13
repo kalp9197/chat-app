@@ -5,12 +5,12 @@ import { validate } from "../middlewares/validation.middleware.js";
 import * as Validation from "../validations/directMessageValidations.js";
 const router = express.Router();
 
-// Send a new direct message
+// Send a new message (direct or group)
 router.post(
   "/",
   authMiddleware,
   validate(Validation.validateSendMessage),
-  directMessageController.sendNewDirectMessage
+  directMessageController.sendMessage
 );
 
 // Get messages between users

@@ -310,12 +310,13 @@ export const useChat = create((set, get) => ({
       }));
 
       const { sendMessage } = await import("@/services/messageService");
-      const response = {
-        data: { data: await sendMessage(receiver, content.trim()) },
-      };
+      const serverMessage = await sendMessage(
+        "direct",
+        receiver,
+        content.trim()
+      );
 
-      if (response.data && response.data.data) {
-        const serverMessage = response.data.data;
+      if (serverMessage) {
         set((state) => ({
           messages: state.messages.map((m) =>
             m.id === tempId
@@ -328,27 +329,15 @@ export const useChat = create((set, get) => ({
                     name: serverMessage.sender_name || user.name,
                   },
                   senderName: serverMessage.sender?.name || user.name,
-                  timestamp: new Date(
-                    serverMessage.created_at || m.timestamp
-                  ).toISOString(),
-                  created_at: serverMessage.created_at || m.created_at,
+                  timestamp: serverMessage.created_at || m.timestamp,
                   isPending: false,
                 }
               : m
           ),
         }));
       } else {
-        // Handle case where message sending might have succeeded but no data returned (or an error status without data.data)
-        set((state) => ({
-          messages: state.messages.map((m) =>
-            m.id === tempId
-              ? { ...m, isPending: false, failed: !response.data?.success }
-              : m
-          ),
-        }));
+        throw new Error("Failed to send message: Invalid server response");
       }
-
-      return response.data?.data; // Return the message data if available
     } catch (error) {
       set((state) => ({
         messages: state.messages.map((m) =>

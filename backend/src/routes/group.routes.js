@@ -19,7 +19,11 @@ router.post(
 router.get("/", groupController.getAllGroups);
 
 // Get a group by uuid
-router.get("/:uuid", groupController.getGroupByUuid);
+router.get(
+  "/:uuid",
+  validate(Validation.validateGetGroupByUuid),
+  groupController.getGroupByUuid
+);
 
 // Update a group by uuid
 router.put(
@@ -29,7 +33,11 @@ router.put(
 );
 
 // Delete a group by uuid
-router.delete("/:uuid", groupController.deleteGroupByUuid);
+router.delete(
+  "/:uuid",
+  validate(Validation.validateDeleteGroupByUuid),
+  groupController.deleteGroupByUuid
+);
 
 // Add members to a group
 router.post(

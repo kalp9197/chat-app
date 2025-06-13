@@ -30,7 +30,7 @@ export const getAllGroups = async (req, res) => {
   }
 };
 
-// Get a group by uuid
+// Get a group by uuid also it contains message getgroup messages
 export const getGroupByUuid = async (req, res) => {
   try {
     const data = await groupService.getGroupByUuid(

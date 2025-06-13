@@ -114,7 +114,9 @@ const CreateGroupModal = ({ onClose }) => {
             </label>
             <ul className="border rounded-md max-h-60 overflow-y-auto">
               {allUsers.map((user) => {
-                const selected = selectedUsers.find((u) => u.uuid === user.uuid);
+                const selected = selectedUsers.find(
+                  (u) => u.uuid === user.uuid
+                );
                 return (
                   <UserRow
                     key={user.uuid}

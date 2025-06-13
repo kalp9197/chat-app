@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 
 export const validateCreateGroup = [
   body("name")
@@ -88,4 +88,37 @@ export const validateAddMembers = [
     .optional()
     .isIn(["admin", "member"])
     .withMessage("Role must be either 'admin' or 'member'."),
+];
+
+export const validateGetGroupByUuid = [
+  param("uuid")
+    .notEmpty()
+    .withMessage("Group UUID is required")
+    .isUUID(4)
+    .withMessage("Group UUID must be a valid UUID"),
+];
+
+export const validateDeleteGroupByUuid = [
+  param("uuid")
+    .notEmpty()
+    .withMessage("Group UUID is required")
+    .isUUID(4)
+    .withMessage("Group UUID must be a valid UUID"),
+];
+
+export const validateSendMessage = [
+  param("uuid")
+    .notEmpty()
+    .withMessage("Group UUID is required")
+    .isUUID(4)
+    .withMessage("Group UUID must be a valid UUID"),
+  body("content")
+    .notEmpty()
+    .withMessage("Content is required")
+    .isString()
+    .withMessage("Content must be a string"),
+  body("message_type")
+    .optional()
+    .isIn(["text", "image", "file"])
+    .withMessage("Invalid message type"),
 ];

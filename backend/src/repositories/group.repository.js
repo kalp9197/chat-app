@@ -240,3 +240,30 @@ export const bulkUserOperations = async (userUuids) => {
     select: { id: true, uuid: true, name: true, email: true },
   });
 };
+
+//send message to group
+export const sendMessageToGroup = async (groupId, message, senderId) => {
+  const { content, message_type = "text" } = message;
+  return prisma.message.create({
+    data: {
+      group_id: groupId,
+      content,
+      message_type,
+      sender_id: senderId,
+    },
+    include: {
+      sender: { select: { id: true, uuid: true, name: true } },
+    },
+  });
+};
+
+//get group messages
+export const getGroupMessages = async (groupId) => {
+  return prisma.message.findMany({
+    where: { group_id: groupId },
+    include: {
+      sender: { select: { uuid: true, name: true, email: true } },
+    },
+    orderBy: { created_at: "asc" },
+  });
+};

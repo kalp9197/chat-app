@@ -1,12 +1,25 @@
 import axios from "../lib/axios";
 
-export const sendMessage = async (receiverUuid, content) => {
+export const sendMessage = async (
+  chatType,
+  chatId,
+  content,
+  messageType = "text"
+) => {
   if (!content.trim()) return null;
 
-  const response = await axios.post("/direct-messages", {
+  const payload = {
     content: content.trim(),
-    receiver_uuid: receiverUuid,
-  });
+    message_type: messageType,
+  };
+
+  if (chatType === "direct") {
+    payload.receiver_uuid = chatId;
+  } else if (chatType === "group") {
+    payload.group_uuid = chatId;
+  }
+
+  const response = await axios.post("/direct-messages", payload);
 
   return response.data.data;
 };

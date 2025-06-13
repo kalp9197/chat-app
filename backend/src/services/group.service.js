@@ -52,10 +52,11 @@ export const getAllGroupsForUser = async (userId) => {
  */
 export const getGroupByUuid = async (groupUuid, userId) => {
   const group = await groupRepository.findGroupByUuid(groupUuid, userId);
+  const messages = await groupRepository.getGroupMessages(group.id);
 
   if (!group) throw new Error("Group not found or access denied");
 
-  return { ...group, memberCount: group.memberships.length };
+  return { ...group, memberCount: group.memberships.length, messages };
 };
 
 /**
