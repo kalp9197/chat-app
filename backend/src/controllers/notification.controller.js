@@ -1,7 +1,7 @@
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 import * as notificationService from "../services/notification.service.js";
+import { ApiError } from "../utils/apiError.js";
 
-// Save FCM token
 export const saveUserToken = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -21,14 +21,18 @@ export const saveUserToken = async (req, res) => {
       message: "FCM token saved successfully",
     });
   } catch (error) {
-    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// Send test notification
 export const sendTestNotification = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -60,7 +64,12 @@ export const sendTestNotification = async (req, res) => {
       });
     }
   } catch (error) {
-    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message,
     });

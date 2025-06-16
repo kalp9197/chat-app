@@ -1,36 +1,25 @@
 import { notificationRepository } from "../repositories/index.js";
 import { messaging } from "../config/firebase.config.js";
+import { HTTP_STATUS } from "../constants/statusCodes.js";
+import { ApiError } from "../utils/apiError.js";
 
-/**
- * Save FCM token for a user
- * @param {number} userId //user id
- * @param {string} fcmToken //FCM token
- * @returns {Promise<boolean>} //return true if success
- */
 export const saveFcmToken = async (userId, fcmToken) => {
   try {
     await notificationRepository.updateUserFcmToken(userId, fcmToken);
     return true;
-  } catch (error) {
-    console.error("Error saving FCM token:", error);
-    throw error;
+  } catch {
+    throw new ApiError(
+      "Error saving FCM token",
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };
 
-/**
- * Send a notification to a user
- * @param {number} receiverId //user id
- * @param {string} title //notification title
- * @param {string} body //notification body
- * @param {Object} data //notification data
- * @returns {Promise<boolean>} //return true if success
- */
 export const sendNotification = async (receiverId, title, body, data = {}) => {
   try {
     const user = await notificationRepository.findUserWithFcmToken(receiverId);
 
     if (!user || !user.fcm_token) {
-      console.log("User has no FCM token");
       return false;
     }
 
@@ -55,20 +44,16 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
       },
     };
 
-    const response = await messaging.send(message);
-    console.log("Successfully sent notification:", response);
+    await messaging.send(message);
     return true;
-  } catch (error) {
-    console.error("Error sending notification:", error);
-    return false;
+  } catch {
+    throw new ApiError(
+      "Error sending notification",
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };
 
-/**
- * Send a new message notification
- * @param {Object} message
- * @returns {Promise<boolean>}
- */
 export const sendNewMessageNotification = async (message) => {
   try {
     const sender = await notificationRepository.findUserWithName(
@@ -86,12 +71,14 @@ export const sendNewMessageNotification = async (message) => {
       senderId: message.sender_id.toString(),
       senderUuid: sender.uuid,
       type: "chat_message",
-      chatId: `user-${sender.uuid}`, // Format to match frontend chat ID format
+      chatId: `user-${sender.uuid}`,
     };
 
     return await sendNotification(message.receiver_id, title, body, data);
-  } catch (error) {
-    console.error("Error sending new message notification:", error);
-    return false;
+  } catch {
+    throw new ApiError(
+      "Error sending new message notification",
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };

@@ -3,9 +3,9 @@ import * as directMessageController from "../controllers/directMessage.controlle
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validation.middleware.js";
 import * as Validation from "../validations/directMessageValidations.js";
+
 const router = express.Router();
 
-// Send a new message (direct or group)
 router.post(
   "/",
   authMiddleware,
@@ -13,7 +13,6 @@ router.post(
   directMessageController.sendMessage
 );
 
-// Get messages between users
 router.get(
   "/:receiver_uuid",
   authMiddleware,

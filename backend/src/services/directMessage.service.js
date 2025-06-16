@@ -3,13 +3,15 @@ import {
   directMessageRepository,
   groupRepository,
 } from "../repositories/index.js";
+import { HTTP_STATUS } from "../constants/statusCodes.js";
+import { ApiError } from "../utils/apiError.js";
 
 const sendDirectMessage = async (messageData) => {
   const receiver = await directMessageRepository.findUserByUuid(
     messageData.receiver_uuid
   );
   if (!receiver) {
-    throw new Error("Receiver not found");
+    throw new ApiError("Receiver not found", HTTP_STATUS.NOT_FOUND);
   }
 
   const message = await directMessageRepository.createMessage({
@@ -28,7 +30,11 @@ const sendMessageToGroup = async (messageData) => {
     messageData.group_uuid,
     messageData.sender_id
   );
-  if (!group) throw new Error("Group not found or access denied");
+  if (!group)
+    throw new ApiError(
+      "Group not found or access denied",
+      HTTP_STATUS.NOT_FOUND
+    );
 
   const savedMessage = await groupRepository.sendMessageToGroup(
     group.id,
@@ -39,7 +45,6 @@ const sendMessageToGroup = async (messageData) => {
     messageData.sender_id
   );
 
-  // Notify group members
   try {
     const title = `New message in ${group.name}`;
     const body = savedMessage.content.substring(0, 100);
@@ -67,11 +72,6 @@ const sendMessageToGroup = async (messageData) => {
   return savedMessage;
 };
 
-/**
- * Send a new message (direct or group)
- * @param {Object} messageData // message data
- * @returns {Promise<Object>} // return message
- */
 export const sendMessage = async (messageData) => {
   try {
     if (messageData.group_uuid) {
@@ -79,7 +79,10 @@ export const sendMessage = async (messageData) => {
     } else if (messageData.receiver_uuid) {
       return await sendDirectMessage(messageData);
     } else {
-      throw new Error("Missing receiver_uuid or group_uuid");
+      throw new ApiError(
+        "Missing receiver_uuid or group_uuid",
+        HTTP_STATUS.BAD_REQUEST
+      );
     }
   } catch (error) {
     console.error("Error sending message:", error);
@@ -87,14 +90,6 @@ export const sendMessage = async (messageData) => {
   }
 };
 
-/**
- * Get direct messages between users
- * @param {number} sender_id //sender id
- * @param {string} receiver_uuid //receiver uuid
- * @param {number} [limit=10] //limit
- * @param {number} [offset=0] //offset
- * @returns {Promise<{ messages: Object[], totalCount: number }>} //return messages and total count
- */
 export const getDirectMessages = async (
   sender_id,
   receiver_uuid,
@@ -106,7 +101,7 @@ export const getDirectMessages = async (
       await directMessageRepository.findUserByUuid(receiver_uuid);
 
     if (!receiver) {
-      throw new Error("Receiver not found");
+      throw new ApiError("Receiver not found", HTTP_STATUS.NOT_FOUND);
     }
 
     const messages = await directMessageRepository.findMessages(
@@ -116,14 +111,13 @@ export const getDirectMessages = async (
       offset
     );
 
-    // Get total count for pagination info
     const totalCount = await directMessageRepository.countMessages(
       sender_id,
       receiver.id
     );
 
     return {
-      messages: messages.reverse(), // Reverse to get back to ascending order after getting most recent messages
+      messages: messages.reverse(),
       totalCount,
     };
   } catch (error) {

@@ -1,16 +1,15 @@
 import { userRepository } from "../repositories/index.js";
+import { HTTP_STATUS } from "../constants/statusCodes.js";
+import { ApiError } from "../utils/apiError.js";
 
-/**
- * Get all users
- * @param {number} currentUserId
- * @returns {Promise<Object[]>} //return users
- */
 export const getAllUsers = async (currentUserId) => {
   try {
     const users = await userRepository.findAllUsersExcept(currentUserId);
     return users;
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    throw new Error("Failed to fetch users");
+  } catch {
+    throw new ApiError(
+      "Failed to fetch users",
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 };

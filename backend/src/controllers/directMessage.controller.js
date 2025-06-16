@@ -1,7 +1,7 @@
 import * as directMessageService from "../services/directMessage.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
+import { ApiError } from "../utils/apiError.js";
 
-// Send a new message (direct or group)
 export const sendMessage = async (req, res) => {
   try {
     const { receiver_uuid, group_uuid, content, message_type } = req.body;
@@ -9,8 +9,8 @@ export const sendMessage = async (req, res) => {
 
     const messageData = {
       sender_id,
-      receiver_uuid, // Will be null for group messages
-      group_uuid, // Will be null for direct messages
+      receiver_uuid,
+      group_uuid,
       content,
       message_type,
     };
@@ -24,21 +24,17 @@ export const sendMessage = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (
-      error.message === "Receiver not found" ||
-      error.message === "Group not found or access denied"
-    ) {
-      statusCode = HTTP_STATUS.NOT_FOUND;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
     }
 
-    return res.status(statusCode).json({
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// Get messages between users
 export const getMessagesBetweenUsers = async (req, res) => {
   try {
     const sender_id = req.user.id;
@@ -65,13 +61,12 @@ export const getMessagesBetweenUsers = async (req, res) => {
       },
     });
   } catch (error) {
-    if (error.message === "Receiver not found") {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        success: false,
-        message: "Receiver not found",
-      });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
     }
-    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message,
     });

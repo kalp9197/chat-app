@@ -1,7 +1,7 @@
 import * as authService from "../services/auth.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
+import { ApiError } from "../utils/apiError.js";
 
-// Register a new user
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -23,13 +23,18 @@ export const register = async (req, res) => {
       data: { user: userWithoutPassword },
     });
   } catch (error) {
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// Login an existing user
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -62,14 +67,18 @@ export const login = async (req, res) => {
       data: { user: userWithoutPassword, token },
     });
   } catch (error) {
-    console.log(error.message);
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// Check if the user is authenticated
 export const checkAuth = async (req, res) => {
   try {
     const user = req.user;
@@ -85,9 +94,14 @@ export const checkAuth = async (req, res) => {
       data: { user },
     });
   } catch (error) {
-    console.log(error.message);
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

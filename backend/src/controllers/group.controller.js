@@ -1,7 +1,7 @@
 import * as groupService from "../services/group.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
+import { ApiError } from "../utils/apiError.js";
 
-// Create a new group
 export const createGroup = async (req, res) => {
   try {
     const { name, members } = req.body;
@@ -12,25 +12,35 @@ export const createGroup = async (req, res) => {
       data,
     });
   } catch (error) {
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// Get all groups for a user
 export const getAllGroups = async (req, res) => {
   try {
     const data = await groupService.getAllGroupsForUser(req.user.id);
     return res.status(HTTP_STATUS.OK).json({ data });
   } catch (error) {
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// Get a group by uuid also it contains message getgroup messages
 export const getGroupByUuid = async (req, res) => {
   try {
     const data = await groupService.getGroupByUuid(
@@ -39,13 +49,18 @@ export const getGroupByUuid = async (req, res) => {
     );
     return res.status(HTTP_STATUS.OK).json({ data });
   } catch (error) {
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// Update a group by uuid
 export const updateGroupByUuid = async (req, res) => {
   try {
     const data = await groupService.updateGroupByUuid(
@@ -59,17 +74,18 @@ export const updateGroupByUuid = async (req, res) => {
       data,
     });
   } catch (error) {
-    return res
-      .status(
-        error.message === "Group must have at least one admin"
-          ? HTTP_STATUS.BAD_REQUEST
-          : HTTP_STATUS.INTERNAL_SERVER_ERROR
-      )
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// Delete a group by uuid
 export const deleteGroupByUuid = async (req, res) => {
   try {
     await groupService.deleteGroupByUuid(req.params.uuid, req.user.id);
@@ -78,13 +94,18 @@ export const deleteGroupByUuid = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
-// Add members to a group
 export const addGroupMembers = async (req, res) => {
   try {
     const data = await groupService.addMembersToGroup(
@@ -98,8 +119,14 @@ export const addGroupMembers = async (req, res) => {
       data,
     });
   } catch (error) {
-    return res
-      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ message: error.message, success: false });
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

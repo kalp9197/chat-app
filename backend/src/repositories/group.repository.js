@@ -79,7 +79,6 @@ export const findGroupByUuid = async (groupUuid, userId) => {
   });
 };
 
-// Validate group and admin access
 export const validateGroupAndAdminAccess = async (groupUuid, userId) => {
   return prisma.group.findFirst({
     where: {
@@ -95,7 +94,6 @@ export const validateGroupAndAdminAccess = async (groupUuid, userId) => {
   });
 };
 
-// Transaction-based group update with all operations
 export const updateGroupTransaction = async (groupId, updates) => {
   return prisma.$transaction(async (tx) => {
     const {
@@ -107,7 +105,6 @@ export const updateGroupTransaction = async (groupId, updates) => {
 
     const results = {};
 
-    // Update group name if provided
     if (name) {
       results.group = await tx.group.update({
         where: { id: groupId },
@@ -115,7 +112,6 @@ export const updateGroupTransaction = async (groupId, updates) => {
       });
     }
 
-    // Remove members if any
     if (removeUserIds.length > 0) {
       results.removedMembers = await tx.groupMembership.deleteMany({
         where: {
@@ -125,14 +121,12 @@ export const updateGroupTransaction = async (groupId, updates) => {
       });
     }
 
-    // Add new members if any
     if (addMemberships.length > 0) {
       results.addedMembers = await tx.groupMembership.createMany({
         data: addMemberships,
       });
     }
 
-    // Update roles if any
     if (roleUpdates.length > 0) {
       results.roleUpdates = [];
       for (const { userId, role } of roleUpdates) {
@@ -144,7 +138,6 @@ export const updateGroupTransaction = async (groupId, updates) => {
       }
     }
 
-    // Ensure at least one admin remains
     const adminCount = await tx.groupMembership.count({
       where: { group_id: groupId, role: "admin" },
     });
@@ -152,7 +145,6 @@ export const updateGroupTransaction = async (groupId, updates) => {
       throw new Error("Group must have at least one admin");
     }
 
-    // Return updated group with members
     results.updatedGroup = await tx.group.findUnique({
       where: { id: groupId },
       include: {
@@ -168,15 +160,12 @@ export const updateGroupTransaction = async (groupId, updates) => {
   });
 };
 
-// Transaction for adding members
 export const addMembersTransaction = async (groupId, memberships) => {
   return prisma.$transaction(async (tx) => {
-    // Add new memberships
     await tx.groupMembership.createMany({
       data: memberships,
     });
 
-    // Return updated group with all members
     return tx.group.findUnique({
       where: { id: groupId },
       include: {
@@ -190,7 +179,6 @@ export const addMembersTransaction = async (groupId, memberships) => {
   });
 };
 
-// Get existing memberships with user data in transaction
 export const getExistingMembershipsTransaction = async (groupId, userUuids) => {
   return prisma.$transaction(async (tx) => {
     const [users, existingMemberships] = await Promise.all([
@@ -215,7 +203,6 @@ export const getExistingMembershipsTransaction = async (groupId, userUuids) => {
 
 export const deleteGroupByUuid = async (groupUuid) => {
   return prisma.$transaction(async (tx) => {
-    // First delete all memberships, then delete the group
     const group = await tx.group.findUnique({
       where: { uuid: groupUuid },
       select: { id: true },
@@ -233,7 +220,6 @@ export const deleteGroupByUuid = async (groupUuid) => {
   });
 };
 
-// Bulk operations for better performance
 export const bulkUserOperations = async (userUuids) => {
   return prisma.user.findMany({
     where: { uuid: { in: userUuids } },
@@ -241,7 +227,6 @@ export const bulkUserOperations = async (userUuids) => {
   });
 };
 
-//send message to group
 export const sendMessageToGroup = async (groupId, message, senderId) => {
   const { content, message_type = "text" } = message;
   return prisma.message.create({
@@ -257,7 +242,6 @@ export const sendMessageToGroup = async (groupId, message, senderId) => {
   });
 };
 
-//get group messages
 export const getGroupMessages = async (groupId) => {
   return prisma.message.findMany({
     where: { group_id: groupId },

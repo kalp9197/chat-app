@@ -1,7 +1,6 @@
 import * as authService from "../services/auth.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
-// Authentication middleware
 export const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;

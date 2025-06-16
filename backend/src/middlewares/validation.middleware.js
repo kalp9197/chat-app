@@ -1,6 +1,5 @@
 import { validationResult } from "express-validator";
 
-// Validation middleware
 export const validate = (validations) => {
   return async (req, res, next) => {
     for (let validation of validations) {
