@@ -18,6 +18,8 @@ const Chat = ({ chatId }) => {
   const setActiveChat = useChat((s) => s.setActiveChat);
   const chats = useChat((s) => s.chats);
   const cleanupNotifications = useChat((s) => s.cleanupNotifications);
+  const loading = useChat((s) => s.loading); // Use loading from store like GroupChat
+
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [firstLoad, setFirstLoad] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -27,22 +29,23 @@ const Chat = ({ chatId }) => {
   const loadMoreButtonRef = useRef(null);
   const firstMessageRef = useRef(null);
 
-  // Set active chat on load if needed
+  // Set active chat when chatId changes - similar to GroupChat
   useEffect(() => {
-    if (chatId && !activeChat) {
+    if (chatId) {
       const chat = chats.find((c) => c.id === chatId);
       if (chat) {
         setActiveChat(chat);
         setFirstLoad(true);
+        fetchMessages(chatId);
       }
     }
-  }, [chatId, chats, activeChat, setActiveChat]);
+    return () => {
+      // cleanup when component unmounts or chatId changes
+      cleanupNotifications();
+    };
+  }, [chatId, chats, setActiveChat, fetchMessages, cleanupNotifications]);
 
-  useEffect(() => {
-    if (chatId) fetchMessages(chatId);
-  }, [chatId, fetchMessages]);
-
-  // Scroll to bottom only on first load or new message from current user
+  // Scroll behavior - same as GroupChat
   useEffect(() => {
     if (firstLoad && messages.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
@@ -54,8 +57,6 @@ const Chat = ({ chatId }) => {
       messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
     }
   }, [messages, firstLoad, user]);
-
-  useEffect(() => cleanupNotifications, [cleanupNotifications]);
 
   // Show scroll button if user scrolls up
   const handleScroll = () => {
@@ -128,7 +129,14 @@ const Chat = ({ chatId }) => {
         className="flex-grow overflow-y-auto px-4 py-6 bg-gray-50"
       >
         <div className="max-w-3xl mx-auto">
-          {messages.length === 0 ? (
+          {loading ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                <p className="text-gray-600">Loading messages...</p>
+              </div>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-200">
                 <p className="text-gray-600 mb-2">

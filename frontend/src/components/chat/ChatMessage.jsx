@@ -58,6 +58,11 @@ const ChatMessage = ({ message }) => {
           }
         `}
         >
+          {!isSentByMe && (
+            <p className="text-xs font-bold mb-1 text-gray-800 dark:text-gray-100">
+              {senderName}
+            </p>
+          )}
           <p className="text-sm whitespace-pre-wrap break-words">
             {message.text || message.content || ""}
           </p>

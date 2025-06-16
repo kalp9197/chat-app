@@ -46,8 +46,7 @@ const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
             {groups.map((group) => (
               <Motion.li
                 key={group.id || group.uuid}
-                whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.03)" }}
-                className={`p-4 cursor-pointer ${
+                className={`p-4 hover:bg-gray-50 dark:hover:bg-slate-700/30 cursor-pointer ${
                   currentGroupId === group.id
                     ? "bg-blue-50 dark:bg-blue-900/20"
                     : ""

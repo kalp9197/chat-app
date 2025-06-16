@@ -62,31 +62,31 @@ instance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     // If the error status is 401 and we haven't tried to refresh the token yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Prevent infinite loops by marking this request as already retried
       originalRequest._retry = true;
-      
+
       try {
         // Get the current auth state
         const { logout } = useAuth.getState();
-        
+
         // Clear the auth state
         logout();
-        
+
         // Clear any stored tokens
         localStorage.removeItem("auth-store");
-        
+
         // Redirect to login page
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
         }
       } catch (err) {
-        console.error('Error during logout:', err);
+        console.error("Error during logout:", err);
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
