@@ -42,6 +42,7 @@ const GroupChat = ({ group }) => {
       // cleanup when component unmounts or group changes
       cleanupNotifications();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group?.uuid, setActiveGroup, cleanupNotifications]);
 
   // Handle loading more messages when scrolling to top

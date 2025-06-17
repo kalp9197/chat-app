@@ -74,13 +74,17 @@ export const useGroupChat = create((set, get) => ({
     if (!groupUuid) return;
     set({ loading: true, error: null });
     try {
-      const data = await groupService.getGroupByUuid(groupUuid, 0, MESSAGES_PER_PAGE);
+      const data = await groupService.getGroupByUuid(
+        groupUuid,
+        0,
+        MESSAGES_PER_PAGE
+      );
       const formatted = formatMessages(data.messages || []);
-      set({ 
-        messages: formatted, 
+      set({
+        messages: formatted,
         loading: false,
         currentPage: 0,
-        hasMoreMessages: data.pagination?.hasMore ?? true
+        hasMoreMessages: data.pagination?.hasMore ?? true,
       });
     } catch (error) {
       console.error("Failed to fetch group messages:", error);
@@ -96,12 +100,16 @@ export const useGroupChat = create((set, get) => ({
     if (!groupUuid) return;
     try {
       // Always fetch first page for latest messages
-      const data = await groupService.getGroupByUuid(groupUuid, 0, MESSAGES_PER_PAGE);
+      const data = await groupService.getGroupByUuid(
+        groupUuid,
+        0,
+        MESSAGES_PER_PAGE
+      );
       const formatted = formatMessages(data.messages || []);
-      set({ 
+      set({
         messages: formatted,
         currentPage: 0,
-        hasMoreMessages: data.pagination?.hasMore ?? true
+        hasMoreMessages: data.pagination?.hasMore ?? true,
       });
     } catch (error) {
       console.error("Failed to fetch latest messages:", error);
@@ -157,16 +165,21 @@ export const useGroupChat = create((set, get) => ({
     if (!groupUuid || !hasMoreMessages || loadingMore) return 0;
 
     set({ loadingMore: true, error: null });
-    
+
     try {
       const nextPage = currentPage + 1;
-      const data = await groupService.getGroupByUuid(groupUuid, nextPage, MESSAGES_PER_PAGE);
+      const data = await groupService.getGroupByUuid(
+        groupUuid,
+        nextPage,
+        MESSAGES_PER_PAGE
+      );
       const newMessages = formatMessages(data.messages || []);
-      
+
       // Combine and deduplicate messages
       const allMessages = [...newMessages, ...messages];
-      const uniqueMessages = allMessages.filter((message, index, self) => 
-        index === self.findIndex((m) => m.id === message.id)
+      const uniqueMessages = allMessages.filter(
+        (message, index, self) =>
+          index === self.findIndex((m) => m.id === message.id)
       );
 
       set({
@@ -175,7 +188,7 @@ export const useGroupChat = create((set, get) => ({
         currentPage: nextPage,
         hasMoreMessages: data.pagination?.hasMore ?? false,
       });
-      
+
       return newMessages.length; // Return number of new messages loaded
     } catch (error) {
       console.error("Failed to load more messages:", error);

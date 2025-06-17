@@ -134,8 +134,6 @@ const Chat = ({ chatId }) => {
     [user?.uuid, chatId, sendMessage, scrollToBottom]
   );
 
-
-
   // ------------------- MAIN FIX IS IN THIS EFFECT -------------------
   useEffect(() => {
     if (!chatId) {
