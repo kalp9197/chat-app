@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -19,7 +19,7 @@ enum GroupRole {
 }
 
 model User {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         Int      @id @default(autoincrement())
   uuid       String   @unique @default(uuid())
   email      String   @unique
   name       String
@@ -36,7 +36,7 @@ model User {
 }
 
 model Group {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         Int      @id @default(autoincrement())
   uuid       String   @unique @default(uuid())
   name       String
   created_at DateTime @default(now())
@@ -49,10 +49,10 @@ model Group {
 }
 
 model GroupMembership {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  id        Int       @id @default(autoincrement())
   uuid      String    @unique @default(uuid())
-  user_id   String    @db.ObjectId
-  group_id  String    @db.ObjectId
+  user_id   Int
+  group_id  Int
   role      GroupRole @default(member)
   joined_at DateTime  @default(now())
 
@@ -64,11 +64,11 @@ model GroupMembership {
 }
 
 model Message {
-  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  id           Int         @id @default(autoincrement())
   uuid         String      @unique @default(uuid())
-  sender_id    String      @db.ObjectId
-  receiver_id  String?     @db.ObjectId
-  group_id     String?     @db.ObjectId
+  sender_id    Int
+  receiver_id  Int?
+  group_id     Int?
   content      String
   message_type MessageType @default(text)
   created_at   DateTime    @default(now())
