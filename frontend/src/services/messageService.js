@@ -24,9 +24,13 @@ export const sendMessage = async (
   return response.data.data;
 };
 
-export const getMessagesBetweenUsers = async (receiverUuid, page = 0) => {
+export const getMessagesBetweenUsers = async (
+  receiverUuid,
+  page = 0,
+  limit = 10
+) => {
   const response = await axios.get(
-    `/direct-messages/${receiverUuid}?page=${page}`
+    `/direct-messages/${receiverUuid}?page=${page}&limit=${limit}`
   );
   return response.data.data || [];
 };

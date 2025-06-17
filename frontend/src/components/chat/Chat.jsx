@@ -1,115 +1,261 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import ChatHeader from "./ChatHeader";
 import ChatMessage from "./ChatMessage";
 import MessageInput from "./MessageInput";
 import EmptyState from "../common/EmptyState";
-import { ArrowDown } from "lucide-react";
 
 const Chat = ({ chatId }) => {
-  const user = useAuth((s) => s.user);
-  const messages = useChat((s) => s.messages);
-  const activeChat = useChat((s) => s.activeChat);
-  const fetchMessages = useChat((s) => s.fetchMessages);
-  const loadMoreMessages = useChat((s) => s.loadMoreMessages);
-  const hasMoreMessages = useChat((s) => s.hasMoreMessages);
-  const sendMessage = useChat((s) => s.sendMessage);
-  const setActiveChat = useChat((s) => s.setActiveChat);
-  const chats = useChat((s) => s.chats);
-  const cleanupNotifications = useChat((s) => s.cleanupNotifications);
-  const loading = useChat((s) => s.loading); // Use loading from store like GroupChat
+  const user = useAuth((state) => state.user);
+  const {
+    messages,
+    activeChat,
+    chats,
+    loading,
+    hasMoreMessages,
+    fetchMessages,
+    loadMoreMessages,
+    sendMessage,
+    setActiveChat,
+    cleanupNotifications,
+  } = useChat();
 
+  //eslint-disable-next-line
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [firstLoad, setFirstLoad] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
 
   const messagesEndRef = useRef(null);
   const messageContainerRef = useRef(null);
-  const loadMoreButtonRef = useRef(null);
-  const firstMessageRef = useRef(null);
+  const prevChatIdRef = useRef(null);
+  const prevMessagesLengthRef = useRef(0);
+  const isScrollingRef = useRef(false);
+  const lastMessageIdRef = useRef(null);
+  const loadMoreTimeoutRef = useRef(null);
 
-  // Set active chat when chatId changes - similar to GroupChat
-  useEffect(() => {
-    if (chatId) {
-      const chat = chats.find((c) => c.id === chatId);
-      if (chat) {
-        setActiveChat(chat);
-        setFirstLoad(true);
-        fetchMessages(chatId);
-      }
+  const currentChat = useMemo(
+    () => chats.find((c) => c.id === chatId),
+    [chats, chatId]
+  );
+
+  const sortedMessages = useMemo(() => {
+    return [...messages].sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.created_at).getTime();
+      const timeB = new Date(b.timestamp || b.created_at).getTime();
+      return timeA - timeB;
+    });
+  }, [messages]);
+
+  const shouldAutoScroll = useCallback(() => {
+    if (!messageContainerRef.current || !sortedMessages.length) return false;
+
+    const container = messageContainerRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+
+    const lastMessage = sortedMessages[sortedMessages.length - 1];
+    const isMyMessage =
+      lastMessage?.sender?.uuid === user?.uuid ||
+      lastMessage?.sender === user?.uuid;
+
+    return isNearBottom || isMyMessage || shouldScrollToBottom;
+  }, [sortedMessages, user?.uuid, shouldScrollToBottom]);
+
+  const handleScroll = useCallback(() => {
+    if (!messageContainerRef.current || isScrollingRef.current) return;
+
+    const container = messageContainerRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+
+    setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
+    setIsAtBottom(scrollHeight - scrollTop - clientHeight < 50);
+
+    if (scrollTop === 0 && hasMoreMessages && !isLoadingMore && !loading) {
+      handleLoadMore();
     }
-    return () => {
-      // cleanup when component unmounts or chatId changes
-      cleanupNotifications();
-    };
-  }, [chatId, chats, setActiveChat, fetchMessages, cleanupNotifications]);
+  }, [hasMoreMessages, isLoadingMore, loading]);
 
-  // Scroll behavior - same as GroupChat
-  useEffect(() => {
-    if (firstLoad && messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-      setFirstLoad(false);
-    } else if (
-      messages.length > 0 &&
-      messages[messages.length - 1]?.sender?.uuid === user?.uuid
+  const scrollToBottom = useCallback((smooth = true) => {
+    if (!messagesEndRef.current) return;
+
+    isScrollingRef.current = true;
+    messagesEndRef.current.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      block: "end",
+    });
+
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 500);
+  }, []);
+
+  const handleSendMessage = useCallback(
+    async (message) => {
+      if (!user?.uuid || !chatId || !message.trim()) return;
+
+      setShouldScrollToBottom(true);
+      await sendMessage(message, chatId);
+
+      setTimeout(() => scrollToBottom(false), 100);
+    },
+    [user?.uuid, chatId, sendMessage, scrollToBottom]
+  );
+
+  const handleLoadMore = useCallback(async () => {
+    if (
+      !hasMoreMessages ||
+      isLoadingMore ||
+      !messageContainerRef.current ||
+      loading
     ) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      return;
     }
-  }, [messages, firstLoad, user]);
 
-  // Show scroll button if user scrolls up
-  const handleScroll = () => {
-    if (messageContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } =
-        messageContainerRef.current;
-      setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
+    if (loadMoreTimeoutRef.current) {
+      clearTimeout(loadMoreTimeoutRef.current);
     }
-  };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-  };
+    setIsLoadingMore(true);
+    const container = messageContainerRef.current;
+    const heightBefore = container.scrollHeight;
+    const scrollTopBefore = container.scrollTop;
 
-  const handleSendMessage = async (message) => {
-    if (!user || !chatId || !message.trim()) return;
-    await sendMessage(message, chatId);
-  };
-
-  const handleLoadMore = async () => {
-    if (hasMoreMessages && !isLoadingMore) {
-      setIsLoadingMore(true);
-
-      // Save the scroll position relative to the first visible message
-      const firstMessage =
-        messages.length > 0
-          ? document.getElementById(`message-${messages[0].id}`)
-          : null;
-      const firstMessagePosition = firstMessage
-        ? firstMessage.getBoundingClientRect().top
-        : 0;
-
-      // Load more messages
+    try {
       await loadMoreMessages(chatId);
 
-      // Wait for DOM update
-      setTimeout(() => {
-        // Find the previously first message (now it's somewhere in the middle)
-        if (firstMessage) {
-          // Restore scroll position relative to what was previously the first message
-          const newPosition = firstMessage.getBoundingClientRect().top;
-          const scrollDifference = newPosition - firstMessagePosition;
-          messageContainerRef.current.scrollTop += scrollDifference;
+      loadMoreTimeoutRef.current = setTimeout(() => {
+        if (container) {
+          const heightAfter = container.scrollHeight;
+          const heightDiff = heightAfter - heightBefore;
+          container.scrollTop = scrollTopBefore + heightDiff;
         }
         setIsLoadingMore(false);
-      }, 0);
+      }, 100);
+    } catch (error) {
+      console.error("Error loading more messages:", error);
+      setIsLoadingMore(false);
     }
-  };
+  }, [hasMoreMessages, isLoadingMore, loadMoreMessages, chatId, loading]);
 
-  if (!chatId || !activeChat) {
+  // ------------------- MAIN FIX IS IN THIS EFFECT -------------------
+  useEffect(() => {
+    if (!chatId) {
+      setHasInitialized(false);
+      setShouldScrollToBottom(true);
+      return;
+    }
+
+    const chatChanged = prevChatIdRef.current !== chatId;
+
+    if (chatChanged) {
+      setHasInitialized(false);
+      setShouldScrollToBottom(true);
+      prevMessagesLengthRef.current = 0;
+      lastMessageIdRef.current = null;
+
+      if (currentChat) {
+        setActiveChat(currentChat);
+        fetchMessages(chatId).then(() => {
+          setHasInitialized(true);
+          setTimeout(() => scrollToBottom(false), 200);
+        });
+      }
+
+      prevChatIdRef.current = chatId;
+    } else {
+      // <--- THIS HANDLES THE DOUBLE CLICK CASE --->
+      if (currentChat && (!messages || messages.length === 0) && !loading) {
+        fetchMessages(chatId).then(() => {
+          setHasInitialized(true);
+          setTimeout(() => scrollToBottom(false), 200);
+        });
+      }
+    }
+
+    return () => {
+      if (chatChanged) {
+        cleanupNotifications();
+        if (loadMoreTimeoutRef.current) {
+          clearTimeout(loadMoreTimeoutRef.current);
+        }
+      }
+    };
+  }, [
+    chatId,
+    currentChat,
+    setActiveChat,
+    fetchMessages,
+    cleanupNotifications,
+    scrollToBottom,
+    messages,
+    loading,
+  ]);
+  // -------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!sortedMessages.length || !hasInitialized) return;
+
+    const isNewMessage = sortedMessages.length > prevMessagesLengthRef.current;
+    const lastMessage = sortedMessages[sortedMessages.length - 1];
+    const isNewUniqueMessage = lastMessage?.id !== lastMessageIdRef.current;
+
+    if (isNewMessage && isNewUniqueMessage && shouldAutoScroll()) {
+      setShouldScrollToBottom(false);
+      setTimeout(() => scrollToBottom(true), 100);
+    }
+
+    prevMessagesLengthRef.current = sortedMessages.length;
+    if (lastMessage) {
+      lastMessageIdRef.current = lastMessage.id;
+    }
+  }, [
+    sortedMessages.length,
+    hasInitialized,
+    shouldAutoScroll,
+    scrollToBottom,
+    sortedMessages,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  if (!chatId) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
         <EmptyState message="Select a chat to start messaging" icon="💬" />
+      </div>
+    );
+  }
+
+  if (!hasInitialized && loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2" />
+          <p className="text-gray-600">Loading chat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeChat) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <EmptyState message="Chat not found" icon="❌" />
       </div>
     );
   }
@@ -119,7 +265,7 @@ const Chat = ({ chatId }) => {
       <ChatHeader
         name={activeChat.name}
         avatar={activeChat.avatar}
-        onScrollToBottom={scrollToBottom}
+        onScrollToBottom={() => scrollToBottom(true)}
         user={activeChat.otherUser}
       />
 
@@ -127,70 +273,45 @@ const Chat = ({ chatId }) => {
         ref={messageContainerRef}
         onScroll={handleScroll}
         className="flex-grow overflow-y-auto px-4 py-6 bg-gray-50"
+        style={{ scrollBehavior: "auto" }}
       >
         <div className="max-w-3xl mx-auto">
-          {loading ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                <p className="text-gray-600">Loading messages...</p>
-              </div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-                <p className="text-gray-600 mb-2">
-                  No messages yet. Say hello to start the conversation!
-                </p>
-                <div className="text-4xl">👋</div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {hasMoreMessages && (
-                <div
-                  className="flex justify-center my-4"
-                  ref={loadMoreButtonRef}
+          <div className="space-y-1">
+            {hasMoreMessages && hasInitialized && !isAtBottom && (
+              <div className="flex justify-center py-4 sticky top-0 z-10">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className={`px-6 py-3 rounded-full bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-lg border border-gray-200 transition-all duration-200 ${
+                    isLoadingMore
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:shadow-xl"
+                  }`}
                 >
-                  <button
-                    onClick={handleLoadMore}
-                    disabled={isLoadingMore}
-                    className={`px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium shadow-sm border border-gray-200 ${
-                      isLoadingMore ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {isLoadingMore ? "Loading..." : "Load More Messages"}
-                  </button>
-                </div>
-              )}
-              {messages.map((message, index) => (
-                <div
-                  key={message.id}
-                  id={`message-${message.id}`}
-                  ref={index === 0 ? firstMessageRef : null}
-                >
-                  <ChatMessage message={message} />
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
+                  {isLoadingMore ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                      Loading...
+                    </div>
+                  ) : (
+                    "Load More Messages"
+                  )}
+                </button>
+              </div>
+            )}
+
+            {sortedMessages.map((message, index) => (
+              <ChatMessage key={`${message.id}-${index}`} message={message} />
+            ))}
+
+            <div ref={messagesEndRef} />
+          </div>
         </div>
       </div>
-
-      {showScrollButton && (
-        <button
-          onClick={scrollToBottom}
-          className="absolute bottom-20 right-4 rounded-full bg-white shadow-md p-2 hover:bg-gray-100 transition-colors z-10"
-          aria-label="Scroll to bottom"
-        >
-          <ArrowDown size={18} />
-        </button>
-      )}
 
       <MessageInput onSendMessage={handleSendMessage} />
     </div>
   );
 };
 
-export default Chat;
+export default React.memo(Chat);

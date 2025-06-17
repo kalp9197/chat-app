@@ -12,11 +12,30 @@ export const useChat = create((set, get) => ({
   notificationUnsubscribe: null,
   currentPage: 0,
   hasMoreMessages: true,
+  isInitialLoad: true,
 
   setActiveChat: (chat) => {
-    const { notificationUnsubscribe } = get();
+    const { notificationUnsubscribe, activeChat } = get();
 
-    // Cleanup existing subscriptions
+    // --- FIX: Only reset if the chat actually changed ---
+    if (activeChat?.id === chat?.id) {
+      // Same chat, just update notifications
+      if (notificationUnsubscribe) notificationUnsubscribe();
+      if (chat) {
+        const unsubscribe = listenForNotifications((payload) => {
+          if (
+            payload?.data?.type === "chat_message" &&
+            payload?.data?.chatId === chat.id
+          ) {
+            get().fetchLatestMessages(chat.id);
+          }
+        });
+        set({ notificationUnsubscribe: unsubscribe });
+      }
+      return; // Don't reset state!
+    }
+
+    // If chat is different, reset as before
     if (notificationUnsubscribe) {
       notificationUnsubscribe();
     }
@@ -26,11 +45,10 @@ export const useChat = create((set, get) => ({
       messages: [],
       currentPage: 0,
       hasMoreMessages: true,
+      isInitialLoad: true,
     });
 
     if (chat) {
-      get().fetchMessages(chat.id);
-
       const unsubscribe = listenForNotifications((payload) => {
         if (
           payload?.data?.type === "chat_message" &&
@@ -46,7 +64,6 @@ export const useChat = create((set, get) => ({
 
   cleanupNotifications: () => {
     const { notificationUnsubscribe } = get();
-
     if (notificationUnsubscribe) {
       notificationUnsubscribe();
       set({ notificationUnsubscribe: null });
@@ -68,7 +85,7 @@ export const useChat = create((set, get) => ({
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`,
           receiver_uuid: user.uuid,
           otherUser: user,
-          last_message: "", // Will be populated by fetchMessages or a dedicated last_message fetch
+          last_message: "",
           updated_at: user.updated_at || new Date().toISOString(),
         }));
 
@@ -113,25 +130,13 @@ export const useChat = create((set, get) => ({
         receiverUuid = chatId.replace("user-", "");
       }
 
-      const page = get().currentPage;
       const { getMessagesBetweenUsers } = await import(
         "@/services/messageService"
       );
-      const messages = await getMessagesBetweenUsers(receiverUuid, page);
-      const response = { data: { data: messages } };
+      const messages = await getMessagesBetweenUsers(receiverUuid, 0, 10);
 
-      if (response.data) {
-        let rawMessages = [];
-
-        if (Array.isArray(response.data)) {
-          rawMessages = response.data;
-        } else if (Array.isArray(response.data.data)) {
-          rawMessages = response.data.data;
-        } else if (Array.isArray(response.data.directMessages)) {
-          rawMessages = response.data.directMessages;
-        }
-
-        const formattedMessages = rawMessages.map((message) => ({
+      if (Array.isArray(messages)) {
+        const formattedMessages = messages.map((message) => ({
           id:
             message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
           text: message.content || message.text || "",
@@ -142,18 +147,25 @@ export const useChat = create((set, get) => ({
           },
           senderName: message.sender?.name || message.sender_name || "",
           timestamp: message.created_at || message.timestamp || Date.now(),
-          _raw: message, // Keep raw message for debugging or other uses
+          created_at: message.created_at || message.timestamp || Date.now(),
+          _raw: message,
         }));
 
-        const hasMore = response.data.pagination?.hasMore ?? false;
+        // Remove duplicates by id
+        const uniqueMessages = formattedMessages.filter(
+          (message, index, self) =>
+            index === self.findIndex((m) => m.id === message.id)
+        );
 
         set({
-          messages: formattedMessages,
-          hasMoreMessages: hasMore,
+          messages: uniqueMessages,
+          hasMoreMessages: messages.length >= 10,
+          currentPage: 0,
+          isInitialLoad: false,
         });
       }
     } catch (error) {
-      set({ error: error.message });
+      set({ error: error.message, isInitialLoad: false });
     } finally {
       set({ loading: false });
     }
@@ -161,9 +173,10 @@ export const useChat = create((set, get) => ({
 
   loadMoreMessages: async (chatId) => {
     const user = useAuth.getState().user;
-    if (!user || !chatId) return;
+    const { currentPage, loading } = get();
 
-    const currentPage = get().currentPage;
+    if (!user || !chatId || loading) return;
+
     const nextPage = currentPage + 1;
 
     try {
@@ -177,21 +190,14 @@ export const useChat = create((set, get) => ({
       const { getMessagesBetweenUsers } = await import(
         "@/services/messageService"
       );
-      const messages = await getMessagesBetweenUsers(receiverUuid, nextPage);
-      const response = { data: { data: messages } };
+      const messages = await getMessagesBetweenUsers(
+        receiverUuid,
+        nextPage,
+        10
+      );
 
-      if (response.data) {
-        let rawMessages = [];
-
-        if (Array.isArray(response.data)) {
-          rawMessages = response.data;
-        } else if (Array.isArray(response.data.data)) {
-          rawMessages = response.data.data;
-        } else if (Array.isArray(response.data.directMessages)) {
-          rawMessages = response.data.directMessages;
-        }
-
-        const formattedMessages = rawMessages.map((message) => ({
+      if (Array.isArray(messages)) {
+        const formattedMessages = messages.map((message) => ({
           id:
             message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
           text: message.content || message.text || "",
@@ -202,16 +208,26 @@ export const useChat = create((set, get) => ({
           },
           senderName: message.sender?.name || message.sender_name || "",
           timestamp: message.created_at || message.timestamp || Date.now(),
+          created_at: message.created_at || message.timestamp || Date.now(),
           _raw: message,
         }));
 
-        const hasMore = response.data.pagination?.hasMore ?? false;
+        set((state) => {
+          // Combine old and new messages, removing duplicates
+          const allMessages = [...formattedMessages, ...state.messages];
+          const uniqueMessages = allMessages.filter(
+            (message, index, self) =>
+              index === self.findIndex((m) => m.id === message.id)
+          );
 
-        set((state) => ({
-          messages: [...formattedMessages, ...state.messages],
-          currentPage: nextPage,
-          hasMoreMessages: hasMore,
-        }));
+          return {
+            messages: uniqueMessages,
+            currentPage: nextPage,
+            hasMoreMessages: messages.length >= 10,
+          };
+        });
+      } else {
+        set({ hasMoreMessages: false });
       }
     } catch (error) {
       set({ error: error.message });
@@ -233,21 +249,10 @@ export const useChat = create((set, get) => ({
       const { getMessagesBetweenUsers } = await import(
         "@/services/messageService"
       );
-      const messages = await getMessagesBetweenUsers(receiverUuid, 0); // Always fetch page 0 for latest
-      const response = { data: { data: messages } };
+      const messages = await getMessagesBetweenUsers(receiverUuid, 0, 10);
 
-      if (response.data) {
-        let rawMessages = [];
-
-        if (Array.isArray(response.data)) {
-          rawMessages = response.data;
-        } else if (Array.isArray(response.data.data)) {
-          rawMessages = response.data.data;
-        } else if (Array.isArray(response.data.directMessages)) {
-          rawMessages = response.data.directMessages;
-        }
-
-        const formattedMessages = rawMessages.map((message) => ({
+      if (Array.isArray(messages)) {
+        const formattedMessages = messages.map((message) => ({
           id:
             message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
           text: message.content || message.text || "",
@@ -258,13 +263,24 @@ export const useChat = create((set, get) => ({
           },
           senderName: message.sender?.name || message.sender_name || "",
           timestamp: message.created_at || message.timestamp || Date.now(),
+          created_at: message.created_at || message.timestamp || Date.now(),
           _raw: message,
         }));
 
-        const hasMore = response.data.pagination?.hasMore ?? true; // Default to true if not specified
-        set({
-          messages: formattedMessages,
-          hasMoreMessages: hasMore, // Update based on actual pagination info
+        set((state) => {
+          // Merge with existing messages, avoiding duplicates
+          const existingIds = new Set(state.messages.map((m) => m.id));
+          const newMessages = formattedMessages.filter(
+            (m) => !existingIds.has(m.id)
+          );
+
+          if (newMessages.length > 0) {
+            return {
+              messages: [...state.messages, ...newMessages],
+            };
+          }
+
+          return state;
         });
       }
     } catch (error) {
@@ -287,10 +303,9 @@ export const useChat = create((set, get) => ({
       return null;
     }
 
-    let tempId;
-    try {
-      tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
 
+    try {
       const tempMessage = {
         id: tempId,
         text: content.trim(),
@@ -303,8 +318,10 @@ export const useChat = create((set, get) => ({
         timestamp: new Date().toISOString(),
         created_at: new Date().toISOString(),
         isPending: true,
+        failed: false,
       };
 
+      // Add temp message immediately
       set((state) => ({
         messages: [...state.messages, tempMessage],
       }));
@@ -317,28 +334,37 @@ export const useChat = create((set, get) => ({
       );
 
       if (serverMessage) {
+        // Update temp message with server response
         set((state) => ({
           messages: state.messages.map((m) =>
             m.id === tempId
               ? {
-                  id: serverMessage.id || tempId,
+                  id: serverMessage.id || serverMessage.uuid || tempId,
                   text: serverMessage.content || m.text,
                   content: serverMessage.content || m.content,
                   sender: serverMessage.sender || {
                     uuid: serverMessage.sender_uuid || user.uuid,
                     name: serverMessage.sender_name || user.name,
                   },
-                  senderName: serverMessage.sender?.name || user.name,
+                  senderName:
+                    serverMessage.sender?.name ||
+                    serverMessage.sender_name ||
+                    user.name,
                   timestamp: serverMessage.created_at || m.timestamp,
+                  created_at: serverMessage.created_at || m.created_at,
                   isPending: false,
+                  failed: false,
                 }
               : m
           ),
         }));
+
+        return serverMessage;
       } else {
         throw new Error("Failed to send message: Invalid server response");
       }
     } catch (error) {
+      // Mark temp message as failed
       set((state) => ({
         messages: state.messages.map((m) =>
           m.id === tempId ? { ...m, isPending: false, failed: true } : m
@@ -374,20 +400,14 @@ export const useChat = create((set, get) => ({
         return existingChat;
       }
 
-      // If no existing chat, create a new one via the backend (optional, depends on backend logic)
-      // For now, we'll assume the backend handles chat creation implicitly or this is just for UI state
-      // If an API call is needed to create/retrieve a chat, it would go here.
-      // For example: const response = await axios.post("/chats", { userId: otherUser.uuid }, { headers: { Authorization: `Bearer ${token}` } });
-      // const chatData = response.data.data;
-
       const newChat = {
-        id: `user-${otherUser.uuid}`, // Use a consistent ID format
+        id: `user-${otherUser.uuid}`,
         name: otherUser.name,
         avatar:
           otherUser.avatar ||
           `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherUser.name}`,
         receiver_uuid: otherUser.uuid,
-        otherUser: otherUser, // Store the full otherUser object
+        otherUser: otherUser,
         last_message: "",
         updated_at: new Date().toISOString(),
       };
@@ -397,6 +417,7 @@ export const useChat = create((set, get) => ({
           (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
         ),
       }));
+
       get().setActiveChat(newChat);
       return newChat;
     } catch (error) {

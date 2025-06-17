@@ -1,91 +1,134 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
-const ChatMessage = ({ message }) => {
-  const user = useAuth((s) => s.user);
+const ChatMessage = React.memo(
+  ({ message }) => {
+    const user = useAuth((state) => state.user);
 
-  // Detect message sender (supports backend and optimistic format)
-  const isSentByMe =
-    (message.sender?.uuid && message.sender.uuid === user?.uuid) ||
-    (message.sender && message.sender === user?.uuid);
+    const messageData = useMemo(() => {
+      if (!message || !user) return null;
 
-  const senderName = message.sender?.name || message.senderName || "";
+      const isSentByMe =
+        message.sender?.uuid === user.uuid || message.sender === user.uuid;
+      const senderName = message.sender?.name || message.senderName || "";
+      const timestamp = message.timestamp || message.created_at;
+      const formattedTime = timestamp
+        ? new Date(timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "";
+      const messageText = message.text || message.content || "";
+      const senderInitial = isSentByMe
+        ? (user.name?.charAt(0) || "M").toUpperCase()
+        : (senderName.charAt(0) || "?").toUpperCase();
 
-  // Format time
-  const formattedTime = new Date(
-    message.timestamp || message.created_at || Date.now()
-  ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return {
+        isSentByMe,
+        senderName,
+        formattedTime,
+        messageText,
+        senderInitial,
+      };
+    }, [
+      message.sender,
+      message.timestamp,
+      message.created_at,
+      message.text,
+      message.content,
+      message.senderName,
+      user,
+    ]);
 
-  // Render message status icon
-  const messageStatus = message.isPending ? (
-    <div className="flex items-center text-xs">
-      <Clock size={12} className="mr-1" />
-      <span>Sending</span>
-    </div>
-  ) : message.failed ? (
-    <div className="flex items-center text-xs text-red-500">
-      <AlertCircle size={12} className="mr-1" />
-      <span>Failed</span>
-    </div>
-  ) : (
-    <div className="flex items-center text-xs">
-      <CheckCircle2 size={12} className="mr-1" />
-    </div>
-  );
+    const statusIcon = useMemo(() => {
+      if (message.isPending)
+        return (
+          <div className="flex items-center text-xs text-gray-400">
+            <Clock size={12} className="mr-1" />
+            <span>Sending</span>
+          </div>
+        );
+      if (message.failed)
+        return (
+          <div className="flex items-center text-xs text-red-500">
+            <AlertCircle size={12} className="mr-1" />
+            <span>Failed</span>
+          </div>
+        );
+      return <CheckCircle2 size={12} className="text-gray-400" />;
+    }, [message.isPending, message.failed]);
 
-  return (
-    <div
-      className={`flex ${
-        isSentByMe ? "justify-end" : "justify-start"
-      } animate-fadeIn mb-2`}
-    >
-      {/* Avatar (other user or me) */}
-      {!isSentByMe && (
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-purple-100 flex items-center justify-center text-white text-xs font-bold self-end mr-2">
-          {senderName.charAt(0)?.toUpperCase() || "?"}
-        </div>
-      )}
+    if (!messageData) return null;
 
-      <div className="max-w-[75%]">
-        <div
-          className={`
-          px-3 py-2 rounded-lg shadow-sm
-          ${
-            isSentByMe
-              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-              : "bg-white text-gray-800 border border-gray-200"
-          }
-        `}
-        >
-          {!isSentByMe && (
-            <p className="text-xs font-bold mb-1 text-gray-800 dark:text-gray-100">
-              {senderName}
-            </p>
+    const {
+      isSentByMe,
+      senderName,
+      formattedTime,
+      messageText,
+      senderInitial,
+    } = messageData;
+
+    return (
+      <div
+        className={`flex mb-4 ${isSentByMe ? "justify-end" : "justify-start"}`}
+        style={{ minHeight: "40px" }}
+      >
+        {!isSentByMe && (
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white shadow-sm flex items-center justify-center text-white text-xs font-semibold self-end mr-3 flex-shrink-0">
+            {senderInitial}
+          </div>
+        )}
+
+        <div className="max-w-[70%] min-w-0">
+          <div
+            className={`px-4 py-3 rounded-2xl shadow-sm transition-all duration-200 ${
+              isSentByMe
+                ? "bg-blue-500 text-white rounded-br-md"
+                : "bg-white text-gray-800 border border-gray-100 rounded-bl-md"
+            }`}
+          >
+            {!isSentByMe && senderName && (
+              <div className="text-xs font-semibold mb-1 text-purple-600">
+                {senderName}
+              </div>
+            )}
+            <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+              {messageText}
+            </div>
+          </div>
+
+          {formattedTime && (
+            <div
+              className={`flex items-center mt-1 px-2 text-xs text-gray-500 ${
+                isSentByMe ? "justify-end" : "justify-start"
+              }`}
+            >
+              <span>{formattedTime}</span>
+              {isSentByMe && <div className="ml-2">{statusIcon}</div>}
+            </div>
           )}
-          <p className="text-sm whitespace-pre-wrap break-words">
-            {message.text || message.content || ""}
-          </p>
         </div>
-        <div
-          className={`
-          flex items-center mt-1 px-1 text-xs
-          ${isSentByMe ? "justify-end" : "justify-start"}
-          text-gray-500
-        `}
-        >
-          <span>{formattedTime}</span>
-          {isSentByMe && <div className="ml-2">{messageStatus}</div>}
-        </div>
+
+        {isSentByMe && (
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white shadow-sm flex items-center justify-center text-white text-xs font-semibold self-end ml-3 flex-shrink-0">
+            {senderInitial}
+          </div>
+        )}
       </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.message.id === nextProps.message.id &&
+      prevProps.message.isPending === nextProps.message.isPending &&
+      prevProps.message.failed === nextProps.message.failed &&
+      prevProps.message.text === nextProps.message.text &&
+      prevProps.message.content === nextProps.message.content &&
+      prevProps.message.timestamp === nextProps.message.timestamp
+    );
+  }
+);
 
-      {isSentByMe && (
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-blue-100 flex items-center justify-center text-white text-xs font-bold self-end ml-2">
-          {user?.name?.charAt(0)?.toUpperCase() || "M"}
-        </div>
-      )}
-    </div>
-  );
-};
-
+ChatMessage.displayName = "ChatMessage";
 export default ChatMessage;
