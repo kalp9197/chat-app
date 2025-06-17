@@ -6,9 +6,11 @@ export const getAllGroups = async () => {
   return response.data.data || [];
 };
 
-// Get a specific group by UUID
-export const getGroupByUuid = async (uuid) => {
-  const response = await axios.get(`/groups/${uuid}`);
+// Get a specific group by UUID with pagination
+export const getGroupByUuid = async (uuid, page = 0, limit = 10) => {
+  const response = await axios.get(`/groups/${uuid}`, {
+    params: { page, limit }
+  });
   return response.data.data;
 };
 

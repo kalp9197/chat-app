@@ -242,12 +242,14 @@ export const sendMessageToGroup = async (groupId, message, senderId) => {
   });
 };
 
-export const getGroupMessages = async (groupId) => {
+export const getGroupMessages = async (groupId, limit, offset) => {
   return prisma.message.findMany({
     where: { group_id: groupId },
     include: {
       sender: { select: { uuid: true, name: true, email: true } },
     },
-    orderBy: { created_at: "asc" },
+    orderBy: { created_at: "desc" },
+    skip: offset,
+    take: limit,
   });
 };

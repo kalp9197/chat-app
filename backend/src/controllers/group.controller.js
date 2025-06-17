@@ -43,11 +43,25 @@ export const getAllGroups = async (req, res) => {
 
 export const getGroupByUuid = async (req, res) => {
   try {
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 0;
+    const offset = page * limit;
     const data = await groupService.getGroupByUuid(
       req.params.uuid,
-      req.user.id
+      req.user.id,
+      limit,
+      offset
     );
-    return res.status(HTTP_STATUS.OK).json({ data });
+    return res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data,
+      pagination: {
+        total: data.totalCount,
+        page,
+        limit,
+        hasMore: offset + data.messages.length < data.totalCount,
+      },
+    });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
     if (error instanceof ApiError) {

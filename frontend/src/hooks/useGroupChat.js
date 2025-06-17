@@ -4,6 +4,8 @@ import { listenForNotifications } from "@/services/notificationService";
 import * as groupService from "@/services/groupService";
 import { sendMessage as sendMessageService } from "@/services/messageService";
 
+const MESSAGES_PER_PAGE = 10;
+
 const formatMessages = (rawMessages) =>
   rawMessages.map((m) => ({
     id: m.id || m.uuid || `msg-${Date.now()}-${Math.random()}`,
@@ -22,6 +24,9 @@ export const useGroupChat = create((set, get) => ({
   messages: [],
   activeGroup: null,
   loading: false,
+  loadingMore: false,
+  currentPage: 0,
+  hasMoreMessages: true,
   error: null,
   notificationUnsubscribe: null,
 
@@ -69,9 +74,14 @@ export const useGroupChat = create((set, get) => ({
     if (!groupUuid) return;
     set({ loading: true, error: null });
     try {
-      const data = await groupService.getGroupByUuid(groupUuid);
+      const data = await groupService.getGroupByUuid(groupUuid, 0, MESSAGES_PER_PAGE);
       const formatted = formatMessages(data.messages || []);
-      set({ messages: formatted, loading: false });
+      set({ 
+        messages: formatted, 
+        loading: false,
+        currentPage: 0,
+        hasMoreMessages: data.pagination?.hasMore ?? true
+      });
     } catch (error) {
       console.error("Failed to fetch group messages:", error);
       set({
@@ -85,9 +95,14 @@ export const useGroupChat = create((set, get) => ({
   fetchLatestMessages: async (groupUuid) => {
     if (!groupUuid) return;
     try {
-      const data = await groupService.getGroupByUuid(groupUuid);
+      // Always fetch first page for latest messages
+      const data = await groupService.getGroupByUuid(groupUuid, 0, MESSAGES_PER_PAGE);
       const formatted = formatMessages(data.messages || []);
-      set({ messages: formatted });
+      set({ 
+        messages: formatted,
+        currentPage: 0,
+        hasMoreMessages: data.pagination?.hasMore ?? true
+      });
     } catch (error) {
       console.error("Failed to fetch latest messages:", error);
     }
@@ -136,6 +151,42 @@ export const useGroupChat = create((set, get) => ({
     }
   },
 
+  // Load more messages for pagination
+  loadMoreMessages: async (groupUuid) => {
+    const { currentPage, hasMoreMessages, loadingMore, messages } = get();
+    if (!groupUuid || !hasMoreMessages || loadingMore) return 0;
+
+    set({ loadingMore: true, error: null });
+    
+    try {
+      const nextPage = currentPage + 1;
+      const data = await groupService.getGroupByUuid(groupUuid, nextPage, MESSAGES_PER_PAGE);
+      const newMessages = formatMessages(data.messages || []);
+      
+      // Combine and deduplicate messages
+      const allMessages = [...newMessages, ...messages];
+      const uniqueMessages = allMessages.filter((message, index, self) => 
+        index === self.findIndex((m) => m.id === message.id)
+      );
+
+      set({
+        messages: uniqueMessages,
+        loadingMore: false,
+        currentPage: nextPage,
+        hasMoreMessages: data.pagination?.hasMore ?? false,
+      });
+      
+      return newMessages.length; // Return number of new messages loaded
+    } catch (error) {
+      console.error("Failed to load more messages:", error);
+      set({
+        error: error.message || "Failed to load more messages",
+        loadingMore: false,
+      });
+      return 0;
+    }
+  },
+
   // Clear messages
   clearMessages: () => {
     set({ messages: [] });
@@ -149,8 +200,11 @@ export const useGroupChat = create((set, get) => ({
       messages: [],
       activeGroup: null,
       loading: false,
+      loadingMore: false,
       error: null,
       notificationUnsubscribe: null,
+      currentPage: 0,
+      hasMoreMessages: true,
     });
   },
 }));

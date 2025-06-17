@@ -29,7 +29,6 @@ const Chat = ({ chatId }) => {
 
   //eslint-disable-next-line
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [isAtBottom, setIsAtBottom] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
@@ -77,12 +76,37 @@ const Chat = ({ chatId }) => {
     const { scrollTop, scrollHeight, clientHeight } = container;
 
     setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
-    setIsAtBottom(scrollHeight - scrollTop - clientHeight < 50);
 
     if (scrollTop === 0 && hasMoreMessages && !isLoadingMore && !loading) {
-      handleLoadMore();
+      const loadMore = async () => {
+        if (loadMoreTimeoutRef.current) {
+          clearTimeout(loadMoreTimeoutRef.current);
+        }
+
+        setIsLoadingMore(true);
+        const heightBefore = container.scrollHeight;
+        const scrollTopBefore = container.scrollTop;
+
+        try {
+          await loadMoreMessages(chatId);
+
+          loadMoreTimeoutRef.current = setTimeout(() => {
+            if (container) {
+              const heightAfter = container.scrollHeight;
+              const heightDiff = heightAfter - heightBefore;
+              container.scrollTop = scrollTopBefore + heightDiff;
+            }
+            setIsLoadingMore(false);
+          }, 100);
+        } catch (error) {
+          console.error("Error loading more messages:", error);
+          setIsLoadingMore(false);
+        }
+      };
+
+      loadMore();
     }
-  }, [hasMoreMessages, isLoadingMore, loading]);
+  }, [hasMoreMessages, isLoadingMore, loading, loadMoreMessages, chatId]);
 
   const scrollToBottom = useCallback((smooth = true) => {
     if (!messagesEndRef.current) return;
@@ -110,41 +134,7 @@ const Chat = ({ chatId }) => {
     [user?.uuid, chatId, sendMessage, scrollToBottom]
   );
 
-  const handleLoadMore = useCallback(async () => {
-    if (
-      !hasMoreMessages ||
-      isLoadingMore ||
-      !messageContainerRef.current ||
-      loading
-    ) {
-      return;
-    }
 
-    if (loadMoreTimeoutRef.current) {
-      clearTimeout(loadMoreTimeoutRef.current);
-    }
-
-    setIsLoadingMore(true);
-    const container = messageContainerRef.current;
-    const heightBefore = container.scrollHeight;
-    const scrollTopBefore = container.scrollTop;
-
-    try {
-      await loadMoreMessages(chatId);
-
-      loadMoreTimeoutRef.current = setTimeout(() => {
-        if (container) {
-          const heightAfter = container.scrollHeight;
-          const heightDiff = heightAfter - heightBefore;
-          container.scrollTop = scrollTopBefore + heightDiff;
-        }
-        setIsLoadingMore(false);
-      }, 100);
-    } catch (error) {
-      console.error("Error loading more messages:", error);
-      setIsLoadingMore(false);
-    }
-  }, [hasMoreMessages, isLoadingMore, loadMoreMessages, chatId, loading]);
 
   // ------------------- MAIN FIX IS IN THIS EFFECT -------------------
   useEffect(() => {
@@ -184,8 +174,9 @@ const Chat = ({ chatId }) => {
     return () => {
       if (chatChanged) {
         cleanupNotifications();
-        if (loadMoreTimeoutRef.current) {
-          clearTimeout(loadMoreTimeoutRef.current);
+        const timeoutRef = loadMoreTimeoutRef.current;
+        if (timeoutRef) {
+          clearTimeout(timeoutRef);
         }
       }
     };
@@ -226,9 +217,10 @@ const Chat = ({ chatId }) => {
   ]);
 
   useEffect(() => {
+    const timeoutRef = loadMoreTimeoutRef.current;
     return () => {
-      if (loadMoreTimeoutRef.current) {
-        clearTimeout(loadMoreTimeoutRef.current);
+      if (timeoutRef) {
+        clearTimeout(timeoutRef);
       }
     };
   }, []);
@@ -245,8 +237,8 @@ const Chat = ({ chatId }) => {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
         <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2" />
-          <p className="text-gray-600">Loading chat...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-200 border-t-blue-500 mx-auto mb-2" />
+          <p className="text-gray-600">Loading messages...</p>
         </div>
       </div>
     );
@@ -276,34 +268,17 @@ const Chat = ({ chatId }) => {
         style={{ scrollBehavior: "auto" }}
       >
         <div className="max-w-3xl mx-auto">
-          <div className="space-y-1">
-            {hasMoreMessages && hasInitialized && !isAtBottom && (
-              <div className="flex justify-center py-4 sticky top-0 z-10">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  className={`px-6 py-3 rounded-full bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-lg border border-gray-200 transition-all duration-200 ${
-                    isLoadingMore
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:shadow-xl"
-                  }`}
-                >
-                  {isLoadingMore ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
-                      Loading...
-                    </div>
-                  ) : (
-                    "Load More Messages"
-                  )}
-                </button>
+          <div className="space-y-3">
+            {isLoadingMore && (
+              <div className="flex justify-center py-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-200 border-t-blue-500" />
               </div>
             )}
-
             {sortedMessages.map((message, index) => (
-              <ChatMessage key={`${message.id}-${index}`} message={message} />
+              <div key={`${message.id}-${index}`} id={`message-${message.id}`}>
+                <ChatMessage message={message} />
+              </div>
             ))}
-
             <div ref={messagesEndRef} />
           </div>
         </div>

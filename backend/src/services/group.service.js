@@ -31,9 +31,13 @@ export const getAllGroupsForUser = async (userId) => {
   return groupRepository.findGroupsForUser(userId);
 };
 
-export const getGroupByUuid = async (groupUuid, userId) => {
+export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
   const group = await groupRepository.findGroupByUuid(groupUuid, userId);
-  const messages = await groupRepository.getGroupMessages(group.id);
+  const messages = await groupRepository.getGroupMessages(
+    group.id,
+    limit,
+    offset
+  );
 
   if (!group)
     throw new ApiError(
@@ -41,7 +45,12 @@ export const getGroupByUuid = async (groupUuid, userId) => {
       HTTP_STATUS.NOT_FOUND
     );
 
-  return { ...group, memberCount: group.memberships.length, messages };
+  return {
+    ...group,
+    memberCount: group.memberships.length,
+    messages: messages.reverse(),
+    totalCount: messages.length,
+  };
 };
 
 export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
