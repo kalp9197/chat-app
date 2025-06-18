@@ -4,14 +4,14 @@ import {
   groupRepository,
 } from "../repositories/index.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { apiError } from "../utils/apiError.js";
 
 const sendDirectMessage = async (messageData) => {
   const receiver = await directMessageRepository.findUserByUuid(
     messageData.receiver_uuid
   );
   if (!receiver) {
-    throw new ApiError("Receiver not found", HTTP_STATUS.NOT_FOUND);
+    throw new apiError("Receiver not found", HTTP_STATUS.NOT_FOUND);
   }
 
   const message = await directMessageRepository.createMessage({
@@ -31,7 +31,7 @@ const sendMessageToGroup = async (messageData) => {
     messageData.sender_id
   );
   if (!group)
-    throw new ApiError(
+    throw new apiError(
       "Group not found or access denied",
       HTTP_STATUS.NOT_FOUND
     );
@@ -79,7 +79,7 @@ export const sendMessage = async (messageData) => {
     } else if (messageData.receiver_uuid) {
       return await sendDirectMessage(messageData);
     } else {
-      throw new ApiError(
+      throw new apiError(
         "Missing receiver_uuid or group_uuid",
         HTTP_STATUS.BAD_REQUEST
       );
@@ -101,7 +101,7 @@ export const getDirectMessages = async (
       await directMessageRepository.findUserByUuid(receiver_uuid);
 
     if (!receiver) {
-      throw new ApiError("Receiver not found", HTTP_STATUS.NOT_FOUND);
+      throw new apiError("Receiver not found", HTTP_STATUS.NOT_FOUND);
     }
 
     const messages = await directMessageRepository.findMessages(

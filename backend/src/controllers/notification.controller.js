@@ -1,6 +1,6 @@
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 import * as notificationService from "../services/notification.service.js";
-import { ApiError } from "../utils/apiError.js";
+import { apiError } from "../utils/apiError.js";
 
 export const saveUserToken = async (req, res) => {
   try {
@@ -22,7 +22,7 @@ export const saveUserToken = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof ApiError) {
+    if (error instanceof apiError) {
       statusCode = error.statusCode;
     }
 
@@ -65,7 +65,7 @@ export const sendTestNotification = async (req, res) => {
     }
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof ApiError) {
+    if (error instanceof apiError) {
       statusCode = error.statusCode;
     }
 

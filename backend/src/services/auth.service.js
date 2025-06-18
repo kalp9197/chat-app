@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import { authRepository } from "../repositories/index.js";
 import { JWT_SECRET } from "../constants/env.js";
-import { ApiError } from "../utils/apiError.js";
+import { apiError } from "../utils/apiError.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
 export const hashPassword = async (password) => {
@@ -25,7 +25,7 @@ export const createUser = async (userData) => {
       uuid: uuidv4(),
     });
   } catch {
-    throw new ApiError("Failed to create user", HTTP_STATUS.BAD_REQUEST);
+    throw new apiError("Failed to create user", HTTP_STATUS.BAD_REQUEST);
   }
 };
 

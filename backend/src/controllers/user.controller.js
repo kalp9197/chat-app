@@ -1,6 +1,6 @@
 import * as userService from "../services/user.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { apiError } from "../utils/apiError.js";
 
 export const getUsers = async (req, res) => {
   try {
@@ -13,7 +13,7 @@ export const getUsers = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof ApiError) {
+    if (error instanceof apiError) {
       statusCode = error.statusCode;
     }
 
