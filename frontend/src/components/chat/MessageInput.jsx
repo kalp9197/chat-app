@@ -70,7 +70,8 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
     const handleClickOutside = (e) => {
       if (
         emojiPickerRef.current &&
-        !emojiPickerRef.current.contains(e.target)
+        !emojiPickerRef.current.contains(e.target) &&
+        !e.target.closest(".emoji-trigger")
       ) {
         setShowEmojiPicker(false);
       }
@@ -108,9 +109,35 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
   };
 
   const handleEmojiSelect = (emoji) => {
-    setMessage((msg) => msg + (emoji.native || ""));
+    const emojiChar = emoji.native || "";
+    setMessage((prev) => prev + emojiChar);
+
+    if (inputRef.current) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(inputRef.current);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      const node = document.createTextNode(emojiChar);
+      range.insertNode(node);
+
+      range.setStartAfter(node);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      const event = new Event("input", { bubbles: true });
+      inputRef.current.dispatchEvent(event);
+    }
+
     setShowEmojiPicker(false);
     inputRef.current?.focus();
+  };
+
+  const handleInput = (e) => {
+    setMessage(e.currentTarget.textContent || "");
   };
 
   const formatFileSize = (bytes) => {
@@ -178,7 +205,7 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
 
             <button
               type="button"
-              className={`text-gray-500 p-1.5 rounded-full hover:bg-yellow-50 ${
+              className={`emoji-trigger text-gray-500 p-1.5 rounded-full hover:bg-yellow-50 ${
                 showEmojiPicker
                   ? "text-yellow-500 bg-yellow-50"
                   : "hover:text-yellow-500"
@@ -194,7 +221,7 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
               <div
                 ref={inputRef}
                 contentEditable
-                onInput={(e) => setMessage(e.currentTarget.textContent || "")}
+                onInput={handleInput}
                 onKeyDown={handleKeyDown}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
