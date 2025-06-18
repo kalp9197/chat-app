@@ -1,6 +1,6 @@
 import { userRepository } from "../repositories/index.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 export const getAllUsers = async (currentUserId) => {
   try {

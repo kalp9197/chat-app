@@ -1,6 +1,6 @@
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 import * as notificationService from "../services/notification.service.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 export const saveUserToken = async (req, res) => {
   try {

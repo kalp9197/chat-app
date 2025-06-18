@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import { authRepository } from "../repositories/index.js";
 import { JWT_SECRET } from "../constants/env.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 
 export const hashPassword = async (password) => {

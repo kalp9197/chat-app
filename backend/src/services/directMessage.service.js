@@ -4,7 +4,7 @@ import {
   groupRepository,
 } from "../repositories/index.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 const sendDirectMessage = async (messageData) => {
   const receiver = await directMessageRepository.findUserByUuid(

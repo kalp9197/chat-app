@@ -1,6 +1,6 @@
 import * as authService from "../services/auth.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 export const register = async (req, res) => {
   try {

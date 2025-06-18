@@ -1,6 +1,6 @@
 import * as groupService from "../services/group.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 export const createGroup = async (req, res) => {
   try {

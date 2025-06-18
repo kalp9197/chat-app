@@ -1,7 +1,7 @@
 import { notificationRepository } from "../repositories/index.js";
 import { messaging } from "../config/firebase.config.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 export const saveFcmToken = async (userId, fcmToken) => {
   try {

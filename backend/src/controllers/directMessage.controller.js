@@ -1,6 +1,6 @@
 import * as directMessageService from "../services/directMessage.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 export const sendMessage = async (req, res) => {
   try {

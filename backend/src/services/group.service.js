@@ -1,6 +1,6 @@
 import { groupRepository } from "../repositories/index.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 export const createGroup = async (name, creatorId, members = []) => {
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);

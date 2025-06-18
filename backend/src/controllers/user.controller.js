@@ -1,6 +1,6 @@
 import * as userService from "../services/user.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from "../errors/apiError.js";
 
 export const getUsers = async (req, res) => {
   try {
