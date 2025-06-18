@@ -1,14 +1,14 @@
 import { notificationRepository } from "../repositories/index.js";
 import { messaging } from "../config/firebase.config.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { apiError } from "../utils/apiError.js";
+import { ApiError } from "../utils/apiError.js";
 
 export const saveFcmToken = async (userId, fcmToken) => {
   try {
     await notificationRepository.updateUserFcmToken(userId, fcmToken);
     return true;
   } catch {
-    throw new apiError(
+    throw new ApiError(
       "Error saving FCM token",
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
@@ -47,7 +47,7 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
     await messaging.send(message);
     return true;
   } catch {
-    throw new apiError(
+    throw new ApiError(
       "Error sending notification",
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
@@ -76,7 +76,7 @@ export const sendNewMessageNotification = async (message) => {
 
     return await sendNotification(message.receiver_id, title, body, data);
   } catch {
-    throw new apiError(
+    throw new ApiError(
       "Error sending new message notification",
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );

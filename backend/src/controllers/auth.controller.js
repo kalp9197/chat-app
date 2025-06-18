@@ -1,6 +1,6 @@
 import * as authService from "../services/auth.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { apiError } from "../utils/apiError.js";
+import { ApiError } from "../utils/apiError.js";
 
 export const register = async (req, res) => {
   try {
@@ -24,7 +24,7 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
@@ -68,7 +68,7 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
@@ -95,7 +95,7 @@ export const checkAuth = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 

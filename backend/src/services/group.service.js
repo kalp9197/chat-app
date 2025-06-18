@@ -1,6 +1,6 @@
 import { groupRepository } from "../repositories/index.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { apiError } from "../utils/apiError.js";
+import { ApiError } from "../utils/apiError.js";
 
 export const createGroup = async (name, creatorId, members = []) => {
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
@@ -40,7 +40,7 @@ export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
   );
 
   if (!group)
-    throw new apiError(
+    throw new ApiError(
       "Group not found or access denied",
       HTTP_STATUS.NOT_FOUND
     );
@@ -60,7 +60,7 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
   );
 
   if (!group) {
-    throw new apiError(
+    throw new ApiError(
       "Group not found or admin access required",
       HTTP_STATUS.NOT_FOUND
     );
@@ -142,7 +142,7 @@ export const deleteGroupByUuid = async (groupUuid, requesterId) => {
   );
 
   if (!group) {
-    throw new apiError(
+    throw new ApiError(
       "Group not found or admin access required",
       HTTP_STATUS.NOT_FOUND
     );
@@ -164,7 +164,7 @@ export const addMembersToGroup = async (
   );
 
   if (!group) {
-    throw new apiError(
+    throw new ApiError(
       "Group not found or admin access required",
       HTTP_STATUS.NOT_FOUND
     );

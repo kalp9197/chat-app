@@ -1,6 +1,6 @@
 import * as directMessageService from "../services/directMessage.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { apiError } from "../utils/apiError.js";
+import { ApiError } from "../utils/apiError.js";
 
 export const sendMessage = async (req, res) => {
   try {
@@ -24,7 +24,7 @@ export const sendMessage = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
@@ -62,7 +62,7 @@ export const getMessagesBetweenUsers = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 

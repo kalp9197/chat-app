@@ -1,6 +1,6 @@
 import * as groupService from "../services/group.service.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { apiError } from "../utils/apiError.js";
+import { ApiError } from "../utils/apiError.js";
 
 export const createGroup = async (req, res) => {
   try {
@@ -13,7 +13,7 @@ export const createGroup = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
@@ -30,7 +30,7 @@ export const getAllGroups = async (req, res) => {
     return res.status(HTTP_STATUS.OK).json({ data });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
@@ -64,7 +64,7 @@ export const getGroupByUuid = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
@@ -89,7 +89,7 @@ export const updateGroupByUuid = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
@@ -109,7 +109,7 @@ export const deleteGroupByUuid = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
@@ -134,7 +134,7 @@ export const addGroupMembers = async (req, res) => {
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    if (error instanceof apiError) {
+    if (error instanceof ApiError) {
       statusCode = error.statusCode;
     }
 
