@@ -5,6 +5,13 @@ import {
 } from "../repositories/index.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 import { ApiError } from "../errors/apiError.js";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PUBLIC_DIR = path.join(__dirname, "../../public");
 
 const sendDirectMessage = async (messageData) => {
   const receiver = await directMessageRepository.findUserByUuid(
@@ -19,6 +26,7 @@ const sendDirectMessage = async (messageData) => {
     receiver_id: receiver.id,
     content: messageData.content,
     message_type: messageData.message_type || "text",
+    file_path: messageData.file_path,
   });
 
   await notificationService.sendNewMessageNotification(message);
@@ -41,6 +49,7 @@ const sendMessageToGroup = async (messageData) => {
     {
       content: messageData.content,
       message_type: messageData.message_type,
+      file_path: messageData.file_path,
     },
     messageData.sender_id
   );
@@ -116,8 +125,34 @@ export const getDirectMessages = async (
       receiver.id
     );
 
+    const processedMessages = await Promise.all(
+      messages.map(async (message) => {
+        if (message.message_type === "file") {
+          const content = JSON.parse(message.content);
+          if (content.filePath) {
+            try {
+              const fullPath = path.join(PUBLIC_DIR, content.filePath);
+              const fileData = await fs.readFile(fullPath);
+              content.data = fileData.toString("base64");
+              // Remove filePath from the response
+              delete content.filePath;
+            } catch (err) {
+              console.error(
+                `Failed to read file for message ${message.id}: ${err.message}`
+              );
+              content.data = null;
+              content.error = "File not found";
+              // Remove filePath from the response even on error
+              delete content.filePath;
+            }
+          }
+          return { ...message, content };
+        }
+        return message;
+      })
+    );
     return {
-      messages: messages.reverse(),
+      messages: processedMessages.reverse(),
       totalCount,
     };
   } catch (error) {

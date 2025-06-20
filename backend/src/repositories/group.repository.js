@@ -228,13 +228,14 @@ export const bulkUserOperations = async (userUuids) => {
 };
 
 export const sendMessageToGroup = async (groupId, message, senderId) => {
-  const { content, message_type = "text" } = message;
+  const { content, message_type = "text", file_path } = message;
   return prisma.message.create({
     data: {
       group_id: groupId,
       content,
       message_type,
       sender_id: senderId,
+      file_path,
     },
     include: {
       sender: { select: { id: true, uuid: true, name: true } },
@@ -245,7 +246,12 @@ export const sendMessageToGroup = async (groupId, message, senderId) => {
 export const getGroupMessages = async (groupId, limit, offset) => {
   return prisma.message.findMany({
     where: { group_id: groupId },
-    include: {
+    select: {
+      id: true,
+      content: true,
+      created_at: true,
+      message_type: true,
+      file_path: true,
       sender: { select: { uuid: true, name: true, email: true } },
     },
     orderBy: { created_at: "desc" },

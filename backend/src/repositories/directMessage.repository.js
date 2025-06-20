@@ -44,7 +44,11 @@ export const findMessages = async (
     },
     skip: offset,
     take: limit,
-    include: {
+    select: {
+      id: true,
+      content: true,
+      created_at: true,
+      message_type: true,
       sender: {
         select: { id: true, uuid: true, name: true },
       },

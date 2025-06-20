@@ -1,6 +1,13 @@
 import { groupRepository } from "../repositories/index.js";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 import { ApiError } from "../errors/apiError.js";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PUBLIC_DIR = path.join(__dirname, "../../public");
 
 export const createGroup = async (name, creatorId, members = []) => {
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
@@ -33,11 +40,6 @@ export const getAllGroupsForUser = async (userId) => {
 
 export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
   const group = await groupRepository.findGroupByUuid(groupUuid, userId);
-  const messages = await groupRepository.getGroupMessages(
-    group.id,
-    limit,
-    offset
-  );
 
   if (!group)
     throw new ApiError(
@@ -45,11 +47,42 @@ export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
       HTTP_STATUS.NOT_FOUND
     );
 
+  const messages = await groupRepository.getGroupMessages(
+    group.id,
+    limit,
+    offset
+  );
+
+  const processedMessages = await Promise.all(
+    messages.map(async (message) => {
+      if (message.message_type === "file" && message.file_path) {
+        try {
+          const filePath = path.join(PUBLIC_DIR, message.file_path);
+          const fileData = await fs.readFile(filePath);
+          const base64Data = fileData.toString("base64");
+
+          const content = JSON.parse(message.content);
+          content.data = base64Data;
+
+          return { ...message, content };
+        } catch (err) {
+          console.error(
+            `Failed to read file for message ${message.id}: ${err.message}`
+          );
+          const content = JSON.parse(message.content);
+          content.data = null;
+          content.error = "File not found";
+          return { ...message, content };
+        }
+      }
+      return message;
+    })
+  );
+
   return {
     ...group,
     memberCount: group.memberships.length,
-    messages: messages.reverse(),
-    totalCount: messages.length,
+    messages: processedMessages.reverse(),
   };
 };
 

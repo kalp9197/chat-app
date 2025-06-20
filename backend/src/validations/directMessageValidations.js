@@ -19,11 +19,7 @@ export const validateSendMessage = [
     }
     return true;
   }),
-  body("content")
-    .notEmpty()
-    .withMessage("Content is required")
-    .isString()
-    .withMessage("Content must be a string"),
+  body("content").notEmpty().withMessage("Content is required"),
   body("message_type")
     .optional()
     .isString()
@@ -36,7 +32,6 @@ export const validateGetMessages = [
   param("receiver_uuid")
     .notEmpty()
     .withMessage("Receiver UUID is required")
-    .isUUID(4)
     .withMessage("Receiver UUID must be a valid UUID"),
 ];
 
@@ -44,6 +39,5 @@ export const validateMessageOwnership = [
   param("receiver_uuid")
     .notEmpty()
     .withMessage("Receiver UUID is required")
-    .isUUID(4)
     .withMessage("Receiver UUID must be a valid UUID"),
 ];

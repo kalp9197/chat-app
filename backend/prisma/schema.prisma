@@ -7,15 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum MessageType {
-  text
-  image
-  file
-}
-
 enum GroupRole {
   admin
   member
+}
+
+enum MessageType {
+  text
+  file
 }
 
 model User {

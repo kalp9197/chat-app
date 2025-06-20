@@ -14,13 +14,11 @@ export const register = async (req, res) => {
       });
     }
 
-    const user = await authService.createUser({ name, email, password });
-    const { password: _, ...userWithoutPassword } = user;
+    await authService.createUser({ name, email, password });
 
     return res.status(HTTP_STATUS.CREATED).json({
       message: "User registered successfully",
       success: true,
-      data: { user: userWithoutPassword },
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
@@ -59,12 +57,14 @@ export const login = async (req, res) => {
     }
 
     const token = authService.generateToken({ id: user.id, email: user.email });
-    const { password: _, ...userWithoutPassword } = user;
 
     return res.status(HTTP_STATUS.OK).json({
       message: "Login successful",
       success: true,
-      data: { user: userWithoutPassword, token },
+      data: {
+        user: { name: user.name, email: user.email, uuid: user.uuid },
+        token,
+      },
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
@@ -91,7 +91,7 @@ export const checkAuth = async (req, res) => {
     return res.status(HTTP_STATUS.OK).json({
       message: "User authenticated successfully",
       success: true,
-      data: { user },
+      data: { user: { name: user.name, email: user.email, uuid: user.uuid } },
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
