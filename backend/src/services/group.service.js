@@ -40,7 +40,15 @@ export const getAllGroupsForUser = async (userId) => {
 
 export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
   const group = await groupRepository.findGroupByUuid(groupUuid, userId);
-  const messages = await groupRepository.getGroupMessages(
+
+  if (!group) {
+    throw new ApiError(
+      "Group not found or you are not a member of this group",
+      HTTP_STATUS.NOT_FOUND
+    );
+  }
+
+  const { messages, totalCount } = await groupRepository.getGroupMessages(
     group.id,
     limit,
     offset
@@ -91,6 +99,7 @@ export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
     ...group,
     memberCount: group.memberships.length,
     messages: processedMessages.reverse(),
+    totalCount,
   };
 };
 

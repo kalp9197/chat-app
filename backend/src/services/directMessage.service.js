@@ -113,16 +113,11 @@ export const getDirectMessages = async (
       throw new ApiError("Receiver not found", HTTP_STATUS.NOT_FOUND);
     }
 
-    const messages = await directMessageRepository.findMessages(
+    const { messages, totalCount } = await directMessageRepository.findMessages(
       sender_id,
       receiver.id,
       limit,
       offset
-    );
-
-    const totalCount = await directMessageRepository.countMessages(
-      sender_id,
-      receiver.id
     );
 
     const processedMessages = await Promise.all(

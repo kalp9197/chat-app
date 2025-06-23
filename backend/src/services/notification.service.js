@@ -56,9 +56,9 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
 
 export const sendNewMessageNotification = async (message) => {
   try {
-    const sender = await notificationRepository.findUserWithName(
-      message.sender_id
-    );
+    const sender =
+      message.sender ||
+      (await notificationRepository.findUserWithName(message.sender_id));
 
     const title = `New message from ${sender.name}`;
     const body =

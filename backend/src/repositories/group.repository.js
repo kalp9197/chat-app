@@ -69,12 +69,6 @@ export const findGroupByUuid = async (groupUuid, userId) => {
           user: { select: { uuid: true, name: true, email: true } },
         },
       },
-      messages: {
-        orderBy: { created_at: "asc" },
-        include: {
-          sender: { select: { uuid: true, name: true, email: true } },
-        },
-      },
     },
   });
 };
@@ -244,17 +238,24 @@ export const sendMessageToGroup = async (groupId, message, senderId) => {
 };
 
 export const getGroupMessages = async (groupId, limit, offset) => {
-  return prisma.message.findMany({
-    where: { group_id: groupId },
-    select: {
-      id: true,
-      content: true,
-      created_at: true,
-      message_type: true,
-      sender: { select: { uuid: true, name: true, email: true } },
-    },
-    orderBy: { created_at: "desc" },
-    skip: offset,
-    take: limit,
-  });
+  const whereClause = { group_id: groupId };
+
+  const [messages, totalCount] = await prisma.$transaction([
+    prisma.message.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        content: true,
+        created_at: true,
+        message_type: true,
+        sender: { select: { uuid: true, name: true, email: true } },
+      },
+      orderBy: { created_at: "desc" },
+      skip: offset,
+      take: limit,
+    }),
+    prisma.message.count({ where: whereClause }),
+  ]);
+
+  return { messages, totalCount };
 };

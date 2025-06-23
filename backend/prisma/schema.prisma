@@ -59,6 +59,8 @@ model GroupMembership {
   group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, group_id])
+  @@index([user_id])
+  @@index([group_id, role])
   @@map("GroupMembership")
 }
 
@@ -77,5 +79,8 @@ model Message {
   receiver User?  @relation("MessagesReceived", fields: [receiver_id], references: [id], onDelete: Cascade)
   group    Group? @relation("GroupMessages", fields: [group_id], references: [id], onDelete: Cascade)
 
+  @@index([created_at])
+  @@index([sender_id, receiver_id, created_at(sort: Desc)])
+  @@index([group_id, created_at(sort: Desc)])
   @@map("Message")
 }

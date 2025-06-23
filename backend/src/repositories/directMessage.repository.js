@@ -32,42 +32,36 @@ export const findMessages = async (
   limit = 10,
   offset = 0
 ) => {
-  const messages = await prisma.message.findMany({
-    where: {
-      OR: [
-        { sender_id: senderId, receiver_id: receiverId },
-        { sender_id: receiverId, receiver_id: senderId },
-      ],
-    },
-    orderBy: {
-      created_at: "desc",
-    },
-    skip: offset,
-    take: limit,
-    select: {
-      id: true,
-      content: true,
-      created_at: true,
-      message_type: true,
-      sender: {
-        select: { id: true, uuid: true, name: true },
-      },
-      receiver: {
-        select: { id: true, uuid: true, name: true },
-      },
-    },
-  });
+  const whereClause = {
+    OR: [
+      { sender_id: senderId, receiver_id: receiverId },
+      { sender_id: receiverId, receiver_id: senderId },
+    ],
+  };
 
-  return messages;
-};
+  const [messages, totalCount] = await prisma.$transaction([
+    prisma.message.findMany({
+      where: whereClause,
+      orderBy: {
+        created_at: "desc",
+      },
+      skip: offset,
+      take: limit,
+      select: {
+        id: true,
+        content: true,
+        created_at: true,
+        message_type: true,
+        sender: {
+          select: { id: true, uuid: true, name: true },
+        },
+        receiver: {
+          select: { id: true, uuid: true, name: true },
+        },
+      },
+    }),
+    prisma.message.count({ where: whereClause }),
+  ]);
 
-export const countMessages = async (senderId, receiverId) => {
-  return prisma.message.count({
-    where: {
-      OR: [
-        { sender_id: senderId, receiver_id: receiverId },
-        { sender_id: receiverId, receiver_id: senderId },
-      ],
-    },
-  });
+  return { messages, totalCount };
 };
