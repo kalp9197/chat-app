@@ -3,28 +3,7 @@ import { useGroups } from "@/hooks/useGroups";
 import { Button } from "@/components/ui/button";
 import { motion as Motion } from "framer-motion";
 
-const MemberRow = ({ member, removeMode, onToggleRemove, onRoleChange }) => (
-  <li className="flex items-center gap-2 px-3 py-2 border-b last:border-none">
-    {removeMode && (
-      <input
-        type="checkbox"
-        checked={member.remove}
-        onChange={(e) => onToggleRemove(member.uuid, e.target.checked)}
-      />
-    )}
-    <span className="flex-1">{member.name}</span>
-    {!member.remove && (
-      <select
-        className="border rounded px-1 py-0.5 text-xs"
-        value={member.newRole}
-        onChange={(e) => onRoleChange(member.uuid, e.target.value)}
-      >
-        <option value="member">Member</option>
-        <option value="admin">Admin</option>
-      </select>
-    )}
-  </li>
-);
+
 
 const EditGroupModal = ({ group, onClose }) => {
   const { updateGroup } = useGroups();
@@ -135,13 +114,26 @@ const EditGroupModal = ({ group, onClose }) => {
           <div className="mb-4 max-h-60 overflow-y-auto border rounded">
             <ul>
               {members.map((member) => (
-                <MemberRow
-                  key={member.uuid}
-                  member={{ ...member, newRole: member.newRole }}
-                  removeMode={removeMode}
-                  onToggleRemove={handleToggleRemove}
-                  onRoleChange={handleRoleChange}
-                />
+                <li key={member.uuid} className="flex items-center gap-2 px-3 py-2 border-b last:border-none">
+                  {removeMode && (
+                    <input
+                      type="checkbox"
+                      checked={member.remove}
+                      onChange={(e) => handleToggleRemove(member.uuid, e.target.checked)}
+                    />
+                  )}
+                  <span className="flex-1">{member.name}</span>
+                  {!member.remove && (
+                    <select
+                      className="border rounded px-1 py-0.5 text-xs"
+                      value={member.newRole}
+                      onChange={(e) => handleRoleChange(member.uuid, e.target.value)}
+                    >
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  )}
+                </li>
               ))}
             </ul>
           </div>

@@ -4,26 +4,7 @@ import { motion as Motion } from "framer-motion";
 import { getAllUsers } from "@/services/userService";
 import { useGroups } from "@/hooks/useGroups";
 
-const UserRow = ({ user, selected, onToggle, onRoleChange }) => (
-  <li className="px-3 py-2 flex items-center gap-2">
-    <input
-      type="checkbox"
-      checked={selected}
-      onChange={(e) => onToggle(user, e.target.checked)}
-    />
-    <span className="flex-1">{user.name}</span>
-    {selected && (
-      <select
-        className="border rounded px-1 py-0.5 text-xs"
-        value={user.role || "member"}
-        onChange={(e) => onRoleChange(user.uuid, e.target.value)}
-      >
-        <option value="member">Member</option>
-        <option value="admin">Admin</option>
-      </select>
-    )}
-  </li>
-);
+
 
 const AddMembersModal = ({ groupUuid, existingMembers = [], onClose }) => {
   const { addMembers } = useGroups();
@@ -105,13 +86,24 @@ const AddMembersModal = ({ groupUuid, existingMembers = [], onClose }) => {
                   (u) => u.uuid === user.uuid
                 );
                 return (
-                  <UserRow
-                    key={user.uuid}
-                    user={{ ...user, role: selected?.role || "member" }}
-                    selected={!!selected}
-                    onToggle={handleToggle}
-                    onRoleChange={handleRoleChange}
-                  />
+                  <li key={user.uuid} className="px-3 py-2 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={!!selected}
+                      onChange={(e) => handleToggle(user, e.target.checked)}
+                    />
+                    <span className="flex-1">{user.name}</span>
+                    {selected && (
+                      <select
+                        className="border rounded px-1 py-0.5 text-xs"
+                        value={selected.role || "member"}
+                        onChange={(e) => handleRoleChange(user.uuid, e.target.value)}
+                      >
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    )}
+                  </li>
                 );
               })}
             </ul>

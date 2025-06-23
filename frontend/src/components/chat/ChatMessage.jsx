@@ -11,126 +11,6 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import PdfViewerModal from "./PdfViewerModal";
 
-const FileMessage = ({ content, isSentByMe }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  if (!content || typeof content !== "object") {
-    return <div className="text-sm text-red-500">Invalid file message</div>;
-  }
-
-  const { data, fileName, type, error } = content;
-
-  if (error) {
-    return <div className="text-sm text-red-500">Error: {error}</div>;
-  }
-
-  const isImage = type && type.startsWith("image/");
-  const isPdf = type === "application/pdf";
-
-  const handleDownload = (e) => {
-    e.stopPropagation();
-    if (!data) return;
-    const byteCharacters = atob(data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  if (isImage && data) {
-    return (
-      <img
-        src={`data:${type};base64,${data}`}
-        alt={fileName}
-        className="max-w-xs max-h-64 rounded-lg object-contain cursor-pointer"
-        onClick={handleDownload}
-        title={`Click to download ${fileName}`}
-      />
-    );
-  }
-
-  if (isPdf && data) {
-    return (
-      <>
-        <div
-          className={`flex items-center gap-2 p-2 rounded-lg min-w-[200px] cursor-pointer ${
-            isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"
-          }`}
-          onClick={() => setIsModalOpen(true)}
-        >
-          <FileIcon
-            className={`w-6 h-6 ${isSentByMe ? "text-white" : "text-blue-500"}`}
-          />
-          <div className="flex-1 overflow-hidden">
-            <p
-              className={`text-sm font-medium truncate ${isSentByMe ? "text-white" : "text-gray-800"}`}
-            >
-              {fileName || "PDF Document"}
-            </p>
-            <p className="text-xs text-gray-400">PDF Document</p>
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDownload(e);
-            }}
-            className={`p-1.5 rounded-full transition-colors ${
-              isSentByMe ? "hover:bg-blue-600" : "hover:bg-gray-100"
-            }`}
-          >
-            <Download
-              className={`w-4 h-4 ${isSentByMe ? "text-white" : "text-gray-700"}`}
-            />
-          </button>
-        </div>
-        {isModalOpen && (
-          <PdfViewerModal
-            pdfData={data}
-            fileName={fileName}
-            onClose={() => setIsModalOpen(false)}
-          />
-        )}
-      </>
-    );
-  }
-
-  return (
-    <div
-      className={`flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"}`}
-    >
-      <FileIcon
-        className={`w-6 h-6 ${isSentByMe ? "text-blue-50" : "text-blue-500"}`}
-      />
-      <div className="flex-1 overflow-hidden">
-        <p
-          className={`text-sm font-medium truncate ${isSentByMe ? "text-gray-900" : "text-gray-800"}`}
-        >
-          {fileName || "File"}
-        </p>
-      </div>
-      {data && (
-        <button
-          onClick={handleDownload}
-          className={`p-1.5 rounded-full transition-colors ${isSentByMe ? "hover:bg-blue-600" : "hover:bg-gray-100"}`}
-        >
-          <Download
-            className={`w-4 h-4 ${isSentByMe ? "text-gray-900" : "text-gray-700"}`}
-          />
-        </button>
-      )}
-    </div>
-  );
-};
 
 const ChatMessage = React.memo(
   ({ message }) => {
@@ -169,6 +49,117 @@ const ChatMessage = React.memo(
 
     const [showTimestamp, setShowTimestamp] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+
+    // --- File message rendering logic ---
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const handleDownload = (e, content) => {
+      e.stopPropagation();
+      if (!content.data) return;
+      const byteCharacters = atob(content.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: content.type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = content.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+    function renderFileMessage(content, isSentByMe) {
+      if (!content || typeof content !== "object") {
+        return <div className="text-sm text-red-500">Invalid file message</div>;
+      }
+      const { data, fileName, type, error } = content;
+      if (error) {
+        return <div className="text-sm text-red-500">Error: {error}</div>;
+      }
+      const isImage = type && type.startsWith("image/");
+      const isPdf = type === "application/pdf";
+      if (isImage && data) {
+        return (
+          <img
+            src={`data:${type};base64,${data}`}
+            alt={fileName}
+            className="max-w-xs max-h-64 rounded-lg object-contain cursor-pointer"
+            onClick={(e) => handleDownload(e, content)}
+            title={`Click to download ${fileName}`}
+          />
+        );
+      }
+      if (isPdf && data) {
+        return (
+          <>
+            <div
+              className={`flex items-center gap-2 p-2 rounded-lg min-w-[200px] cursor-pointer ${
+                isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"
+              }`}
+              onClick={() => setIsModalOpen(true)}
+            >
+              <FileIcon
+                className={`w-6 h-6 ${isSentByMe ? "text-white" : "text-blue-500"}`}
+              />
+              <div className="flex-1 overflow-hidden">
+                <p
+                  className={`text-sm font-medium truncate ${isSentByMe ? "text-white" : "text-gray-800"}`}
+                >
+                  {fileName || "PDF Document"}
+                </p>
+                <p className="text-xs text-gray-400">PDF Document</p>
+              </div>
+              <button
+                onClick={(e) => handleDownload(e, content)}
+                className={`p-1.5 rounded-full transition-colors ${
+                  isSentByMe ? "hover:bg-blue-600" : "hover:bg-gray-100"
+                }`}
+              >
+                <Download
+                  className={`w-4 h-4 ${isSentByMe ? "text-white" : "text-gray-700"}`}
+                />
+              </button>
+            </div>
+            {isModalOpen && (
+              <PdfViewerModal
+                pdfData={data}
+                fileName={fileName}
+                onClose={() => setIsModalOpen(false)}
+              />
+            )}
+          </>
+        );
+      }
+      return (
+        <div
+          className={`flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"}`}
+        >
+          <FileIcon
+            className={`w-6 h-6 ${isSentByMe ? "text-blue-50" : "text-blue-500"}`}
+          />
+          <div className="flex-1 overflow-hidden">
+            <p
+              className={`text-sm font-medium truncate ${isSentByMe ? "text-gray-900" : "text-gray-800"}`}
+            >
+              {fileName || "File"}
+            </p>
+          </div>
+          {data && (
+            <button
+              onClick={(e) => handleDownload(e, content)}
+              className={`p-1.5 rounded-full transition-colors ${isSentByMe ? "hover:bg-blue-600" : "hover:bg-gray-100"}`}
+            >
+              <Download
+                className={`w-4 h-4 ${isSentByMe ? "text-gray-900" : "text-gray-700"}`}
+              />
+            </button>
+          )}
+        </div>
+      );
+    }
 
     const statusIcon = useMemo(() => {
       if (message.isPending)
@@ -250,7 +241,7 @@ const ChatMessage = React.memo(
             )}
             <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
               {messageType === "file" ? (
-                <FileMessage content={messageContent} isSentByMe={isSentByMe} />
+                renderFileMessage(messageContent, isSentByMe)
               ) : typeof messageContent === "string" ? (
                 messageContent
               ) : null}

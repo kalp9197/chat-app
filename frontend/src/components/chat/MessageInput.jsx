@@ -3,24 +3,6 @@ import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { Smile, Paperclip, Send, Image, File, X } from "lucide-react";
 
-function EmojiPickerErrorBoundary({ children }) {
-  const [hasError] = useState(false);
-  return hasError ? (
-    <div className="bg-rose-50 text-rose-600 p-2 rounded text-sm text-center">
-      Failed to load emoji picker.
-    </div>
-  ) : (
-    <React.Suspense
-      fallback={
-        <div className="bg-blue-50 text-blue-500 p-2 rounded text-sm text-center animate-pulse">
-          Loading...
-        </div>
-      }
-    >
-      {children}
-    </React.Suspense>
-  );
-}
 
 const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
   const [message, setMessage] = useState("");
@@ -270,7 +252,13 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
             className="absolute bottom-2 left-0 right-0 z-10 shadow-lg mx-2"
           >
             <div className="bg-white rounded-lg border border-gray-200 shadow overflow-hidden">
-              <EmojiPickerErrorBoundary>
+              <React.Suspense
+                fallback={
+                  <div className="bg-blue-50 text-blue-500 p-2 rounded text-sm text-center animate-pulse">
+                    Loading...
+                  </div>
+                }
+              >
                 <Picker
                   data={data}
                   onEmojiSelect={handleEmojiSelect}
@@ -281,7 +269,7 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
                   skinTonePosition="search"
                   emojiSize={18}
                 />
-              </EmojiPickerErrorBoundary>
+              </React.Suspense>
             </div>
           </div>
         )}
