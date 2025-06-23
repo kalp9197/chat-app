@@ -9,8 +9,11 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import PdfViewerModal from "./PdfViewerModal";
 
 const FileMessage = ({ content, isSentByMe }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   if (!content || typeof content !== "object") {
     return <div className="text-sm text-red-500">Invalid file message</div>;
   }
@@ -22,8 +25,10 @@ const FileMessage = ({ content, isSentByMe }) => {
   }
 
   const isImage = type && type.startsWith("image/");
+  const isPdf = type === "application/pdf";
 
-  const handleDownload = () => {
+  const handleDownload = (e) => {
+    e.stopPropagation();
     if (!data) return;
     const byteCharacters = atob(data);
     const byteNumbers = new Array(byteCharacters.length);
@@ -51,6 +56,51 @@ const FileMessage = ({ content, isSentByMe }) => {
         onClick={handleDownload}
         title={`Click to download ${fileName}`}
       />
+    );
+  }
+
+  if (isPdf && data) {
+    return (
+      <>
+        <div
+          className={`flex items-center gap-2 p-2 rounded-lg min-w-[200px] cursor-pointer ${
+            isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"
+          }`}
+          onClick={() => setIsModalOpen(true)}
+        >
+          <FileIcon
+            className={`w-6 h-6 ${isSentByMe ? "text-white" : "text-blue-500"}`}
+          />
+          <div className="flex-1 overflow-hidden">
+            <p
+              className={`text-sm font-medium truncate ${isSentByMe ? "text-white" : "text-gray-800"}`}
+            >
+              {fileName || "PDF Document"}
+            </p>
+            <p className="text-xs text-gray-400">PDF Document</p>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload(e);
+            }}
+            className={`p-1.5 rounded-full transition-colors ${
+              isSentByMe ? "hover:bg-blue-600" : "hover:bg-gray-100"
+            }`}
+          >
+            <Download
+              className={`w-4 h-4 ${isSentByMe ? "text-white" : "text-gray-700"}`}
+            />
+          </button>
+        </div>
+        {isModalOpen && (
+          <PdfViewerModal
+            pdfData={data}
+            fileName={fileName}
+            onClose={() => setIsModalOpen(false)}
+          />
+        )}
+      </>
     );
   }
 
