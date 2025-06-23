@@ -125,9 +125,14 @@ const GroupChat = ({ group }) => {
     }, 1000);
   }, []);
 
-  const handleSendMessage = async (text) => {
-    if (!text.trim()) return;
-    await sendMessage(text.trim());
+  const handleSendMessage = async (message) => {
+    const isFile = typeof message === "object" && message.file;
+    const text = isFile ? message.text : message;
+
+    if (!isFile && !text.trim()) {
+      return;
+    }
+    await sendMessage(message);
   };
 
   // Cleanup on unmount

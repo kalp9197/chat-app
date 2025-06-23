@@ -2,15 +2,25 @@ import { create } from "zustand";
 import { useAuth } from "./useAuth";
 import { listenForNotifications } from "@/services/notificationService";
 import * as groupService from "@/services/groupService";
+import { uploadFileAndSend } from "@/services/uploadService";
 import { sendMessage as sendMessageService } from "@/services/messageService";
+
+// Helper for preview
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = (error) => reject(error);
+  });
 
 const MESSAGES_PER_PAGE = 10;
 
 const formatMessages = (rawMessages) =>
   rawMessages.map((m) => ({
     id: m.id || m.uuid || `msg-${Date.now()}-${Math.random()}`,
-    text: m.content || m.text || "",
-    content: m.content || m.text || "",
+    content: m.content,
+    message_type: m.message_type,
     sender: m.sender || {
       uuid: m.sender_uuid,
       name: m.sender_name,
@@ -117,44 +127,81 @@ export const useGroupChat = create((set, get) => ({
   },
 
   // Send a message to the group with optimistic update
-  sendMessage: async (content) => {
-    const { activeGroup, messages } = get();
+  sendMessage: async (message) => {
+    const { activeGroup } = get();
     const user = useAuth.getState().user;
-    if (!content.trim() || !activeGroup || !user) return;
+    if (!activeGroup || !user) return;
+
+    const isFileMessage = typeof message === "object" && message.file;
+    const textContent = isFileMessage ? message.text : message;
+    const file = isFileMessage ? message.file : null;
+
+    if (!file && !textContent.trim()) return;
 
     const tempId = `temp-${Date.now()}`;
+    let tempContent;
+    if (isFileMessage) {
+      // Add preview for sender
+      const previewData = await fileToBase64(file);
+      tempContent = { fileName: file.name, type: file.type, data: previewData };
+    } else {
+      tempContent = textContent.trim();
+    }
     const tempMessage = {
       id: tempId,
-      text: content.trim(),
-      content: content.trim(),
+      content: tempContent,
+      message_type: isFileMessage ? "file" : "text",
       sender: { uuid: user.uuid, name: user.name },
       senderName: user.name,
       timestamp: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       isPending: true,
     };
 
     // Optimistic update
-    set({ messages: [...messages, tempMessage] });
+    set((state) => ({ messages: [...state.messages, tempMessage] }));
 
     try {
-      const serverMessage = await sendMessageService(
-        "group",
-        activeGroup.uuid,
-        content.trim()
-      );
+      let serverMessage;
+      if (isFileMessage) {
+        serverMessage = await uploadFileAndSend(
+          file,
+          "group",
+          activeGroup.uuid
+        );
+      } else {
+        serverMessage = await sendMessageService(
+          "group",
+          activeGroup.uuid,
+          textContent.trim()
+        );
+      }
 
       set((state) => ({
         messages: state.messages.map((m) =>
-          m.id === tempId ? formatMessages([serverMessage])[0] : m
+          m.id === tempId
+            ? {
+                ...m,
+                ...formatMessages([serverMessage])[0],
+                isPending: false,
+                // Preserve preview data for sender if backend doesn't include it
+                content:
+                  serverMessage.message_type === "file" &&
+                  m.content &&
+                  m.content.data &&
+                  (!serverMessage.content || !serverMessage.content.data)
+                    ? { ...serverMessage.content, data: m.content.data }
+                    : serverMessage.content,
+              }
+            : m
         ),
       }));
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error("Error sending message:", error);
       set((state) => ({
         messages: state.messages.map((m) =>
           m.id === tempId ? { ...m, isPending: false, failed: true } : m
         ),
-        error: error.message,
       }));
     }
   },

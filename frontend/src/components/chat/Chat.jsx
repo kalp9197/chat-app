@@ -124,14 +124,19 @@ const Chat = ({ chatId }) => {
 
   const handleSendMessage = useCallback(
     async (message) => {
-      if (!user?.uuid || !chatId || !message.trim()) return;
+      if (!user?.uuid || !chatId) return;
+
+      const isFile = typeof message === "object" && message.file;
+      const text = isFile ? message.text : message;
+
+      if (!isFile && !text.trim()) {
+        return;
+      }
 
       setShouldScrollToBottom(true);
       await sendMessage(message, chatId);
-
-      setTimeout(() => scrollToBottom(false), 100);
     },
-    [user?.uuid, chatId, sendMessage, scrollToBottom]
+    [user?.uuid, chatId, sendMessage]
   );
 
   // ------------------- MAIN FIX IS IN THIS EFFECT -------------------

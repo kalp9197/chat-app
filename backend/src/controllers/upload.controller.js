@@ -1,17 +1,20 @@
-// Handles file upload requests
 import * as uploadService from "../services/upload.service.js";
 import * as directMessageService from "../services/directMessage.service.js";
+import path from "path";
 import { HTTP_STATUS } from "../constants/statusCodes.js";
 import { ApiError } from "../errors/apiError.js";
 
 export const uploadFile = async (req, res) => {
   try {
-    const { data, type, fileName, receiver_uuid, group_uuid } = req.body;
+    let { data, type, fileName, receiver_uuid, group_uuid } = req.body;
     const sender_id = req.user.id;
+
+    const ext = path.extname(fileName);
+    const fileExtension = ext ? ext.substring(1) : type.split("/")[1] || "bin";
 
     const uniqueFileName = await uploadService.saveBase64File(
       data,
-      type,
+      fileExtension,
       fileName
     );
 
@@ -30,6 +33,7 @@ export const uploadFile = async (req, res) => {
     const message = await directMessageService.sendMessage(messageData);
     message.content = JSON.parse(message.content);
     delete message.content.filePath;
+
     return res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: "File uploaded and message sent successfully",
@@ -40,8 +44,9 @@ export const uploadFile = async (req, res) => {
       error instanceof ApiError
         ? error.statusCode
         : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    return res
-      .status(statusCode)
-      .json({ success: false, message: error.message });
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

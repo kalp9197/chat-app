@@ -62,6 +62,15 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
     setAttachedFile(null);
   };
 
+  // Function to clear the input content
+  const clearInput = () => {
+    setMessage("");
+    if (inputRef.current) {
+      inputRef.current.textContent = "";
+      inputRef.current.innerHTML = "";
+    }
+  };
+
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -89,9 +98,11 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
       const messageToSend = attachedFile?.file
         ? { text: message, file: attachedFile.file }
         : message;
+
       await onSendMessage(messageToSend);
 
-      setMessage("");
+      // Clear both state and DOM content
+      clearInput();
       removeAttachment();
       inputRef.current?.focus();
     } catch (error) {
@@ -110,26 +121,20 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
 
   const handleEmojiSelect = (emoji) => {
     const emojiChar = emoji.native || "";
-    setMessage((prev) => prev + emojiChar);
+    const newMessage = message + emojiChar;
+    setMessage(newMessage);
 
     if (inputRef.current) {
-      const selection = window.getSelection();
+      // Update the contentEditable div content
+      inputRef.current.textContent = newMessage;
+
+      // Set cursor to end
       const range = document.createRange();
+      const selection = window.getSelection();
       range.selectNodeContents(inputRef.current);
       range.collapse(false);
       selection.removeAllRanges();
       selection.addRange(range);
-
-      const node = document.createTextNode(emojiChar);
-      range.insertNode(node);
-
-      range.setStartAfter(node);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      const event = new Event("input", { bubbles: true });
-      inputRef.current.dispatchEvent(event);
     }
 
     setShowEmojiPicker(false);
@@ -137,7 +142,8 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
   };
 
   const handleInput = (e) => {
-    setMessage(e.currentTarget.textContent || "");
+    const content = e.currentTarget.textContent || "";
+    setMessage(content);
   };
 
   const formatFileSize = (bytes) => {
@@ -225,8 +231,9 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
                 onKeyDown={handleKeyDown}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
-                placeholder="Type a message..."
-                className="max-h-32 min-h-[32px] py-1.5 px-2 bg-transparent w-full focus:outline-none overflow-y-auto resize-none text-gray-700 placeholder-gray-400 text-sm"
+                suppressContentEditableWarning={true}
+                className="max-h-32 min-h-[32px] py-1.5 px-2 bg-transparent w-full focus:outline-none overflow-y-auto resize-none text-gray-700 text-sm empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
+                data-placeholder="Type a message..."
                 style={{
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",

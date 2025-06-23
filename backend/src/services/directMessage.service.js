@@ -128,7 +128,21 @@ export const getDirectMessages = async (
     const processedMessages = await Promise.all(
       messages.map(async (message) => {
         if (message.message_type === "file") {
-          const content = JSON.parse(message.content);
+          let content;
+          try {
+            content = JSON.parse(message.content);
+          } catch (e) {
+            console.error(
+              `Failed to parse message content for message ${message.id}: ${e.message}`
+            );
+            return {
+              ...message,
+              content: {
+                fileName: "Invalid File",
+                error: "Corrupted message data",
+              },
+            };
+          }
           if (content.filePath) {
             try {
               const fullPath = path.join(PUBLIC_DIR, content.filePath);

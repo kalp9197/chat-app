@@ -4,10 +4,83 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  Image as ImageIcon,
+  Download,
+  File as FileIcon,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+
+const FileMessage = ({ content, isSentByMe }) => {
+  if (!content || typeof content !== "object") {
+    return <div className="text-sm text-red-500">Invalid file message</div>;
+  }
+
+  const { data, fileName, type, error } = content;
+
+  if (error) {
+    return <div className="text-sm text-red-500">Error: {error}</div>;
+  }
+
+  const isImage = type && type.startsWith("image/");
+
+  const handleDownload = () => {
+    if (!data) return;
+    const byteCharacters = atob(data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  if (isImage && data) {
+    return (
+      <img
+        src={`data:${type};base64,${data}`}
+        alt={fileName}
+        className="max-w-xs max-h-64 rounded-lg object-contain cursor-pointer"
+        onClick={handleDownload}
+        title={`Click to download ${fileName}`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"}`}
+    >
+      <FileIcon
+        className={`w-6 h-6 ${isSentByMe ? "text-blue-50" : "text-blue-500"}`}
+      />
+      <div className="flex-1 overflow-hidden">
+        <p
+          className={`text-sm font-medium truncate ${isSentByMe ? "text-gray-900" : "text-gray-800"}`}
+        >
+          {fileName || "File"}
+        </p>
+      </div>
+      {data && (
+        <button
+          onClick={handleDownload}
+          className={`p-1.5 rounded-full transition-colors ${isSentByMe ? "hover:bg-blue-600" : "hover:bg-gray-100"}`}
+        >
+          <Download
+            className={`w-4 h-4 ${isSentByMe ? "text-gray-900" : "text-gray-700"}`}
+          />
+        </button>
+      )}
+    </div>
+  );
+};
 
 const ChatMessage = React.memo(
   ({ message }) => {
@@ -26,7 +99,10 @@ const ChatMessage = React.memo(
             minute: "2-digit",
           })
         : "";
-      const messageText = message.text || message.content || "";
+      const messageContent = message.content;
+      const messageType =
+        message.message_type ||
+        (typeof messageContent === "string" ? "text" : "file");
       const senderInitial = isSentByMe
         ? (user.name?.charAt(0) || "M").toUpperCase()
         : (senderName.charAt(0) || "?").toUpperCase();
@@ -35,7 +111,8 @@ const ChatMessage = React.memo(
         isSentByMe,
         senderName,
         formattedTime,
-        messageText,
+        messageContent,
+        messageType,
         senderInitial,
       };
     }, [message, user]);
@@ -75,8 +152,9 @@ const ChatMessage = React.memo(
       isSentByMe,
       senderName,
       formattedTime,
-      messageText,
+      messageContent,
       senderInitial,
+      messageType,
     } = messageData;
 
     return (
@@ -121,7 +199,11 @@ const ChatMessage = React.memo(
               </div>
             )}
             <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-              {messageText}
+              {messageType === "file" ? (
+                <FileMessage content={messageContent} isSentByMe={isSentByMe} />
+              ) : typeof messageContent === "string" ? (
+                messageContent
+              ) : null}
             </div>
           </div>
 
@@ -151,8 +233,8 @@ const ChatMessage = React.memo(
       prevProps.message.id === nextProps.message.id &&
       prevProps.message.isPending === nextProps.message.isPending &&
       prevProps.message.failed === nextProps.message.failed &&
-      prevProps.message.text === nextProps.message.text &&
       prevProps.message.content === nextProps.message.content &&
+      prevProps.message.message_type === nextProps.message.message_type &&
       prevProps.message.timestamp === nextProps.message.timestamp
     );
   }

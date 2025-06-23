@@ -40,13 +40,6 @@ export const getAllGroupsForUser = async (userId) => {
 
 export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
   const group = await groupRepository.findGroupByUuid(groupUuid, userId);
-
-  if (!group)
-    throw new ApiError(
-      "Group not found or access denied",
-      HTTP_STATUS.NOT_FOUND
-    );
-
   const messages = await groupRepository.getGroupMessages(
     group.id,
     limit,
@@ -55,25 +48,40 @@ export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
 
   const processedMessages = await Promise.all(
     messages.map(async (message) => {
-      if (message.message_type === "file" && message.file_path) {
+      if (message.message_type === "file") {
+        let content;
         try {
-          const filePath = path.join(PUBLIC_DIR, message.file_path);
-          const fileData = await fs.readFile(filePath);
-          const base64Data = fileData.toString("base64");
-
-          const content = JSON.parse(message.content);
-          content.data = base64Data;
-
-          return { ...message, content };
-        } catch (err) {
+          content = JSON.parse(message.content);
+        } catch (parseError) {
           console.error(
-            `Failed to read file for message ${message.id}: ${err.message}`
+            `Failed to parse message content for message ${message.id}: ${parseError.message}`
           );
-          const content = JSON.parse(message.content);
-          content.data = null;
-          content.error = "File not found";
-          return { ...message, content };
+          return {
+            ...message,
+            content: {
+              fileName: "Invalid File",
+              error: "Corrupted message data",
+            },
+          };
         }
+
+        if (content && content.filePath) {
+          try {
+            const filePath = path.join(PUBLIC_DIR, content.filePath);
+            const fileData = await fs.readFile(filePath);
+            const base64Data = fileData.toString("base64");
+            content.data = base64Data;
+            delete content.filePath;
+          } catch (err) {
+            console.error(
+              `Failed to read file for message ${message.id}: ${err.message}`
+            );
+            content.data = null;
+            content.error = "File not found";
+            delete content.filePath;
+          }
+        }
+        return { ...message, content };
       }
       return message;
     })

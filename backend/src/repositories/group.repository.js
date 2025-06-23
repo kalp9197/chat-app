@@ -251,7 +251,6 @@ export const getGroupMessages = async (groupId, limit, offset) => {
       content: true,
       created_at: true,
       message_type: true,
-      file_path: true,
       sender: { select: { uuid: true, name: true, email: true } },
     },
     orderBy: { created_at: "desc" },

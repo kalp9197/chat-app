@@ -3,12 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { listenForNotifications } from "@/services/notificationService";
 import { motion as Motion } from "framer-motion";
 import { useChat } from "@/hooks/useChat";
+import { useGroupChat } from "@/hooks/useGroupChat";
+import { useGroups } from "@/hooks/useGroups";
 
 const NotificationBanner = () => {
   const [notifications, setNotifications] = useState([]);
   const [currentNotification, setCurrentNotification] = useState(null);
   const navigate = useNavigate();
   const { fetchChats, fetchMessages } = useChat();
+  const { fetchLatestMessages: fetchGroupMessages } = useGroupChat();
+  const { fetchGroups } = useGroups();
 
   // Show next notification in queue
   useEffect(() => {
@@ -18,7 +22,32 @@ const NotificationBanner = () => {
     }
   }, [notifications, currentNotification]);
 
-  // Handle incoming notification
+  // Helper to make notification body user-friendly for file messages
+  function getNotificationText(data, body) {
+    let messageType = data?.message_type;
+
+    // Try to parse message_type from data.body if not directly available
+    if (!messageType && data?.body) {
+      try {
+        const parsed = JSON.parse(data.body);
+        messageType = parsed.message_type;
+      } catch {
+        // pass
+      }
+    }
+
+    // Check if it's a file message by looking for file patterns in the body
+    const isFileMessage =
+      messageType === "file" ||
+      (body && (body.includes("fileName") || body.includes("filePath")));
+
+    if (isFileMessage) {
+      return "New File Received";
+    }
+
+    return body || "New message received";
+  }
+
   const handleNotification = useCallback(
     (payload) => {
       if (!payload) return;
@@ -26,8 +55,11 @@ const NotificationBanner = () => {
         payload.notification?.title ||
         payload.data?.title ||
         "New notification";
-      const body = payload.notification?.body || payload.data?.body || "";
       const data = payload.data || payload.notification?.data || {};
+      const body = getNotificationText(
+        data,
+        payload.notification?.body || payload.data?.body || ""
+      );
       const newNotification = {
         id: `notification-${Date.now()}`,
         title,
@@ -38,8 +70,17 @@ const NotificationBanner = () => {
 
       // For chat message notification, update data
       if (data.type === "chat_message") {
-        fetchChats();
-        if (data.chatId) fetchMessages(data.chatId);
+        const chatId = data.chatId;
+        if (chatId) {
+          if (chatId.startsWith("group-")) {
+            const groupUuid = chatId.replace("group-", "");
+            fetchGroupMessages(groupUuid);
+            fetchGroups();
+          } else {
+            fetchMessages(chatId);
+            fetchChats();
+          }
+        }
         newNotification.data.url = `/chat/${data.chatId}`;
       }
 
@@ -47,7 +88,13 @@ const NotificationBanner = () => {
         ? setNotifications((prev) => [...prev, newNotification])
         : setCurrentNotification({ ...newNotification, visible: true });
     },
-    [currentNotification, fetchChats, fetchMessages]
+    [
+      currentNotification,
+      fetchChats,
+      fetchMessages,
+      fetchGroupMessages,
+      fetchGroups,
+    ]
   );
 
   // Navigate on click
@@ -125,7 +172,7 @@ const NotificationBanner = () => {
           <p className="text-sm font-medium text-gray-900">
             {currentNotification.title}
           </p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 whitespace-pre-line">
             {currentNotification.body}
           </p>
         </div>
