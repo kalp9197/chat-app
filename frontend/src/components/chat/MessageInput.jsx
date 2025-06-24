@@ -3,7 +3,6 @@ import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { Smile, Paperclip, Send, Image, File, X } from "lucide-react";
 
-
 const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -187,7 +186,7 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
                 type="file"
                 className="hidden"
                 onChange={handleFileSelect}
-                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.ppt,.pptx,.zip"
               />
             </label>
 

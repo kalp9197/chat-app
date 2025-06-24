@@ -4,8 +4,6 @@ import { getAllUsers } from "@/services/userService";
 import { Button } from "@/components/ui/button";
 import { motion as Motion } from "framer-motion";
 
-
-
 const CreateGroupModal = ({ onClose }) => {
   const { createGroup } = useGroups();
   const [name, setName] = useState("");
@@ -99,7 +97,10 @@ const CreateGroupModal = ({ onClose }) => {
                   (u) => u.uuid === user.uuid
                 );
                 return (
-                  <li key={user.uuid} className="px-3 py-2 flex items-center gap-2">
+                  <li
+                    key={user.uuid}
+                    className="px-3 py-2 flex items-center gap-2"
+                  >
                     <input
                       type="checkbox"
                       checked={!!selected}
@@ -110,7 +111,9 @@ const CreateGroupModal = ({ onClose }) => {
                       <select
                         className="border rounded px-1 py-0.5 text-xs"
                         value={selected.role || "member"}
-                        onChange={(e) => handleRoleChange(user.uuid, e.target.value)}
+                        onChange={(e) =>
+                          handleRoleChange(user.uuid, e.target.value)
+                        }
                       >
                         <option value="member">Member</option>
                         <option value="admin">Admin</option>

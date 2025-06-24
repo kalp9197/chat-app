@@ -3,8 +3,6 @@ import { useGroups } from "@/hooks/useGroups";
 import { Button } from "@/components/ui/button";
 import { motion as Motion } from "framer-motion";
 
-
-
 const EditGroupModal = ({ group, onClose }) => {
   const { updateGroup } = useGroups();
   const [name, setName] = useState("");
@@ -114,12 +112,17 @@ const EditGroupModal = ({ group, onClose }) => {
           <div className="mb-4 max-h-60 overflow-y-auto border rounded">
             <ul>
               {members.map((member) => (
-                <li key={member.uuid} className="flex items-center gap-2 px-3 py-2 border-b last:border-none">
+                <li
+                  key={member.uuid}
+                  className="flex items-center gap-2 px-3 py-2 border-b last:border-none"
+                >
                   {removeMode && (
                     <input
                       type="checkbox"
                       checked={member.remove}
-                      onChange={(e) => handleToggleRemove(member.uuid, e.target.checked)}
+                      onChange={(e) =>
+                        handleToggleRemove(member.uuid, e.target.checked)
+                      }
                     />
                   )}
                   <span className="flex-1">{member.name}</span>
@@ -127,7 +130,9 @@ const EditGroupModal = ({ group, onClose }) => {
                     <select
                       className="border rounded px-1 py-0.5 text-xs"
                       value={member.newRole}
-                      onChange={(e) => handleRoleChange(member.uuid, e.target.value)}
+                      onChange={(e) =>
+                        handleRoleChange(member.uuid, e.target.value)
+                      }
                     >
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>

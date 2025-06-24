@@ -4,8 +4,6 @@ import { motion as Motion } from "framer-motion";
 import { getAllUsers } from "@/services/userService";
 import { useGroups } from "@/hooks/useGroups";
 
-
-
 const AddMembersModal = ({ groupUuid, existingMembers = [], onClose }) => {
   const { addMembers } = useGroups();
   const [allUsers, setAllUsers] = useState([]);
@@ -86,7 +84,10 @@ const AddMembersModal = ({ groupUuid, existingMembers = [], onClose }) => {
                   (u) => u.uuid === user.uuid
                 );
                 return (
-                  <li key={user.uuid} className="px-3 py-2 flex items-center gap-2">
+                  <li
+                    key={user.uuid}
+                    className="px-3 py-2 flex items-center gap-2"
+                  >
                     <input
                       type="checkbox"
                       checked={!!selected}
@@ -97,7 +98,9 @@ const AddMembersModal = ({ groupUuid, existingMembers = [], onClose }) => {
                       <select
                         className="border rounded px-1 py-0.5 text-xs"
                         value={selected.role || "member"}
-                        onChange={(e) => handleRoleChange(user.uuid, e.target.value)}
+                        onChange={(e) =>
+                          handleRoleChange(user.uuid, e.target.value)
+                        }
                       >
                         <option value="member">Member</option>
                         <option value="admin">Admin</option>

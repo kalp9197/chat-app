@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   CheckCircle2,
@@ -6,11 +6,33 @@ import {
   AlertCircle,
   Download,
   File as FileIcon,
+  MoreVertical,
+  X,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import PdfViewerModal from "./PdfViewerModal";
 
+const ImageViewerModal = ({ src, alt, onClose }) => (
+  <div
+    className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+    onClick={onClose}
+  >
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <img
+        src={src}
+        alt={alt}
+        className="max-h-[90vh] max-w-[90vw] object-contain"
+      />
+      <button
+        onClick={onClose}
+        className="absolute -top-2 -right-2 bg-white rounded-full p-1 text-black"
+      >
+        <X size={24} />
+      </button>
+    </div>
+  </div>
+);
 
 const ChatMessage = React.memo(
   ({ message }) => {
@@ -48,10 +70,10 @@ const ChatMessage = React.memo(
     }, [message, user]);
 
     const [showTimestamp, setShowTimestamp] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
 
     // --- File message rendering logic ---
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState(null);
     const handleDownload = (e, content) => {
       e.stopPropagation();
       if (!content.data) return;
@@ -75,7 +97,7 @@ const ChatMessage = React.memo(
       if (!content || typeof content !== "object") {
         return <div className="text-sm text-red-500">Invalid file message</div>;
       }
-      const { data, fileName, type, error } = content;
+      const { data, fileName, type, error, fileSize } = content;
       if (error) {
         return <div className="text-sm text-red-500">Error: {error}</div>;
       }
@@ -83,51 +105,80 @@ const ChatMessage = React.memo(
       const isPdf = type === "application/pdf";
       if (isImage && data) {
         return (
-          <img
-            src={`data:${type};base64,${data}`}
-            alt={fileName}
-            className="max-w-xs max-h-64 rounded-lg object-contain cursor-pointer"
-            onClick={(e) => handleDownload(e, content)}
-            title={`Click to download ${fileName}`}
-          />
+          <>
+            <div className="relative">
+              <img
+                src={`data:${type};base64,${data}`}
+                alt={fileName}
+                className="max-w-xs max-h-64 rounded-lg object-contain cursor-pointer"
+                onClick={() => {
+                  setModalContent("image");
+                  setIsModalOpen(true);
+                }}
+                title={`Click to view ${fileName}`}
+              />
+              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <MessageMenu
+                  onDownload={(e) => handleDownload(e, content)}
+                  isSentByMe={isSentByMe}
+                />
+              </div>
+            </div>
+            {isModalOpen && modalContent === "image" && (
+              <ImageViewerModal
+                src={`data:${type};base64,${data}`}
+                alt={fileName}
+                onClose={() => {
+                  setIsModalOpen(false);
+                  setModalContent(null);
+                }}
+              />
+            )}
+          </>
         );
       }
       if (isPdf && data) {
         return (
           <>
             <div
-              className={`flex items-center gap-2 p-2 rounded-lg min-w-[200px] cursor-pointer ${
+              className={`relative flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${
                 isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"
               }`}
-              onClick={() => setIsModalOpen(true)}
             >
-              <FileIcon
-                className={`w-6 h-6 ${isSentByMe ? "text-white" : "text-blue-500"}`}
-              />
-              <div className="flex-1 overflow-hidden">
-                <p
-                  className={`text-sm font-medium truncate ${isSentByMe ? "text-white" : "text-gray-800"}`}
-                >
-                  {fileName || "PDF Document"}
-                </p>
-                <p className="text-xs text-gray-400">PDF Document</p>
-              </div>
-              <button
-                onClick={(e) => handleDownload(e, content)}
-                className={`p-1.5 rounded-full transition-colors ${
-                  isSentByMe ? "hover:bg-blue-600" : "hover:bg-gray-100"
-                }`}
+              <div
+                className="flex items-center gap-2 flex-1 cursor-pointer"
+                onClick={() => {
+                  setModalContent("pdf");
+                  setIsModalOpen(true);
+                }}
               >
-                <Download
-                  className={`w-4 h-4 ${isSentByMe ? "text-white" : "text-gray-700"}`}
+                <FileIcon
+                  className={`w-6 h-6 ${isSentByMe ? "text-white" : "text-blue-500"}`}
                 />
-              </button>
+                <div className="flex-1 overflow-hidden">
+                  <p
+                    className={`text-sm font-medium truncate ${isSentByMe ? "text-white" : "text-gray-800"}`}
+                  >
+                    {fileName || "PDF Document"}
+                  </p>
+                  <p className="text-xs text-gray-400">PDF Document</p>
+                </div>
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <MessageMenu
+                  onDownload={(e) => handleDownload(e, content)}
+                  isSentByMe={isSentByMe}
+                />
+              </div>
             </div>
-            {isModalOpen && (
+            {isModalOpen && modalContent === "pdf" && (
               <PdfViewerModal
                 pdfData={data}
                 fileName={fileName}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => {
+                  setIsModalOpen(false);
+                  setModalContent(null);
+                }}
               />
             )}
           </>
@@ -135,27 +186,28 @@ const ChatMessage = React.memo(
       }
       return (
         <div
-          className={`flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"}`}
+          className={`relative flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"}`}
         >
           <FileIcon
             className={`w-6 h-6 ${isSentByMe ? "text-blue-50" : "text-blue-500"}`}
           />
           <div className="flex-1 overflow-hidden">
             <p
-              className={`text-sm font-medium truncate ${isSentByMe ? "text-gray-900" : "text-gray-800"}`}
+              className={`text-sm font-medium truncate ${isSentByMe ? "text-white" : "text-gray-800"}`}
             >
               {fileName || "File"}
             </p>
+            <p className="text-xs text-gray-400">
+              {fileSize ? `(${fileSize})` : ""}
+            </p>
           </div>
           {data && (
-            <button
-              onClick={(e) => handleDownload(e, content)}
-              className={`p-1.5 rounded-full transition-colors ${isSentByMe ? "hover:bg-blue-600" : "hover:bg-gray-100"}`}
-            >
-              <Download
-                className={`w-4 h-4 ${isSentByMe ? "text-gray-900" : "text-gray-700"}`}
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <MessageMenu
+                onDownload={(e) => handleDownload(e, content)}
+                isSentByMe={isSentByMe}
               />
-            </button>
+            </div>
           )}
         </div>
       );
@@ -198,15 +250,64 @@ const ChatMessage = React.memo(
       messageType,
     } = messageData;
 
+    const MessageMenu = ({ onDownload, isSentByMe }) => {
+      const [isOpen, setIsOpen] = useState(false);
+      const menuRef = useRef(null);
+
+      useEffect(() => {
+        const handleClickOutside = (event) => {
+          if (menuRef.current && !menuRef.current.contains(event.target)) {
+            setIsOpen(false);
+          }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+          document.removeEventListener("mousedown", handleClickOutside);
+        };
+      }, []);
+
+      return (
+        <div ref={menuRef} className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen((prev) => !prev);
+            }}
+            className="p-1 rounded-full hover:bg-black/10"
+          >
+            <MoreVertical
+              size={18}
+              className={isSentByMe ? "text-white" : "text-gray-500"}
+            />
+          </button>
+          {isOpen && (
+            <div className="absolute top-full right-0 mt-1 w-40 bg-white dark:bg-slate-800 rounded-md shadow-lg z-20 border border-gray-200 dark:border-slate-700">
+              <ul>
+                <li
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDownload(e);
+                    setIsOpen(false);
+                  }}
+                  className="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer"
+                >
+                  <Download size={14} className="mr-2" />
+                  Download
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    };
+
     return (
       <div
         className={cn(
           "group w-full flex mb-4 last:mb-2",
           isSentByMe ? "justify-end" : "justify-start"
         )}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={() => setShowTimestamp(!showTimestamp)}
+        onClick={() => setShowTimestamp((prev) => !prev)}
       >
         {!isSentByMe ? (
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white shadow-sm flex items-center justify-center text-white text-xs font-semibold self-start mt-1 mr-2 flex-shrink-0">
@@ -220,7 +321,7 @@ const ChatMessage = React.memo(
             className={cn(
               "text-xs text-gray-400 whitespace-nowrap transition-opacity duration-200 mb-1",
               isSentByMe ? "text-right pr-2" : "pl-2",
-              showTimestamp || isHovered ? "opacity-100" : "opacity-0"
+              showTimestamp ? "opacity-100" : "opacity-0"
             )}
           >
             {timeAgo}
@@ -240,11 +341,11 @@ const ChatMessage = React.memo(
               </div>
             )}
             <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-              {messageType === "file" ? (
-                renderFileMessage(messageContent, isSentByMe)
-              ) : typeof messageContent === "string" ? (
-                messageContent
-              ) : null}
+              {messageType === "file"
+                ? renderFileMessage(messageContent, isSentByMe)
+                : typeof messageContent === "string"
+                  ? messageContent
+                  : null}
             </div>
           </div>
 
