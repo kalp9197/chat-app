@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from "react";
-import { listenForNotifications } from "../services/notificationService";
-import { getMessagesBetweenUsers } from "../services/messageService";
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { listenForNotifications } from '../services/notificationService';
+import { getMessagesBetweenUsers } from '../services/messageService';
 
 export const useMessages = (chatId) => {
   const [messages, setMessages] = useState([]);
@@ -19,8 +19,8 @@ export const useMessages = (chatId) => {
         setMessages(
           messagesData.map((msg) => ({
             ...msg,
-            isMe: msg.sender_uuid === localStorage.getItem("userUuid"),
-          }))
+            isMe: msg.sender_uuid === localStorage.getItem('userUuid'),
+          })),
         );
       }
       setError(null);
@@ -37,10 +37,7 @@ export const useMessages = (chatId) => {
     fetchMessages();
 
     notificationUnsubscribeRef.current = listenForNotifications((payload) => {
-      if (
-        payload?.data?.type === "chat_message" &&
-        payload?.data?.chatId === chatId
-      ) {
+      if (payload?.data?.type === 'chat_message' && payload?.data?.chatId === chatId) {
         fetchMessages();
       }
     });

@@ -1,16 +1,14 @@
-import React from "react";
-import { ArrowDown } from "lucide-react";
+import React from 'react';
+import { ArrowDown } from 'lucide-react';
 
 const ChatHeader = ({ name, avatar, onScrollToBottom }) => {
   return (
     <div className="flex items-center p-3 border-b bg-white shadow-sm">
       <div className="flex items-center flex-grow">
         <div className="relative w-10 h-10 mr-3">
+          {/* User avatar */}
           <img
-            src={
-              avatar ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`
-            }
+            src={avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`}
             alt={`${name}'s avatar`}
             className="w-full h-full rounded-full object-cover border-2 border-gray-100 shadow-sm"
           />
@@ -20,7 +18,7 @@ const ChatHeader = ({ name, avatar, onScrollToBottom }) => {
         </div>
       </div>
 
-      {/* Keep only the scroll to bottom button */}
+      {/* Scroll to bottom button */}
       {onScrollToBottom && (
         <button
           onClick={onScrollToBottom}

@@ -1,33 +1,29 @@
-import axios from "@/lib/axios";
+import axios from '@/lib/axios';
 
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onload = () => resolve(reader.result.split(',')[1]);
     reader.onerror = reject;
   });
 
 const getFileType = (file) => {
-  if (file.type.startsWith("image/")) {
-    const extension = file.name.split(".").pop().toLowerCase();
-    return `image/${extension}`;
-  }
-
-  return `application/${file.name.split(".").pop().toLowerCase()}`;
+  if (file.type) return file.type;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') return 'application/pdf';
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  if (ext === 'png') return 'image/png';
+  return 'application/octet-stream';
 };
 
 export const uploadFileAndSend = async (file, chatType, chatId) => {
-  const base64Data = await fileToBase64(file);
-
-  const payload = {
-    data: base64Data,
-    type: getFileType(file),
-    fileName: file.name,
-    ...(chatType === "direct" && { receiver_uuid: chatId }),
-    ...(chatType === "group" && { group_uuid: chatId }),
-  };
-
-  const response = await axios.post("/upload", payload);
+  const data = await fileToBase64(file);
+  const type = getFileType(file);
+  const fileName = file.name;
+  const payload = { data, type, fileName };
+  if (chatType === 'direct') payload.receiver_uuid = chatId;
+  if (chatType === 'group') payload.group_uuid = chatId;
+  const response = await axios.post('/upload', payload);
   return response.data.data;
 };

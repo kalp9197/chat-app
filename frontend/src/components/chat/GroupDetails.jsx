@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { useGroups } from "@/hooks/useGroups";
-import { Button } from "@/components/ui/button";
-import EditGroupModal from "./EditGroupModal";
-import AddMembersModal from "./AddMembersModal";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { useState } from 'react';
+import { useGroups } from '@/hooks/useGroups';
+import { Button } from '@/components/ui/button';
+import EditGroupModal from './EditGroupModal';
+import AddMembersModal from './AddMembersModal';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 
 const GroupDetails = ({ group }) => {
   const [showEditModal, setShowEditModal] = useState(false);
@@ -12,7 +12,7 @@ const GroupDetails = ({ group }) => {
   const { deleteGroup } = useGroups();
 
   const handleDelete = async () => {
-    if (isDeleting || !confirm("Delete this group?")) return;
+    if (isDeleting || !confirm('Delete this group?')) return;
 
     setIsDeleting(true);
     try {
@@ -27,11 +27,7 @@ const GroupDetails = ({ group }) => {
   return (
     <div className="p-4 border-b flex justify-between items-center bg-white dark:bg-slate-800 shadow-sm">
       <div className="flex items-center gap-3">
-        <img
-          src={group.avatar}
-          alt={group.name}
-          className="w-10 h-10 rounded-full object-cover"
-        />
+        <img src={group.avatar} alt={group.name} className="w-10 h-10 rounded-full object-cover" />
         <div>
           <h2 className="font-semibold">{group.name}</h2>
           <p className="text-sm text-gray-500">{group.memberCount} members</p>
@@ -39,18 +35,10 @@ const GroupDetails = ({ group }) => {
       </div>
 
       <div className="flex gap-2">
-        <Button
-          onClick={() => setShowAddModal(true)}
-          variant="ghost"
-          size="icon"
-        >
+        <Button onClick={() => setShowAddModal(true)} variant="ghost" size="icon">
           <Plus className="h-4 w-4" />
         </Button>
-        <Button
-          onClick={() => setShowEditModal(true)}
-          variant="ghost"
-          size="icon"
-        >
+        <Button onClick={() => setShowEditModal(true)} variant="ghost" size="icon">
           <Pencil className="h-4 w-4" />
         </Button>
         <Button
@@ -64,9 +52,7 @@ const GroupDetails = ({ group }) => {
         </Button>
       </div>
 
-      {showEditModal && (
-        <EditGroupModal group={group} onClose={() => setShowEditModal(false)} />
-      )}
+      {showEditModal && <EditGroupModal group={group} onClose={() => setShowEditModal(false)} />}
       {showAddModal && (
         <AddMembersModal
           groupUuid={group.uuid}

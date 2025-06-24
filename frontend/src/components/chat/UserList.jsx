@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
-import { useChat } from "@/hooks/useChat";
-import EmptyState from "@/components/common/EmptyState";
+import React, { useEffect } from 'react';
+import { useChat } from '@/hooks/useChat';
+import EmptyState from '@/components/common/EmptyState';
 
 const UserList = ({ onSelectUser }) => {
   const { fetchAllUsers, users, loading, error } = useChat();
@@ -32,13 +32,8 @@ const UserList = ({ onSelectUser }) => {
   }
 
   if (!users || users.length === 0) {
-    return (
-      <EmptyState
-        message="No users found"
-        actionText="Refresh"
-        action={fetchAllUsers}
-      />
-    );
+    // Show empty state if no users
+    return <EmptyState message="No users found" actionText="Refresh" action={fetchAllUsers} />;
   }
 
   return (
@@ -53,21 +48,19 @@ const UserList = ({ onSelectUser }) => {
             <img
               src={
                 user.avatar ||
-                `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || "user"}`
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || 'user'}`
               }
-              alt={`${user.name || "User"}'s avatar`}
+              alt={`${user.name || 'User'}'s avatar`}
               className="w-full h-full rounded-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${user.name || "user"}`;
+                e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${user.name || 'user'}`;
               }}
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-medium">{user.name || "Unknown User"}</span>
-            {user.email && (
-              <span className="text-sm text-gray-500">{user.email}</span>
-            )}
+            <span className="font-medium">{user.name || 'Unknown User'}</span>
+            {user.email && <span className="text-sm text-gray-500">{user.email}</span>}
           </div>
         </li>
       ))}

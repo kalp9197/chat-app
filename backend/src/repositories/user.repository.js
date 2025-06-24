@@ -1,5 +1,6 @@
-import { prisma } from "../config/database.config.js";
+import { prisma } from '../config/database.config.js';
 
+//find all users except the current user
 export const findAllUsersExcept = async (userId) => {
   return prisma.user.findMany({
     where: {
@@ -16,6 +17,7 @@ export const findAllUsersExcept = async (userId) => {
   });
 };
 
+//find a user by id
 export const findUserById = async (userId) => {
   return prisma.user.findUnique({
     where: { id: userId },
@@ -28,6 +30,7 @@ export const findUserById = async (userId) => {
   });
 };
 
+//find a user by uuid
 export const findUserByUuid = async (userUuid) => {
   return prisma.user.findUnique({
     where: { uuid: userUuid },

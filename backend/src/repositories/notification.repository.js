@@ -1,5 +1,6 @@
-import { prisma } from "../config/database.config.js";
+import { prisma } from '../config/database.config.js';
 
+//update a user's fcm token
 export const updateUserFcmToken = async (userId, fcmToken) => {
   return prisma.user.update({
     where: { id: userId },
@@ -7,6 +8,7 @@ export const updateUserFcmToken = async (userId, fcmToken) => {
   });
 };
 
+//find a user with their fcm token
 export const findUserWithFcmToken = async (userId) => {
   return prisma.user.findUnique({
     where: { id: userId },
@@ -14,6 +16,7 @@ export const findUserWithFcmToken = async (userId) => {
   });
 };
 
+//find a user with their name and uuid
 export const findUserWithName = async (userId) => {
   return prisma.user.findUnique({
     where: { id: userId },

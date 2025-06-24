@@ -1,48 +1,50 @@
-import { useEffect, useState } from "react";
-import { useChat } from "@/hooks/useChat";
-import { Button } from "@/components/ui/button";
-import EmptyState from "../common/EmptyState";
-import UserList from "./UserList";
-import GroupList from "./GroupList";
-import CreateGroupModal from "./CreateGroupModal";
+import { useEffect, useState } from 'react';
+import { useChat } from '@/hooks/useChat';
+import { Button } from '@/components/ui/button';
+import EmptyState from '../common/EmptyState';
+import UserList from './UserList';
+import GroupList from './GroupList';
+import CreateGroupModal from './CreateGroupModal';
 
 const ChatList = ({ onSelectChat, currentChatId }) => {
   const { fetchChats, chats, startChat } = useChat();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [currentView, setCurrentView] = useState("direct");
+  const [currentView, setCurrentView] = useState('direct');
 
   useEffect(() => {
     fetchChats();
   }, [fetchChats]);
 
+  // Start a new direct chat
   const handleStartNewChat = async (user) => {
     const chat = await startChat(user);
     if (chat) {
       onSelectChat(chat);
-      setCurrentView("direct");
+      setCurrentView('direct');
     }
   };
 
+  // Select a group chat
   const handleSelectGroup = (group) => {
     onSelectChat(group);
   };
 
-  const sortedChats = [...chats].sort(
-    (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
-  );
+  // Sort chats by last updated
+  const sortedChats = [...chats].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
-  if (currentView === "users") {
+  if (currentView === 'users') {
     return (
       <div className="h-full flex flex-col">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-lg font-semibold">New Chat</h2>
           <button
-            onClick={() => setCurrentView("direct")}
+            onClick={() => setCurrentView('direct')}
             className="text-gray-500 hover:text-gray-700"
           >
             ← Back
           </button>
         </div>
+        {/* User list for starting new chat */}
         <UserList onSelectUser={handleStartNewChat} />
       </div>
     );
@@ -52,45 +54,42 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
     <div className="h-full flex flex-col">
       <div className="p-4 border-b">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">
-            {currentView === "direct" ? "Chats" : "Groups"}
-          </h2>
+          <h2 className="text-lg font-semibold">{currentView === 'direct' ? 'Chats' : 'Groups'}</h2>
           <Button
             onClick={() =>
-              currentView === "direct"
-                ? setCurrentView("users")
-                : setShowCreateModal(true)
+              currentView === 'direct' ? setCurrentView('users') : setShowCreateModal(true)
             }
             variant="outline"
             size="sm"
           >
-            {currentView === "direct" ? "New Chat" : "New Group"}
+            {currentView === 'direct' ? 'New Chat' : 'New Group'}
           </Button>
         </div>
 
+        {/* Tabs for switching between chats and groups */}
         <div className="flex border-b">
-          {["direct", "groups"].map((view) => (
+          {['direct', 'groups'].map((view) => (
             <button
               key={view}
               className={`px-4 py-2 text-sm font-medium ${
                 currentView === view
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
               onClick={() => setCurrentView(view)}
             >
-              {view === "direct" ? "Chats" : "Groups"}
+              {view === 'direct' ? 'Chats' : 'Groups'}
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex-grow overflow-y-auto">
-        {currentView === "direct" ? (
+        {currentView === 'direct' ? (
           sortedChats.length === 0 ? (
             <EmptyState
               message="No chats yet"
-              action={() => setCurrentView("users")}
+              action={() => setCurrentView('users')}
               actionText="Start a conversation"
             />
           ) : (
@@ -99,9 +98,7 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
                 <li
                   key={chat.id}
                   className={`p-4 hover:bg-gray-50 dark:hover:bg-slate-700/30 cursor-pointer ${
-                    currentChatId === chat.id
-                      ? "bg-blue-50 dark:bg-blue-900/20"
-                      : ""
+                    currentChatId === chat.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                   }`}
                   onClick={() => onSelectChat(chat)}
                 >
@@ -114,7 +111,7 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
                     <div className="flex-grow">
                       <h3 className="text-base font-medium">{chat.name}</h3>
                       <p className="text-sm text-gray-500 truncate">
-                        {chat.last_message || "Click to start chatting"}
+                        {chat.last_message || 'Click to start chatting'}
                       </p>
                     </div>
                   </div>
@@ -131,9 +128,8 @@ const ChatList = ({ onSelectChat, currentChatId }) => {
         )}
       </div>
 
-      {showCreateModal && (
-        <CreateGroupModal onClose={() => setShowCreateModal(false)} />
-      )}
+      {/* Modal for creating a new group */}
+      {showCreateModal && <CreateGroupModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 };

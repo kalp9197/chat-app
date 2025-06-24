@@ -1,7 +1,8 @@
-import * as authService from "../services/auth.service.js";
-import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../errors/apiError.js";
+import * as authService from '../services/auth.service.js';
+import { HTTP_STATUS } from '../constants/statusCodes.js';
+import { ApiError } from '../errors/apiError.js';
 
+//register a new user
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -9,7 +10,7 @@ export const register = async (req, res) => {
 
     if (existingUser) {
       return res.status(HTTP_STATUS.CONFLICT).json({
-        message: "User already exists",
+        message: 'User already exists',
         success: false,
       });
     }
@@ -17,7 +18,7 @@ export const register = async (req, res) => {
     await authService.createUser({ name, email, password });
 
     return res.status(HTTP_STATUS.CREATED).json({
-      message: "User registered successfully",
+      message: 'User registered successfully',
       success: true,
     });
   } catch (error) {
@@ -33,6 +34,7 @@ export const register = async (req, res) => {
   }
 };
 
+//login a user
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -40,18 +42,15 @@ export const login = async (req, res) => {
 
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
-        message: "User not found",
+        message: 'User not found',
         success: false,
       });
     }
 
-    const isPasswordValid = await authService.comparePasswords(
-      password,
-      user.password
-    );
+    const isPasswordValid = await authService.comparePasswords(password, user.password);
     if (!isPasswordValid) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        message: "Invalid credentials",
+        message: 'Invalid credentials',
         success: false,
       });
     }
@@ -59,7 +58,7 @@ export const login = async (req, res) => {
     const token = authService.generateToken({ id: user.id, email: user.email });
 
     return res.status(HTTP_STATUS.OK).json({
-      message: "Login successful",
+      message: 'Login successful',
       success: true,
       data: {
         user: { name: user.name, email: user.email, uuid: user.uuid },
@@ -79,17 +78,18 @@ export const login = async (req, res) => {
   }
 };
 
+//check if user is authenticated
 export const checkAuth = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        message: "User not authenticated",
+        message: 'User not authenticated',
         success: false,
       });
     }
     return res.status(HTTP_STATUS.OK).json({
-      message: "User authenticated successfully",
+      message: 'User authenticated successfully',
       success: true,
       data: { user: { name: user.name, email: user.email, uuid: user.uuid } },
     });

@@ -1,5 +1,6 @@
-import { prisma } from "../config/database.config.js";
+import { prisma } from '../config/database.config.js';
 
+//get users by uuids
 export const getUsersByUuids = async (uuids) => {
   return prisma.user.findMany({
     where: { uuid: { in: uuids } },
@@ -7,6 +8,7 @@ export const getUsersByUuids = async (uuids) => {
   });
 };
 
+//get a group with its members
 export const getGroupWithMembers = async (groupId) => {
   return prisma.group.findUnique({
     where: { id: groupId },
@@ -20,6 +22,7 @@ export const getGroupWithMembers = async (groupId) => {
   });
 };
 
+//create a group with its members
 export const createGroupWithMembers = async (name, memberships) => {
   return prisma.$transaction(async (tx) => {
     return tx.group.create({
@@ -38,6 +41,7 @@ export const createGroupWithMembers = async (name, memberships) => {
   });
 };
 
+//find groups for a user
 export const findGroupsForUser = async (userId) => {
   return prisma.group.findMany({
     where: {
@@ -50,13 +54,14 @@ export const findGroupsForUser = async (userId) => {
         },
       },
       messages: {
-        orderBy: { created_at: "desc" },
+        orderBy: { created_at: 'desc' },
         take: 1,
       },
     },
   });
 };
 
+//find a group by uuid
 export const findGroupByUuid = async (groupUuid, userId) => {
   return prisma.group.findFirst({
     where: {
@@ -73,6 +78,7 @@ export const findGroupByUuid = async (groupUuid, userId) => {
   });
 };
 
+//validate group and admin access
 export const validateGroupAndAdminAccess = async (groupUuid, userId) => {
   return prisma.group.findFirst({
     where: {
@@ -80,7 +86,7 @@ export const validateGroupAndAdminAccess = async (groupUuid, userId) => {
       memberships: {
         some: {
           user_id: userId,
-          role: "admin",
+          role: 'admin',
         },
       },
     },
@@ -88,14 +94,10 @@ export const validateGroupAndAdminAccess = async (groupUuid, userId) => {
   });
 };
 
+//update a group
 export const updateGroupTransaction = async (groupId, updates) => {
   return prisma.$transaction(async (tx) => {
-    const {
-      name,
-      removeUserIds = [],
-      addMemberships = [],
-      roleUpdates = [],
-    } = updates;
+    const { name, removeUserIds = [], addMemberships = [], roleUpdates = [] } = updates;
 
     const results = {};
 
@@ -133,10 +135,10 @@ export const updateGroupTransaction = async (groupId, updates) => {
     }
 
     const adminCount = await tx.groupMembership.count({
-      where: { group_id: groupId, role: "admin" },
+      where: { group_id: groupId, role: 'admin' },
     });
     if (adminCount === 0) {
-      throw new Error("Group must have at least one admin");
+      throw new Error('Group must have at least one admin');
     }
 
     results.updatedGroup = await tx.group.findUnique({
@@ -154,6 +156,7 @@ export const updateGroupTransaction = async (groupId, updates) => {
   });
 };
 
+//add members to a group
 export const addMembersTransaction = async (groupId, memberships) => {
   return prisma.$transaction(async (tx) => {
     await tx.groupMembership.createMany({
@@ -173,6 +176,7 @@ export const addMembersTransaction = async (groupId, memberships) => {
   });
 };
 
+//get existing memberships
 export const getExistingMembershipsTransaction = async (groupId, userUuids) => {
   return prisma.$transaction(async (tx) => {
     const [users, existingMemberships] = await Promise.all([
@@ -195,6 +199,7 @@ export const getExistingMembershipsTransaction = async (groupId, userUuids) => {
   });
 };
 
+//delete a group by uuid
 export const deleteGroupByUuid = async (groupUuid) => {
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.findUnique({
@@ -202,7 +207,7 @@ export const deleteGroupByUuid = async (groupUuid) => {
       select: { id: true },
     });
 
-    if (!group) throw new Error("Group not found");
+    if (!group) throw new Error('Group not found');
 
     await tx.groupMembership.deleteMany({
       where: { group_id: group.id },
@@ -214,6 +219,7 @@ export const deleteGroupByUuid = async (groupUuid) => {
   });
 };
 
+//bulk user operations
 export const bulkUserOperations = async (userUuids) => {
   return prisma.user.findMany({
     where: { uuid: { in: userUuids } },
@@ -221,8 +227,9 @@ export const bulkUserOperations = async (userUuids) => {
   });
 };
 
+//send a message to a group
 export const sendMessageToGroup = async (groupId, message, senderId) => {
-  const { content, message_type = "text", file_path } = message;
+  const { content, message_type = 'text', file_path } = message;
   return prisma.message.create({
     data: {
       group_id: groupId,
@@ -237,6 +244,7 @@ export const sendMessageToGroup = async (groupId, message, senderId) => {
   });
 };
 
+//get messages for a group
 export const getGroupMessages = async (groupId, limit, offset) => {
   const whereClause = { group_id: groupId };
 
@@ -250,7 +258,7 @@ export const getGroupMessages = async (groupId, limit, offset) => {
         message_type: true,
         sender: { select: { uuid: true, name: true, email: true } },
       },
-      orderBy: { created_at: "desc" },
+      orderBy: { created_at: 'desc' },
       skip: offset,
       take: limit,
     }),

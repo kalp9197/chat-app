@@ -1,7 +1,8 @@
-import * as userService from "../services/user.service.js";
-import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../errors/apiError.js";
+import * as userService from '../services/user.service.js';
+import { HTTP_STATUS } from '../constants/statusCodes.js';
+import { ApiError } from '../errors/apiError.js';
 
+//get all users except the current user
 export const getUsers = async (req, res) => {
   try {
     const currentUserId = req.user.id;

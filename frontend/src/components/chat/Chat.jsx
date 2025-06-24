@@ -1,18 +1,13 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  useMemo,
-} from "react";
-import { useChat } from "@/hooks/useChat";
-import { useAuth } from "@/hooks/useAuth";
-import ChatHeader from "./ChatHeader";
-import ChatMessage from "./ChatMessage";
-import MessageInput from "./MessageInput";
-import EmptyState from "../common/EmptyState";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useChat } from '@/hooks/useChat';
+import { useAuth } from '@/hooks/useAuth';
+import ChatHeader from './ChatHeader';
+import ChatMessage from './ChatMessage';
+import MessageInput from './MessageInput';
+import EmptyState from '../common/EmptyState';
 
 const Chat = ({ chatId }) => {
+  // chatId is the uuid of the chat
   const user = useAuth((state) => state.user);
   const {
     messages,
@@ -27,8 +22,7 @@ const Chat = ({ chatId }) => {
     cleanupNotifications,
   } = useChat();
 
-  //eslint-disable-next-line
-  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [setShowScrollButton] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
@@ -41,11 +35,9 @@ const Chat = ({ chatId }) => {
   const lastMessageIdRef = useRef(null);
   const loadMoreTimeoutRef = useRef(null);
 
-  const currentChat = useMemo(
-    () => chats.find((c) => c.id === chatId),
-    [chats, chatId]
-  );
+  const currentChat = useMemo(() => chats.find((c) => c.id === chatId), [chats, chatId]);
 
+  // sort messages by timestamp
   const sortedMessages = useMemo(() => {
     return [...messages].sort((a, b) => {
       const timeA = new Date(a.timestamp || a.created_at).getTime();
@@ -54,6 +46,7 @@ const Chat = ({ chatId }) => {
     });
   }, [messages]);
 
+  // should auto scroll if user is typing or if the last message is from the user
   const shouldAutoScroll = useCallback(() => {
     if (!messageContainerRef.current || !sortedMessages.length) return false;
 
@@ -63,8 +56,7 @@ const Chat = ({ chatId }) => {
 
     const lastMessage = sortedMessages[sortedMessages.length - 1];
     const isMyMessage =
-      lastMessage?.sender?.uuid === user?.uuid ||
-      lastMessage?.sender === user?.uuid;
+      lastMessage?.sender?.uuid === user?.uuid || lastMessage?.sender === user?.uuid;
 
     return isNearBottom || isMyMessage || shouldScrollToBottom;
   }, [sortedMessages, user?.uuid, shouldScrollToBottom]);
@@ -99,22 +91,24 @@ const Chat = ({ chatId }) => {
             setIsLoadingMore(false);
           }, 100);
         } catch (error) {
-          console.error("Error loading more messages:", error);
+          console.error('Error loading more messages:', error);
           setIsLoadingMore(false);
         }
       };
 
       loadMore();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMoreMessages, isLoadingMore, loading, loadMoreMessages, chatId]);
 
+  // scroll to bottom
   const scrollToBottom = useCallback((smooth = true) => {
     if (!messagesEndRef.current) return;
 
     isScrollingRef.current = true;
     messagesEndRef.current.scrollIntoView({
-      behavior: smooth ? "smooth" : "auto",
-      block: "end",
+      behavior: smooth ? 'smooth' : 'auto',
+      block: 'end',
     });
 
     setTimeout(() => {
@@ -126,7 +120,7 @@ const Chat = ({ chatId }) => {
     async (message) => {
       if (!user?.uuid || !chatId) return;
 
-      const isFile = typeof message === "object" && message.file;
+      const isFile = typeof message === 'object' && message.file;
       const text = isFile ? message.text : message;
 
       if (!isFile && !text.trim()) {
@@ -136,10 +130,10 @@ const Chat = ({ chatId }) => {
       setShouldScrollToBottom(true);
       await sendMessage(message, chatId);
     },
-    [user?.uuid, chatId, sendMessage]
+    [user?.uuid, chatId, sendMessage],
   );
 
-  // ------------------- MAIN FIX IS IN THIS EFFECT -------------------
+  // handle chat change
   useEffect(() => {
     if (!chatId) {
       setHasInitialized(false);
@@ -165,7 +159,6 @@ const Chat = ({ chatId }) => {
 
       prevChatIdRef.current = chatId;
     } else {
-      // <--- THIS HANDLES THE DOUBLE CLICK CASE --->
       if (currentChat && (!messages || messages.length === 0) && !loading) {
         fetchMessages(chatId).then(() => {
           setHasInitialized(true);
@@ -193,7 +186,6 @@ const Chat = ({ chatId }) => {
     messages,
     loading,
   ]);
-  // -------------------------------------------------------------------
 
   useEffect(() => {
     if (!sortedMessages.length || !hasInitialized) return;
@@ -211,13 +203,7 @@ const Chat = ({ chatId }) => {
     if (lastMessage) {
       lastMessageIdRef.current = lastMessage.id;
     }
-  }, [
-    sortedMessages.length,
-    hasInitialized,
-    shouldAutoScroll,
-    scrollToBottom,
-    sortedMessages,
-  ]);
+  }, [sortedMessages.length, hasInitialized, shouldAutoScroll, scrollToBottom, sortedMessages]);
 
   useEffect(() => {
     const timeoutRef = loadMoreTimeoutRef.current;
@@ -268,7 +254,7 @@ const Chat = ({ chatId }) => {
         ref={messageContainerRef}
         onScroll={handleScroll}
         className="flex-grow overflow-y-auto px-4 py-6 bg-gray-50"
-        style={{ scrollBehavior: "auto" }}
+        style={{ scrollBehavior: 'auto' }}
       >
         <div className="max-w-3xl mx-auto">
           <div className="space-y-3">

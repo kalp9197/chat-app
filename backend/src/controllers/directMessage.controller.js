@@ -1,7 +1,8 @@
-import * as directMessageService from "../services/directMessage.service.js";
-import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../errors/apiError.js";
+import * as directMessageService from '../services/directMessage.service.js';
+import { HTTP_STATUS } from '../constants/statusCodes.js';
+import { ApiError } from '../errors/apiError.js';
 
+//send a message to a user or group
 export const sendMessage = async (req, res) => {
   try {
     const { receiver_uuid, group_uuid, content, message_type } = req.body;
@@ -19,7 +20,7 @@ export const sendMessage = async (req, res) => {
 
     res.status(HTTP_STATUS.CREATED).json({
       success: true,
-      message: "Message sent successfully",
+      message: 'Message sent successfully',
       data: message,
     });
   } catch (error) {
@@ -35,6 +36,7 @@ export const sendMessage = async (req, res) => {
   }
 };
 
+//get messages between two users
 export const getMessagesBetweenUsers = async (req, res) => {
   try {
     const sender_id = req.user.id;
@@ -47,7 +49,7 @@ export const getMessagesBetweenUsers = async (req, res) => {
       sender_id,
       receiver_uuid,
       limit,
-      offset
+      offset,
     );
 
     res.status(HTTP_STATUS.OK).json({

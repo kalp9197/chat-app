@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { listenForNotifications } from "@/services/notificationService";
-import { motion as Motion } from "framer-motion";
-import { useChat } from "@/hooks/useChat";
-import { useGroupChat } from "@/hooks/useGroupChat";
-import { useGroups } from "@/hooks/useGroups";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { listenForNotifications } from '@/services/notificationService';
+import { motion as Motion } from 'framer-motion';
+import { useChat } from '@/hooks/useChat';
+import { useGroupChat } from '@/hooks/useGroupChat';
+import { useGroups } from '@/hooks/useGroups';
 
 const NotificationBanner = () => {
   const [notifications, setNotifications] = useState([]);
@@ -14,7 +14,7 @@ const NotificationBanner = () => {
   const { fetchLatestMessages: fetchGroupMessages } = useGroupChat();
   const { fetchGroups } = useGroups();
 
-  // Show next notification in queue
+  // Show next notification if available
   useEffect(() => {
     if (notifications.length > 0 && !currentNotification) {
       setCurrentNotification({ ...notifications[0], visible: true });
@@ -22,43 +22,37 @@ const NotificationBanner = () => {
     }
   }, [notifications, currentNotification]);
 
-  // Helper to make notification body user-friendly for file messages
   function getNotificationText(data, body) {
     let messageType = data?.message_type;
 
-    // Try to parse message_type from data.body if not directly available
     if (!messageType && data?.body) {
       try {
         const parsed = JSON.parse(data.body);
         messageType = parsed.message_type;
       } catch {
-        // pass
+        //pass
       }
     }
 
-    // Check if it's a file message by looking for file patterns in the body
     const isFileMessage =
-      messageType === "file" ||
-      (body && (body.includes("fileName") || body.includes("filePath")));
+      messageType === 'file' || (body && (body.includes('fileName') || body.includes('filePath')));
 
     if (isFileMessage) {
-      return "New File Received";
+      return 'New File Received';
     }
 
-    return body || "New message received";
+    return body || 'New message received';
   }
 
+  // Handle notification payload
   const handleNotification = useCallback(
     (payload) => {
       if (!payload) return;
-      const title =
-        payload.notification?.title ||
-        payload.data?.title ||
-        "New notification";
+      const title = payload.notification?.title || payload.data?.title || 'New notification';
       const data = payload.data || payload.notification?.data || {};
       const body = getNotificationText(
         data,
-        payload.notification?.body || payload.data?.body || ""
+        payload.notification?.body || payload.data?.body || '',
       );
       const newNotification = {
         id: `notification-${Date.now()}`,
@@ -68,12 +62,11 @@ const NotificationBanner = () => {
         timestamp: new Date(),
       };
 
-      // For chat message notification, update data
-      if (data.type === "chat_message") {
+      if (data.type === 'chat_message') {
         const chatId = data.chatId;
         if (chatId) {
-          if (chatId.startsWith("group-")) {
-            const groupUuid = chatId.replace("group-", "");
+          if (chatId.startsWith('group-')) {
+            const groupUuid = chatId.replace('group-', '');
             fetchGroupMessages(groupUuid);
             fetchGroups();
           } else {
@@ -88,42 +81,30 @@ const NotificationBanner = () => {
         ? setNotifications((prev) => [...prev, newNotification])
         : setCurrentNotification({ ...newNotification, visible: true });
     },
-    [
-      currentNotification,
-      fetchChats,
-      fetchMessages,
-      fetchGroupMessages,
-      fetchGroups,
-    ]
+    [currentNotification, fetchChats, fetchMessages, fetchGroupMessages, fetchGroups],
   );
 
-  // Navigate on click
+  // Handle click to navigate to chat
   const handleNavigate = useCallback(() => {
     if (currentNotification?.data?.url) {
       navigate(currentNotification.data.url);
     }
-    setCurrentNotification((prev) =>
-      prev ? { ...prev, visible: false } : null
-    );
+    setCurrentNotification((prev) => (prev ? { ...prev, visible: false } : null));
     setTimeout(() => setCurrentNotification(null), 300);
   }, [currentNotification, navigate]);
 
-  // Close notification
+  // Handle close button
   const handleClose = useCallback((e) => {
     e.stopPropagation();
-    setCurrentNotification((prev) =>
-      prev ? { ...prev, visible: false } : null
-    );
+    setCurrentNotification((prev) => (prev ? { ...prev, visible: false } : null));
     setTimeout(() => setCurrentNotification(null), 300);
   }, []);
 
-  // Auto-hide after 5s
+  // Auto-hide notification after 5s
   useEffect(() => {
     if (currentNotification?.visible) {
       const timer = setTimeout(() => {
-        setCurrentNotification((prev) =>
-          prev ? { ...prev, visible: false } : null
-        );
+        setCurrentNotification((prev) => (prev ? { ...prev, visible: false } : null));
         setTimeout(() => setCurrentNotification(null), 300);
       }, 5000);
       return () => clearTimeout(timer);
@@ -134,7 +115,7 @@ const NotificationBanner = () => {
   useEffect(() => {
     const unsubscribe = listenForNotifications(handleNotification);
     return () => {
-      if (typeof unsubscribe === "function") unsubscribe();
+      if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, [handleNotification]);
 
@@ -169,9 +150,7 @@ const NotificationBanner = () => {
           </svg>
         </div>
         <div className="ml-3 w-0 flex-1">
-          <p className="text-sm font-medium text-gray-900">
-            {currentNotification.title}
-          </p>
+          <p className="text-sm font-medium text-gray-900">{currentNotification.title}</p>
           <p className="mt-1 text-sm text-gray-500 whitespace-pre-line">
             {currentNotification.body}
           </p>

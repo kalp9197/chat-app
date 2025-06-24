@@ -1,10 +1,5 @@
-import { initializeApp } from "firebase/app";
-import {
-  getMessaging,
-  getToken,
-  onMessage,
-  isSupported,
-} from "firebase/messaging";
+import { initializeApp } from 'firebase/app';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -53,7 +48,7 @@ export const requestNotificationPermission = async () => {
 
   try {
     const permission = await Notification.requestPermission();
-    if (permission === "granted") {
+    if (permission === 'granted') {
       const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
       if (!vapidKey) return null;
 
@@ -68,7 +63,7 @@ export const requestNotificationPermission = async () => {
 
 export const onMessageListener = async (callback) => {
   const messaging = await getMessagingInstance();
-  if (!messaging) return () => {}; // No-op unsubscriber
+  if (!messaging) return () => {};
 
   return onMessage(messaging, (payload) => {
     if (callback) callback(payload);

@@ -1,5 +1,6 @@
-import { prisma } from "../config/database.config.js";
+import { prisma } from '../config/database.config.js';
 
+//find a user by uuid
 export const findUserByUuid = async (uuid) => {
   return prisma.user.findUnique({
     where: { uuid },
@@ -7,13 +8,14 @@ export const findUserByUuid = async (uuid) => {
   });
 };
 
+//create a new message
 export const createMessage = async (messageData) => {
   return prisma.message.create({
     data: {
       sender_id: messageData.sender_id,
       receiver_id: messageData.receiver_id,
       content: messageData.content,
-      message_type: messageData.message_type || "text",
+      message_type: messageData.message_type || 'text',
     },
     include: {
       sender: {
@@ -26,12 +28,8 @@ export const createMessage = async (messageData) => {
   });
 };
 
-export const findMessages = async (
-  senderId,
-  receiverId,
-  limit = 10,
-  offset = 0
-) => {
+//find messages between two users
+export const findMessages = async (senderId, receiverId, limit = 10, offset = 0) => {
   const whereClause = {
     OR: [
       { sender_id: senderId, receiver_id: receiverId },
@@ -43,7 +41,7 @@ export const findMessages = async (
     prisma.message.findMany({
       where: whereClause,
       orderBy: {
-        created_at: "desc",
+        created_at: 'desc',
       },
       skip: offset,
       take: limit,

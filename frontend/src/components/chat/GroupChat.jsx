@@ -1,16 +1,15 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useGroupChat } from "@/hooks/useGroupChat";
-import ChatHeader from "./ChatHeader";
-import ChatMessage from "./ChatMessage";
-import MessageInput from "./MessageInput";
-import EmptyState from "../common/EmptyState";
-import { ArrowDown, Loader2 } from "lucide-react";
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useGroupChat } from '@/hooks/useGroupChat';
+import ChatHeader from './ChatHeader';
+import ChatMessage from './ChatMessage';
+import MessageInput from './MessageInput';
+import EmptyState from '../common/EmptyState';
+import { ArrowDown, Loader2 } from 'lucide-react';
 
 const GroupChat = ({ group }) => {
   const user = useAuth((s) => s.user);
 
-  // Group chat store
   const {
     messages,
     setActiveGroup,
@@ -32,30 +31,25 @@ const GroupChat = ({ group }) => {
   const loadingRef = useRef(false);
   const scrollTimeoutRef = useRef(null);
 
-  // Set active group when prop changes
   useEffect(() => {
     if (group) {
       setActiveGroup(group);
       setFirstLoad(true);
     }
     return () => {
-      // cleanup when component unmounts or group changes
       cleanupNotifications();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group?.uuid, setActiveGroup, cleanupNotifications]);
 
-  // Handle loading more messages when scrolling to top
+  // Handle scroll for loading more messages
   const handleScroll = useCallback(async () => {
     if (!messageContainerRef.current || loadingRef.current || !group) return;
 
-    const { scrollTop, scrollHeight, clientHeight } =
-      messageContainerRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = messageContainerRef.current;
 
-    // Show/hide scroll to bottom button
     setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
 
-    // Check if we're near the top and have more messages to load
     const nearTop = scrollTop < 200;
 
     if (nearTop && hasMoreMessages && !loadingMore) {
@@ -70,52 +64,48 @@ const GroupChat = ({ group }) => {
     }
   }, [group, hasMoreMessages, loadMoreMessages, loadingMore]);
 
-  // Scroll to bottom when new messages arrive and auto-scroll is enabled
+  // Auto scroll to bottom on new message
   useEffect(() => {
     if (autoScroll && messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }
   }, [messages, autoScroll]);
 
-  // Handle initial load and new messages from current user
+  // Scroll to bottom on first load or if user sends message
   useEffect(() => {
     if (!group) return;
 
     if (firstLoad && messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
       setFirstLoad(false);
-    } else if (
-      messages.length > 0 &&
-      messages[messages.length - 1]?.sender?.uuid === user?.uuid
-    ) {
+    } else if (messages.length > 0 && messages[messages.length - 1]?.sender?.uuid === user?.uuid) {
       setAutoScroll(true);
     }
   }, [messages, firstLoad, user, group]);
 
-  // Maintain scroll position when loading more messages
+  // Maintain scroll position when loading more
   useEffect(() => {
     if (prevScrollHeight > 0 && messageContainerRef.current) {
       const newScrollHeight = messageContainerRef.current.scrollHeight;
-      messageContainerRef.current.scrollTop =
-        newScrollHeight - prevScrollHeight;
+      messageContainerRef.current.scrollTop = newScrollHeight - prevScrollHeight;
       setPrevScrollHeight(0);
     }
   }, [messages.length, prevScrollHeight]);
 
-  // Add scroll event listener
+  // Attach/detach scroll event
   useEffect(() => {
     const container = messageContainerRef.current;
     if (container) {
-      container.addEventListener("scroll", handleScroll);
-      return () => container.removeEventListener("scroll", handleScroll);
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll, group]);
 
+  // Scroll to bottom helper
   const scrollToBottom = useCallback(() => {
     setAutoScroll(true);
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
 
-    // Auto-scroll will be disabled on manual scroll
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
@@ -125,8 +115,9 @@ const GroupChat = ({ group }) => {
     }, 1000);
   }, []);
 
+  // Handle sending a message
   const handleSendMessage = async (message) => {
-    const isFile = typeof message === "object" && message.file;
+    const isFile = typeof message === 'object' && message.file;
     const text = isFile ? message.text : message;
 
     if (!isFile && !text.trim()) {
@@ -135,7 +126,7 @@ const GroupChat = ({ group }) => {
     await sendMessage(message);
   };
 
-  // Cleanup on unmount
+  // Cleanup timeout on unmount
   useEffect(() => {
     const timeoutRef = scrollTimeoutRef.current;
     return () => {
@@ -155,7 +146,6 @@ const GroupChat = ({ group }) => {
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
-      {/* Message Container */}
       <div
         ref={messageContainerRef}
         onScroll={handleScroll}
@@ -196,7 +186,6 @@ const GroupChat = ({ group }) => {
         </div>
       </div>
 
-      {/* Scroll to Bottom Button */}
       {showScrollButton && (
         <button
           onClick={scrollToBottom}
@@ -207,7 +196,6 @@ const GroupChat = ({ group }) => {
         </button>
       )}
 
-      {/* Message Input */}
       <MessageInput onSendMessage={handleSendMessage} />
     </div>
   );

@@ -1,12 +1,10 @@
-import { create } from "zustand";
-import * as groupService from "@/services/groupService";
+import { create } from 'zustand';
+import * as groupService from '@/services/groupService';
 
 const formatGroup = (group) => ({
   ...group,
   id: `group-${group.uuid}`,
-  avatar:
-    group.avatar ||
-    `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name}`,
+  avatar: group.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name}`,
   memberCount: group.memberCount ?? group.memberships?.length ?? 0,
 });
 
@@ -53,15 +51,10 @@ export const useGroups = create((set) => ({
       const formattedGroup = formatGroup(updatedGroup);
 
       set((state) => {
-        const groups = state.groups.map((group) =>
-          group.uuid === uuid ? formattedGroup : group
-        );
+        const groups = state.groups.map((group) => (group.uuid === uuid ? formattedGroup : group));
         return {
           groups,
-          activeGroup:
-            state.activeGroup?.uuid === uuid
-              ? formattedGroup
-              : state.activeGroup,
+          activeGroup: state.activeGroup?.uuid === uuid ? formattedGroup : state.activeGroup,
         };
       });
 
@@ -80,8 +73,7 @@ export const useGroups = create((set) => ({
       await groupService.deleteGroup(uuid);
       set((state) => ({
         groups: state.groups.filter((group) => group.uuid !== uuid),
-        activeGroup:
-          state.activeGroup?.uuid === uuid ? null : state.activeGroup,
+        activeGroup: state.activeGroup?.uuid === uuid ? null : state.activeGroup,
       }));
       return true;
     } catch (error) {
@@ -100,7 +92,6 @@ export const useGroups = create((set) => ({
 
       set((state) => {
         const existingGroup = state.groups.find((g) => g.uuid === uuid);
-        // Preserve name and avatar if missing in the response to prevent blank UI
         if (existingGroup) {
           if (!formattedGroup.name)
             formattedGroup = { ...formattedGroup, name: existingGroup.name };
@@ -118,10 +109,7 @@ export const useGroups = create((set) => ({
 
         return {
           groups,
-          activeGroup:
-            state.activeGroup?.uuid === uuid
-              ? formattedGroup
-              : state.activeGroup,
+          activeGroup: state.activeGroup?.uuid === uuid ? formattedGroup : state.activeGroup,
         };
       });
 

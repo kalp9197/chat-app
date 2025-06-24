@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
-import { useGroups } from "@/hooks/useGroups";
-import { getAllUsers } from "@/services/userService";
-import { Button } from "@/components/ui/button";
-import { motion as Motion } from "framer-motion";
+import { useState, useEffect } from 'react';
+import { useGroups } from '@/hooks/useGroups';
+import { getAllUsers } from '@/services/userService';
+import { Button } from '@/components/ui/button';
+import { motion as Motion } from 'framer-motion';
 
 const CreateGroupModal = ({ onClose }) => {
   const { createGroup } = useGroups();
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -18,32 +18,30 @@ const CreateGroupModal = ({ onClose }) => {
 
   const handleToggle = (user, checked) => {
     if (checked) {
-      setSelectedUsers((prev) => [...prev, { ...user, role: "member" }]);
+      setSelectedUsers((prev) => [...prev, { ...user, role: 'member' }]);
     } else {
       setSelectedUsers((prev) => prev.filter((u) => u.uuid !== user.uuid));
     }
   };
 
   const handleRoleChange = (uuid, role) => {
-    setSelectedUsers((prev) =>
-      prev.map((u) => (u.uuid === uuid ? { ...u, role } : u))
-    );
+    setSelectedUsers((prev) => prev.map((u) => (u.uuid === uuid ? { ...u, role } : u)));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name.trim()) {
-      setError("Group name is required");
+      setError('Group name is required');
       return;
     }
     if (!selectedUsers.length) {
-      setError("Select at least one member");
+      setError('Select at least one member');
       return;
     }
 
     setLoading(true);
-    setError("");
+    setError('');
 
     try {
       const members = selectedUsers.map((u) => ({
@@ -53,7 +51,7 @@ const CreateGroupModal = ({ onClose }) => {
       const newGroup = await createGroup(name.trim(), members);
       if (newGroup) onClose();
     } catch (error) {
-      setError(error.message || "Failed to create group");
+      setError(error.message || 'Failed to create group');
     } finally {
       setLoading(false);
     }
@@ -88,19 +86,12 @@ const CreateGroupModal = ({ onClose }) => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Select Members
-            </label>
+            <label className="block text-sm font-medium mb-1">Select Members</label>
             <ul className="border rounded-md max-h-60 overflow-y-auto">
               {allUsers.map((user) => {
-                const selected = selectedUsers.find(
-                  (u) => u.uuid === user.uuid
-                );
+                const selected = selectedUsers.find((u) => u.uuid === user.uuid);
                 return (
-                  <li
-                    key={user.uuid}
-                    className="px-3 py-2 flex items-center gap-2"
-                  >
+                  <li key={user.uuid} className="px-3 py-2 flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={!!selected}
@@ -110,10 +101,8 @@ const CreateGroupModal = ({ onClose }) => {
                     {selected && (
                       <select
                         className="border rounded px-1 py-0.5 text-xs"
-                        value={selected.role || "member"}
-                        onChange={(e) =>
-                          handleRoleChange(user.uuid, e.target.value)
-                        }
+                        value={selected.role || 'member'}
+                        onChange={(e) => handleRoleChange(user.uuid, e.target.value)}
                       >
                         <option value="member">Member</option>
                         <option value="admin">Admin</option>
@@ -128,16 +117,11 @@ const CreateGroupModal = ({ onClose }) => {
           {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={loading}
-            >
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Group"}
+              {loading ? 'Creating...' : 'Create Group'}
             </Button>
           </div>
         </form>

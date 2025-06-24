@@ -1,5 +1,6 @@
-import { validationResult } from "express-validator";
+import { validationResult } from 'express-validator';
 
+//middleware to validate request body
 export const validate = (validations) => {
   return async (req, res, next) => {
     for (let validation of validations) {

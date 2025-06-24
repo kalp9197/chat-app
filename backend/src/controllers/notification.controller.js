@@ -1,7 +1,8 @@
-import { HTTP_STATUS } from "../constants/statusCodes.js";
-import * as notificationService from "../services/notification.service.js";
-import { ApiError } from "../errors/apiError.js";
+import { HTTP_STATUS } from '../constants/statusCodes.js';
+import * as notificationService from '../services/notification.service.js';
+import { ApiError } from '../errors/apiError.js';
 
+//save a user's fcm token
 export const saveUserToken = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -10,7 +11,7 @@ export const saveUserToken = async (req, res) => {
     if (!fcm_token) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "FCM token is required",
+        message: 'FCM token is required',
       });
     }
 
@@ -18,7 +19,7 @@ export const saveUserToken = async (req, res) => {
 
     return res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "FCM token saved successfully",
+      message: 'FCM token saved successfully',
     });
   } catch (error) {
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
@@ -33,6 +34,7 @@ export const saveUserToken = async (req, res) => {
   }
 };
 
+//send a test notification
 export const sendTestNotification = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -41,26 +43,23 @@ export const sendTestNotification = async (req, res) => {
     if (!title || !body) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Title and body are required",
+        message: 'Title and body are required',
       });
     }
 
-    const result = await notificationService.sendNotification(
-      userId,
-      title,
-      body,
-      { type: "test_notification" }
-    );
+    const result = await notificationService.sendNotification(userId, title, body, {
+      type: 'test_notification',
+    });
 
     if (result) {
       return res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: "Test notification sent",
+        message: 'Test notification sent',
       });
     } else {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: "Failed to send notification",
+        message: 'Failed to send notification',
       });
     }
   } catch (error) {

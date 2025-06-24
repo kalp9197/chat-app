@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
-import Picker from "@emoji-mart/react";
-import data from "@emoji-mart/data";
-import { Smile, Paperclip, Send, Image, File, X } from "lucide-react";
+import React, { useState, useRef, useEffect } from 'react';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
+import { Smile, Paperclip, Send, Image, File, X } from 'lucide-react';
 
 const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [attachedFile, setAttachedFile] = useState(null);
@@ -13,6 +13,7 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
   const emojiPickerRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
 
+  // Handle file selection
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -20,11 +21,9 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
     setAttachedFile({
       file,
       name: file.name,
-      type: file.type.startsWith("image/") ? "image" : "file",
+      type: file.type.startsWith('image/') ? 'image' : 'file',
       size: file.size,
-      preview: file.type.startsWith("image/")
-        ? URL.createObjectURL(file)
-        : null,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
     });
 
     if (propOnFileSelect) {
@@ -32,10 +31,11 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
     }
 
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
+  // Remove file attachment
   const removeAttachment = () => {
     if (attachedFile?.preview) {
       URL.revokeObjectURL(attachedFile.preview);
@@ -43,12 +43,12 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
     setAttachedFile(null);
   };
 
-  // Function to clear the input content
+  // Clear input field
   const clearInput = () => {
-    setMessage("");
+    setMessage('');
     if (inputRef.current) {
-      inputRef.current.textContent = "";
-      inputRef.current.innerHTML = "";
+      inputRef.current.textContent = '';
+      inputRef.current.innerHTML = '';
     }
   };
 
@@ -56,20 +56,22 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
     inputRef.current?.focus();
   }, []);
 
+  // Hide emoji picker on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
         emojiPickerRef.current &&
         !emojiPickerRef.current.contains(e.target) &&
-        !e.target.closest(".emoji-trigger")
+        !e.target.closest('.emoji-trigger')
       ) {
         setShowEmojiPicker(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Handle send message
   const handleSubmit = async (e) => {
     e.preventDefault();
     if ((!message.trim() && !attachedFile) || isSubmitting) return;
@@ -82,34 +84,33 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
 
       await onSendMessage(messageToSend);
 
-      // Clear both state and DOM content
       clearInput();
       removeAttachment();
       inputRef.current?.focus();
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Enter to send, Shift+Enter for newline
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
   };
 
+  // Handle emoji selection
   const handleEmojiSelect = (emoji) => {
-    const emojiChar = emoji.native || "";
+    const emojiChar = emoji.native || '';
     const newMessage = message + emojiChar;
     setMessage(newMessage);
 
     if (inputRef.current) {
-      // Update the contentEditable div content
       inputRef.current.textContent = newMessage;
 
-      // Set cursor to end
       const range = document.createRange();
       const selection = window.getSelection();
       range.selectNodeContents(inputRef.current);
@@ -122,11 +123,13 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
     inputRef.current?.focus();
   };
 
+  // Handle input change
   const handleInput = (e) => {
-    const content = e.currentTarget.textContent || "";
+    const content = e.currentTarget.textContent || '';
     setMessage(content);
   };
 
+  // Format file size for display
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -146,7 +149,7 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
           </button>
 
           <div className="flex items-center">
-            {attachedFile.type === "image" ? (
+            {attachedFile.type === 'image' ? (
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center mr-2 flex-shrink-0">
                 <Image className="w-4 h-4 text-indigo-500" />
               </div>
@@ -156,9 +159,7 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
               </div>
             )}
             <div className="truncate">
-              <p className="text-xs font-medium text-gray-900 truncate">
-                {attachedFile.name}
-              </p>
+              <p className="text-xs font-medium text-gray-900 truncate">{attachedFile.name}</p>
               <p className="text-[10px] text-gray-500 mt-0.5">
                 {formatFileSize(attachedFile.size)}
               </p>
@@ -170,15 +171,12 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
       <form
         onSubmit={handleSubmit}
         className={`relative bg-gradient-to-r from-white to-gray-50 rounded-xl shadow border transition-all duration-200 ${
-          isFocused ? "border-indigo-300 shadow-indigo-100" : "border-gray-200"
+          isFocused ? 'border-indigo-300 shadow-indigo-100' : 'border-gray-200'
         }`}
       >
-        <div
-          className={`flex items-center relative py-1.5 px-2 ${
-            showEmojiPicker ? "pb-16" : ""
-          }`}
-        >
+        <div className={`flex items-center relative py-1.5 px-2 ${showEmojiPicker ? 'pb-16' : ''}`}>
           <div className="flex items-center space-x-0.5 mr-1">
+            {/* File attachment */}
             <label className="cursor-pointer text-gray-500 hover:text-indigo-600 p-1.5 rounded-full hover:bg-indigo-50">
               <Paperclip className="w-4 h-4" />
               <input
@@ -190,12 +188,11 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
               />
             </label>
 
+            {/* Emoji picker trigger */}
             <button
               type="button"
               className={`emoji-trigger text-gray-500 p-1.5 rounded-full hover:bg-yellow-50 ${
-                showEmojiPicker
-                  ? "text-yellow-500 bg-yellow-50"
-                  : "hover:text-yellow-500"
+                showEmojiPicker ? 'text-yellow-500 bg-yellow-50' : 'hover:text-yellow-500'
               }`}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             >
@@ -216,9 +213,9 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
                 className="max-h-32 min-h-[32px] py-1.5 px-2 bg-transparent w-full focus:outline-none overflow-y-auto resize-none text-gray-700 text-sm empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
                 data-placeholder="Type a message..."
                 style={{
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  lineHeight: "1.4",
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  lineHeight: '1.4',
                 }}
                 aria-label="Message"
               />
@@ -226,13 +223,14 @@ const MessageInput = ({ onSendMessage, onFileSelect: propOnFileSelect }) => {
           </div>
 
           <div className="ml-1">
+            {/* Send button */}
             <button
               type="submit"
               disabled={(!message.trim() && !attachedFile) || isSubmitting}
               className={`p-2 rounded-full transition-all ${
                 (message.trim() || attachedFile) && !isSubmitting
-                  ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600"
-                  : "text-gray-400 bg-gray-100 cursor-not-allowed"
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600'
+                  : 'text-gray-400 bg-gray-100 cursor-not-allowed'
               }`}
               aria-label="Send message"
             >

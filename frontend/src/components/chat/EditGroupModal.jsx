@@ -1,19 +1,19 @@
-import { useState, useEffect } from "react";
-import { useGroups } from "@/hooks/useGroups";
-import { Button } from "@/components/ui/button";
-import { motion as Motion } from "framer-motion";
+import { useState, useEffect } from 'react';
+import { useGroups } from '@/hooks/useGroups';
+import { Button } from '@/components/ui/button';
+import { motion as Motion } from 'framer-motion';
 
 const EditGroupModal = ({ group, onClose }) => {
   const { updateGroup } = useGroups();
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [members, setMembers] = useState([]);
   const [removeMode, setRemoveMode] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (group) {
-      setName(group.name || "");
+      setName(group.name || '');
       setMembers(
         (group.memberships || []).map((m) => ({
           uuid: m.user.uuid,
@@ -21,40 +21,34 @@ const EditGroupModal = ({ group, onClose }) => {
           role: m.role,
           newRole: m.role,
           remove: false,
-        }))
+        })),
       );
     }
   }, [group]);
 
   const handleToggleRemove = (uuid, remove) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.uuid === uuid ? { ...m, remove } : m))
-    );
+    setMembers((prev) => prev.map((m) => (m.uuid === uuid ? { ...m, remove } : m)));
   };
 
   const handleRoleChange = (uuid, newRole) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.uuid === uuid ? { ...m, newRole } : m))
-    );
+    setMembers((prev) => prev.map((m) => (m.uuid === uuid ? { ...m, newRole } : m)));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name.trim()) {
-      setError("Group name is required");
+      setError('Group name is required');
       return;
     }
 
     setLoading(true);
-    setError("");
+    setError('');
 
     try {
       const payload = { name: name.trim() };
 
-      const removeMembers = members
-        .filter((m) => m.remove)
-        .map((m) => ({ uuid: m.uuid }));
+      const removeMembers = members.filter((m) => m.remove).map((m) => ({ uuid: m.uuid }));
       const roleUpdates = members
         .filter((m) => !m.remove && m.newRole !== m.role)
         .map((m) => ({ uuid: m.uuid, role: m.newRole }));
@@ -65,7 +59,7 @@ const EditGroupModal = ({ group, onClose }) => {
       const result = await updateGroup(group.uuid, payload);
       if (result) onClose();
     } catch (error) {
-      setError(error.message || "Failed to update group");
+      setError(error.message || 'Failed to update group');
     } finally {
       setLoading(false);
     }
@@ -105,7 +99,7 @@ const EditGroupModal = ({ group, onClose }) => {
               size="sm"
               onClick={() => setRemoveMode(!removeMode)}
             >
-              {removeMode ? "Cancel Remove" : "Remove Members"}
+              {removeMode ? 'Cancel Remove' : 'Remove Members'}
             </Button>
           </div>
 
@@ -120,9 +114,7 @@ const EditGroupModal = ({ group, onClose }) => {
                     <input
                       type="checkbox"
                       checked={member.remove}
-                      onChange={(e) =>
-                        handleToggleRemove(member.uuid, e.target.checked)
-                      }
+                      onChange={(e) => handleToggleRemove(member.uuid, e.target.checked)}
                     />
                   )}
                   <span className="flex-1">{member.name}</span>
@@ -130,9 +122,7 @@ const EditGroupModal = ({ group, onClose }) => {
                     <select
                       className="border rounded px-1 py-0.5 text-xs"
                       value={member.newRole}
-                      onChange={(e) =>
-                        handleRoleChange(member.uuid, e.target.value)
-                      }
+                      onChange={(e) => handleRoleChange(member.uuid, e.target.value)}
                     >
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>
@@ -146,16 +136,11 @@ const EditGroupModal = ({ group, onClose }) => {
           {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={loading}
-            >
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save Changes"}
+              {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

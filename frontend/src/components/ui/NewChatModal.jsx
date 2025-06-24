@@ -1,36 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { Search, X, MessageCircle } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useChat } from "@/hooks/useChat";
-import { useAuth } from "@/hooks/useAuth";
+import React, { useState, useEffect } from 'react';
+import { Search, X, MessageCircle } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useChat } from '@/hooks/useChat';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function NewChatModal({ isOpen, onClose }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { users, loading, fetchAllUsers, startChat } = useChat();
   const user = useAuth((s) => s.user);
 
   useEffect(() => {
-    // Load all users when modal opens, but only if we don't already have users
     if (isOpen) {
-      // Only fetch if we're not already loading and don't have users
       if (!loading && (!users || users.length === 0)) {
-        fetchAllUsers().catch(() => {
-          // Error handled by the hook
-        });
+        fetchAllUsers().catch(() => {});
       }
     }
   }, [isOpen, loading, users, fetchAllUsers]);
 
-  // Filter users based on search query
   const filteredUsers = users.filter((u) => {
-    if (u.uuid === user?.uuid) return false; // Exclude current user
+    if (u.uuid === user?.uuid) return false;
 
-    if (!searchQuery.trim()) return true; // Show all when no search query
+    if (!searchQuery.trim()) return true;
 
-    // Search by name or email
     return (
       u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -41,9 +35,9 @@ export default function NewChatModal({ isOpen, onClose }) {
     try {
       await startChat(otherUser);
       onClose();
-      setSearchQuery("");
+      setSearchQuery('');
     } catch {
-      alert("Failed to start chat. Please try again.");
+      alert('Failed to start chat. Please try again.');
     }
   };
 
@@ -51,25 +45,15 @@ export default function NewChatModal({ isOpen, onClose }) {
 
   return (
     <>
-      {/* Modal content */}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
-          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Start New Chat
-            </h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8 rounded-full"
-            >
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Start New Chat</h2>
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Search */}
           <div className="p-4 border-b border-slate-200 dark:border-slate-700">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -84,7 +68,6 @@ export default function NewChatModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Results */}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center p-8">
@@ -93,9 +76,7 @@ export default function NewChatModal({ isOpen, onClose }) {
             ) : filteredUsers.length === 0 ? (
               <div className="p-8 text-center text-slate-400">
                 <p>
-                  {searchQuery
-                    ? `No users found matching "${searchQuery}"`
-                    : "No users available"}
+                  {searchQuery ? `No users found matching "${searchQuery}"` : 'No users available'}
                 </p>
               </div>
             ) : (
@@ -115,9 +96,7 @@ export default function NewChatModal({ isOpen, onClose }) {
                           }
                           alt={otherUser.name}
                         />
-                        <AvatarFallback>
-                          {otherUser.name?.charAt(0)}
-                        </AvatarFallback>
+                        <AvatarFallback>{otherUser.name?.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-slate-900 dark:text-white truncate">

@@ -1,14 +1,15 @@
-import * as groupService from "../services/group.service.js";
-import { HTTP_STATUS } from "../constants/statusCodes.js";
-import { ApiError } from "../errors/apiError.js";
+import * as groupService from '../services/group.service.js';
+import { HTTP_STATUS } from '../constants/statusCodes.js';
+import { ApiError } from '../errors/apiError.js';
 
+//create a new group
 export const createGroup = async (req, res) => {
   try {
     const { name, members } = req.body;
     const data = await groupService.createGroup(name, req.user.id, members);
 
     return res.status(HTTP_STATUS.CREATED).json({
-      message: "Group created successfully",
+      message: 'Group created successfully',
       data,
     });
   } catch (error) {
@@ -24,6 +25,7 @@ export const createGroup = async (req, res) => {
   }
 };
 
+//get all groups for a user
 export const getAllGroups = async (req, res) => {
   try {
     const data = await groupService.getAllGroupsForUser(req.user.id);
@@ -41,17 +43,13 @@ export const getAllGroups = async (req, res) => {
   }
 };
 
+//get a group and its messages by uuid
 export const getGroupByUuid = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const page = parseInt(req.query.page) || 0;
     const offset = page * limit;
-    const data = await groupService.getGroupByUuid(
-      req.params.uuid,
-      req.user.id,
-      limit,
-      offset
-    );
+    const data = await groupService.getGroupByUuid(req.params.uuid, req.user.id, limit, offset);
     return res.status(HTTP_STATUS.OK).json({
       success: true,
       data,
@@ -75,16 +73,13 @@ export const getGroupByUuid = async (req, res) => {
   }
 };
 
+//update a group by uuid
 export const updateGroupByUuid = async (req, res) => {
   try {
-    const data = await groupService.updateGroupByUuid(
-      req.params.uuid,
-      req.body,
-      req.user.id
-    );
+    const data = await groupService.updateGroupByUuid(req.params.uuid, req.body, req.user.id);
 
     return res.status(HTTP_STATUS.OK).json({
-      message: "Group updated successfully",
+      message: 'Group updated successfully',
       data,
     });
   } catch (error) {
@@ -100,11 +95,12 @@ export const updateGroupByUuid = async (req, res) => {
   }
 };
 
+//delete a group by uuid
 export const deleteGroupByUuid = async (req, res) => {
   try {
     await groupService.deleteGroupByUuid(req.params.uuid, req.user.id);
     return res.status(HTTP_STATUS.NO_CONTENT).json({
-      message: "Group deleted successfully",
+      message: 'Group deleted successfully',
       success: true,
     });
   } catch (error) {
@@ -120,16 +116,17 @@ export const deleteGroupByUuid = async (req, res) => {
   }
 };
 
+//add members to a group
 export const addGroupMembers = async (req, res) => {
   try {
     const data = await groupService.addMembersToGroup(
       req.params.uuid,
       req.body.members,
-      req.user.id
+      req.user.id,
     );
 
     return res.status(HTTP_STATUS.OK).json({
-      message: "Members added successfully",
+      message: 'Members added successfully',
       data,
     });
   } catch (error) {

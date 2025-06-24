@@ -1,7 +1,7 @@
-import { useEffect } from "react";
-import { useGroups } from "@/hooks/useGroups";
-import EmptyState from "@/components/common/EmptyState";
-import { motion as Motion } from "framer-motion";
+import { useEffect } from 'react';
+import { useGroups } from '@/hooks/useGroups';
+import EmptyState from '@/components/common/EmptyState';
+import { motion as Motion } from 'framer-motion';
 
 const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
   const { groups, fetchGroups, loading, error } = useGroups();
@@ -22,10 +22,7 @@ const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
     return (
       <div className="p-4 text-center text-red-500">
         Error loading groups: {error}
-        <button
-          onClick={fetchGroups}
-          className="block mx-auto mt-2 text-blue-500 hover:underline"
-        >
+        <button onClick={fetchGroups} className="block mx-auto mt-2 text-blue-500 hover:underline">
           Try Again
         </button>
       </div>
@@ -47,9 +44,7 @@ const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
               <Motion.li
                 key={group.id || group.uuid}
                 className={`p-4 hover:bg-gray-50 dark:hover:bg-slate-700/30 cursor-pointer ${
-                  currentGroupId === group.id
-                    ? "bg-blue-50 dark:bg-blue-900/20"
-                    : ""
+                  currentGroupId === group.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                 }`}
                 onClick={() => onSelectGroup(group)}
               >
@@ -58,13 +53,13 @@ const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
                     <img
                       src={
                         group.avatar ||
-                        `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || "group"}`
+                        `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || 'group'}`
                       }
-                      alt={`${group.name || "Group"} avatar`}
+                      alt={`${group.name || 'Group'} avatar`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || "fallback"}`;
+                        e.target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${group.name || 'fallback'}`;
                       }}
                     />
                   </div>

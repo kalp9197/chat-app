@@ -1,20 +1,21 @@
-import * as authService from "../services/auth.service.js";
-import { HTTP_STATUS } from "../constants/statusCodes.js";
+import * as authService from '../services/auth.service.js';
+import { HTTP_STATUS } from '../constants/statusCodes.js';
 
+//middleware to check if user is authenticated
 export const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        message: "Authorization header missing or invalid",
+        message: 'Authorization header missing or invalid',
         success: false,
       });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1];
     if (!token) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        message: "No token provided",
+        message: 'No token provided',
         success: false,
       });
     }

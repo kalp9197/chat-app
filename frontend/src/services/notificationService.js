@@ -1,73 +1,47 @@
-import axios from "../lib/axios";
-import {
-  requestNotificationPermission,
-  onMessageListener,
-  firebaseConfigForSW,
-} from "../config/firebase";
+import axios from '@/lib/axios';
+import { onMessageListener } from '../config/firebase';
 
-const notificationCallbacks = new Set();
+let notificationCallbacks = new Set();
 
 export const saveFcmToken = async (token) => {
-  try {
-    await axios.post("/notifications/token", { fcm_token: token });
-    return true;
-  } catch {
-    return false;
-  }
+  await axios.post('/notifications/token', { fcm_token: token });
 };
 
 export const initializeNotifications = async () => {
-  if ("serviceWorker" in navigator) {
+  if (!('serviceWorker' in navigator)) return null;
+  let token = null;
+  if (window.firebase && window.firebase.messaging) {
     try {
-      const registration = await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js",
-        { scope: "/" }
-      );
-
-      const sendConfig = () =>
-        registration.active?.postMessage({
-          type: "FIREBASE_CONFIG",
-          config: firebaseConfigForSW,
-        });
-
-      if (registration.active) {
-        sendConfig();
-      } else {
-        navigator.serviceWorker.addEventListener(
-          "message",
-          ({ data, source }) => {
-            if (data?.type === "SW_READY")
-              source.postMessage({
-                type: "FIREBASE_CONFIG",
-                config: firebaseConfigForSW,
-              });
-          }
-        );
-      }
-
-      const token = await requestNotificationPermission();
-      if (token) {
-        await saveFcmToken(token);
-        setupGlobalNotificationListener();
-        return token;
-      }
+      token = await window.firebase.messaging().getToken();
     } catch {
-      return null;
+      /* ignore */
     }
+  }
+  if (!token && window.Notification && window.Notification.permission === 'granted') {
+    try {
+      const { default: firebase } = await import('firebase/compat/app');
+      await import('firebase/compat/messaging');
+      const messaging = firebase.messaging();
+      token = await messaging.getToken();
+    } catch {
+      /* ignore */
+    }
+  }
+  if (token) {
+    await saveFcmToken(token);
+    return token;
   }
   return null;
 };
 
 const handleGlobalNotification = (payload) => {
-  // Handle other notifications
   notificationCallbacks.forEach((cb) => cb(payload));
 };
 
 let unsubscribeGlobalListener = null;
 
 export const setupGlobalNotificationListener = () => {
-  if (setupGlobalNotificationListener.initialized && unsubscribeGlobalListener)
-    return;
+  if (setupGlobalNotificationListener.initialized && unsubscribeGlobalListener) return;
 
   unsubscribeGlobalListener?.();
   unsubscribeGlobalListener = onMessageListener(handleGlobalNotification);
@@ -82,16 +56,14 @@ export const teardownGlobalNotificationListener = () => {
 };
 
 export const listenForNotifications = (callback) => {
-  if (typeof callback !== "function") return () => {};
   notificationCallbacks.add(callback);
   return () => notificationCallbacks.delete(callback);
 };
 
 export const triggerTestNotification = async (title, body) => {
   try {
-    await axios.post("/notifications/test", { title, body });
-    return true;
+    await axios.post('/notifications/test', { title, body });
   } catch {
-    return false;
+    /* ignore */
   }
 };

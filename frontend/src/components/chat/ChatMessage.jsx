@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   CheckCircle2,
   Clock,
@@ -8,22 +8,19 @@ import {
   File as FileIcon,
   MoreVertical,
   X,
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
-import PdfViewerModal from "./PdfViewerModal";
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
+import PdfViewerModal from './PdfViewerModal';
 
+// Modal for viewing images
 const ImageViewerModal = ({ src, alt, onClose }) => (
   <div
     className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
     onClick={onClose}
   >
     <div className="relative" onClick={(e) => e.stopPropagation()}>
-      <img
-        src={src}
-        alt={alt}
-        className="max-h-[90vh] max-w-[90vw] object-contain"
-      />
+      <img src={src} alt={alt} className="max-h-[90vh] max-w-[90vw] object-contain" />
       <button
         onClick={onClose}
         className="absolute -top-2 -right-2 bg-white rounded-full p-1 text-black"
@@ -38,26 +35,25 @@ const ChatMessage = React.memo(
   ({ message }) => {
     const user = useAuth((state) => state.user);
 
+    // Memoize message data for performance
     const messageData = useMemo(() => {
       if (!message || !user) return null;
 
-      const isSentByMe =
-        message.sender?.uuid === user.uuid || message.sender === user.uuid;
-      const senderName = message.sender?.name || message.senderName || "";
+      const isSentByMe = message.sender?.uuid === user.uuid || message.sender === user.uuid;
+      const senderName = message.sender?.name || message.senderName || '';
       const timestamp = message.timestamp || message.created_at;
       const formattedTime = timestamp
         ? new Date(timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
+            hour: '2-digit',
+            minute: '2-digit',
           })
-        : "";
+        : '';
       const messageContent = message.content;
       const messageType =
-        message.message_type ||
-        (typeof messageContent === "string" ? "text" : "file");
+        message.message_type || (typeof messageContent === 'string' ? 'text' : 'file');
       const senderInitial = isSentByMe
-        ? (user.name?.charAt(0) || "M").toUpperCase()
-        : (senderName.charAt(0) || "?").toUpperCase();
+        ? (user.name?.charAt(0) || 'M').toUpperCase()
+        : (senderName.charAt(0) || '?').toUpperCase();
 
       return {
         isSentByMe,
@@ -70,10 +66,10 @@ const ChatMessage = React.memo(
     }, [message, user]);
 
     const [showTimestamp, setShowTimestamp] = useState(false);
-
-    // --- File message rendering logic ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState(null);
+
+    // Download file handler
     const handleDownload = (e, content) => {
       e.stopPropagation();
       if (!content.data) return;
@@ -85,7 +81,7 @@ const ChatMessage = React.memo(
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: content.type });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = content.fileName;
       document.body.appendChild(a);
@@ -93,16 +89,18 @@ const ChatMessage = React.memo(
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     };
+
+    // Render file message (image, pdf, other)
     function renderFileMessage(content, isSentByMe) {
-      if (!content || typeof content !== "object") {
+      if (!content || typeof content !== 'object') {
         return <div className="text-sm text-red-500">Invalid file message</div>;
       }
       const { data, fileName, type, error, fileSize } = content;
       if (error) {
         return <div className="text-sm text-red-500">Error: {error}</div>;
       }
-      const isImage = type && type.startsWith("image/");
-      const isPdf = type === "application/pdf";
+      const isImage = type && type.startsWith('image/');
+      const isPdf = type === 'application/pdf';
       if (isImage && data) {
         return (
           <>
@@ -112,7 +110,7 @@ const ChatMessage = React.memo(
                 alt={fileName}
                 className="max-w-xs max-h-64 rounded-lg object-contain cursor-pointer"
                 onClick={() => {
-                  setModalContent("image");
+                  setModalContent('image');
                   setIsModalOpen(true);
                 }}
                 title={`Click to view ${fileName}`}
@@ -124,7 +122,7 @@ const ChatMessage = React.memo(
                 />
               </div>
             </div>
-            {isModalOpen && modalContent === "image" && (
+            {isModalOpen && modalContent === 'image' && (
               <ImageViewerModal
                 src={`data:${type};base64,${data}`}
                 alt={fileName}
@@ -142,24 +140,22 @@ const ChatMessage = React.memo(
           <>
             <div
               className={`relative flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${
-                isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"
+                isSentByMe ? 'bg-blue-500' : 'bg-white border border-gray-200'
               }`}
             >
               <div
                 className="flex items-center gap-2 flex-1 cursor-pointer"
                 onClick={() => {
-                  setModalContent("pdf");
+                  setModalContent('pdf');
                   setIsModalOpen(true);
                 }}
               >
-                <FileIcon
-                  className={`w-6 h-6 ${isSentByMe ? "text-white" : "text-blue-500"}`}
-                />
+                <FileIcon className={`w-6 h-6 ${isSentByMe ? 'text-white' : 'text-blue-500'}`} />
                 <div className="flex-1 overflow-hidden">
                   <p
-                    className={`text-sm font-medium truncate ${isSentByMe ? "text-white" : "text-gray-800"}`}
+                    className={`text-sm font-medium truncate ${isSentByMe ? 'text-white' : 'text-gray-800'}`}
                   >
-                    {fileName || "PDF Document"}
+                    {fileName || 'PDF Document'}
                   </p>
                   <p className="text-xs text-gray-400">PDF Document</p>
                 </div>
@@ -171,7 +167,7 @@ const ChatMessage = React.memo(
                 />
               </div>
             </div>
-            {isModalOpen && modalContent === "pdf" && (
+            {isModalOpen && modalContent === 'pdf' && (
               <PdfViewerModal
                 pdfData={data}
                 fileName={fileName}
@@ -186,33 +182,27 @@ const ChatMessage = React.memo(
       }
       return (
         <div
-          className={`relative flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${isSentByMe ? "bg-blue-500" : "bg-white border border-gray-200"}`}
+          className={`relative flex items-center gap-2 p-2 rounded-lg min-w-[200px] ${isSentByMe ? 'bg-blue-500' : 'bg-white border border-gray-200'}`}
         >
-          <FileIcon
-            className={`w-6 h-6 ${isSentByMe ? "text-blue-50" : "text-blue-500"}`}
-          />
+          <FileIcon className={`w-6 h-6 ${isSentByMe ? 'text-blue-50' : 'text-blue-500'}`} />
           <div className="flex-1 overflow-hidden">
             <p
-              className={`text-sm font-medium truncate ${isSentByMe ? "text-white" : "text-gray-800"}`}
+              className={`text-sm font-medium truncate ${isSentByMe ? 'text-white' : 'text-gray-800'}`}
             >
-              {fileName || "File"}
+              {fileName || 'File'}
             </p>
-            <p className="text-xs text-gray-400">
-              {fileSize ? `(${fileSize})` : ""}
-            </p>
+            <p className="text-xs text-gray-400">{fileSize ? `(${fileSize})` : ''}</p>
           </div>
           {data && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              <MessageMenu
-                onDownload={(e) => handleDownload(e, content)}
-                isSentByMe={isSentByMe}
-              />
+              <MessageMenu onDownload={(e) => handleDownload(e, content)} isSentByMe={isSentByMe} />
             </div>
           )}
         </div>
       );
     }
 
+    // Memoize status icon
     const statusIcon = useMemo(() => {
       if (message.isPending)
         return (
@@ -231,25 +221,19 @@ const ChatMessage = React.memo(
       return <CheckCircle2 size={12} className="text-gray-400" />;
     }, [message.isPending, message.failed]);
 
+    // Memoize time ago
     const timeAgo = useMemo(() => {
-      if (!message.timestamp && !message.created_at) return "";
-      const date = message.timestamp
-        ? new Date(message.timestamp)
-        : new Date(message.created_at);
+      if (!message.timestamp && !message.created_at) return '';
+      const date = message.timestamp ? new Date(message.timestamp) : new Date(message.created_at);
       return formatDistanceToNow(date, { addSuffix: true });
     }, [message.timestamp, message.created_at]);
 
     if (!messageData) return null;
 
-    const {
-      isSentByMe,
-      senderName,
-      formattedTime,
-      messageContent,
-      senderInitial,
-      messageType,
-    } = messageData;
+    const { isSentByMe, senderName, formattedTime, messageContent, senderInitial, messageType } =
+      messageData;
 
+    // Message menu for download, etc.
     const MessageMenu = ({ onDownload, isSentByMe }) => {
       const [isOpen, setIsOpen] = useState(false);
       const menuRef = useRef(null);
@@ -260,9 +244,9 @@ const ChatMessage = React.memo(
             setIsOpen(false);
           }
         };
-        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
         return () => {
-          document.removeEventListener("mousedown", handleClickOutside);
+          document.removeEventListener('mousedown', handleClickOutside);
         };
       }, []);
 
@@ -275,10 +259,7 @@ const ChatMessage = React.memo(
             }}
             className="p-1 rounded-full hover:bg-black/10"
           >
-            <MoreVertical
-              size={18}
-              className={isSentByMe ? "text-white" : "text-gray-500"}
-            />
+            <MoreVertical size={18} className={isSentByMe ? 'text-white' : 'text-gray-500'} />
           </button>
           {isOpen && (
             <div className="absolute top-full right-0 mt-1 w-40 bg-white dark:bg-slate-800 rounded-md shadow-lg z-20 border border-gray-200 dark:border-slate-700">
@@ -304,11 +285,12 @@ const ChatMessage = React.memo(
     return (
       <div
         className={cn(
-          "group w-full flex mb-4 last:mb-2",
-          isSentByMe ? "justify-end" : "justify-start"
+          'group w-full flex mb-4 last:mb-2',
+          isSentByMe ? 'justify-end' : 'justify-start',
         )}
         onClick={() => setShowTimestamp((prev) => !prev)}
       >
+        {/* Sender avatar (left for others, right for me) */}
         {!isSentByMe ? (
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white shadow-sm flex items-center justify-center text-white text-xs font-semibold self-start mt-1 mr-2 flex-shrink-0">
             {senderInitial}
@@ -319,9 +301,9 @@ const ChatMessage = React.memo(
           {/* Timestamp */}
           <div
             className={cn(
-              "text-xs text-gray-400 whitespace-nowrap transition-opacity duration-200 mb-1",
-              isSentByMe ? "text-right pr-2" : "pl-2",
-              showTimestamp ? "opacity-100" : "opacity-0"
+              'text-xs text-gray-400 whitespace-nowrap transition-opacity duration-200 mb-1',
+              isSentByMe ? 'text-right pr-2' : 'pl-2',
+              showTimestamp ? 'opacity-100' : 'opacity-0',
             )}
           >
             {timeAgo}
@@ -329,21 +311,20 @@ const ChatMessage = React.memo(
 
           <div
             className={cn(
-              "px-4 py-2.5 rounded-2xl shadow-sm transition-all duration-200",
+              'px-4 py-2.5 rounded-2xl shadow-sm transition-all duration-200',
               isSentByMe
-                ? "bg-blue-500 text-white rounded-br-sm"
-                : "bg-white text-gray-800 border border-gray-100 rounded-bl-sm"
+                ? 'bg-blue-500 text-white rounded-br-sm'
+                : 'bg-white text-gray-800 border border-gray-100 rounded-bl-sm',
             )}
           >
+            {/* Sender name for group/other messages */}
             {!isSentByMe && senderName && (
-              <div className="text-xs font-semibold mb-1 text-purple-600">
-                {senderName}
-              </div>
+              <div className="text-xs font-semibold mb-1 text-purple-600">{senderName}</div>
             )}
             <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-              {messageType === "file"
+              {messageType === 'file'
                 ? renderFileMessage(messageContent, isSentByMe)
-                : typeof messageContent === "string"
+                : typeof messageContent === 'string'
                   ? messageContent
                   : null}
             </div>
@@ -352,8 +333,8 @@ const ChatMessage = React.memo(
           {formattedTime && (
             <div
               className={cn(
-                "flex items-center mt-1 text-xs text-gray-500",
-                isSentByMe ? "justify-end pr-2" : "justify-start pl-2"
+                'flex items-center mt-1 text-xs text-gray-500',
+                isSentByMe ? 'justify-end pr-2' : 'justify-start pl-2',
               )}
             >
               <span>{formattedTime}</span>
@@ -362,6 +343,7 @@ const ChatMessage = React.memo(
           )}
         </div>
 
+        {/* Sender avatar (right for me) */}
         {isSentByMe && (
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white shadow-sm flex items-center justify-center text-white text-xs font-semibold self-start mt-1 ml-2 flex-shrink-0">
             {senderInitial}
@@ -379,8 +361,8 @@ const ChatMessage = React.memo(
       prevProps.message.message_type === nextProps.message.message_type &&
       prevProps.message.timestamp === nextProps.message.timestamp
     );
-  }
+  },
 );
 
-ChatMessage.displayName = "ChatMessage";
+ChatMessage.displayName = 'ChatMessage';
 export default ChatMessage;

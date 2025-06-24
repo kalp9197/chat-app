@@ -1,6 +1,7 @@
-import React from "react";
+import React from 'react';
 
-const EmptyState = ({ message, action, actionText, icon = "📫" }) => {
+// Simple empty state component for lists
+const EmptyState = ({ message, action, actionText, icon = '📫' }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 text-center">
       <div className="text-5xl mb-4">{icon}</div>
