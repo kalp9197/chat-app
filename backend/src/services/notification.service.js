@@ -8,7 +8,7 @@ export const saveFcmToken = async (userId, fcmToken) => {
   try {
     await notificationRepository.updateUserFcmToken(userId, fcmToken);
     return true;
-  } catch {
+  } catch (error) {
     throw new ApiError('Error saving FCM token', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
@@ -17,11 +17,9 @@ export const saveFcmToken = async (userId, fcmToken) => {
 export const sendNotification = async (receiverId, title, body, data = {}) => {
   try {
     const user = await notificationRepository.findUserWithFcmToken(receiverId);
-
     if (!user || !user.fcm_token) {
       return false;
     }
-
     const message = {
       token: user.fcm_token,
       notification: {
@@ -42,10 +40,9 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
         },
       },
     };
-
     await messaging.send(message);
     return true;
-  } catch {
+  } catch (error) {
     throw new ApiError('Error sending notification', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
@@ -53,13 +50,16 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
 //send a new message notification
 export const sendNewMessageNotification = async (message) => {
   try {
-    const sender =
-      message.sender || (await notificationRepository.findUserWithName(message.sender_id));
-
+    let sender = message.sender;
+    if (!sender) {
+      sender = await notificationRepository.findUserWithName(message.sender_id);
+    }
+    if (!sender) {
+      return false;
+    }
     const title = `New message from ${sender.name}`;
     const body =
       message.content.length > 100 ? `${message.content.substring(0, 97)}...` : message.content;
-
     const data = {
       messageId: message.id.toString(),
       senderId: message.sender_id.toString(),
@@ -67,9 +67,8 @@ export const sendNewMessageNotification = async (message) => {
       type: 'chat_message',
       chatId: `user-${sender.uuid}`,
     };
-
     return await sendNotification(message.receiver_id, title, body, data);
-  } catch {
+  } catch (error) {
     throw new ApiError('Error sending new message notification', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };

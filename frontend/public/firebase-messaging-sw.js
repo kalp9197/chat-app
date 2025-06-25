@@ -2,44 +2,41 @@
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
-//firebase config
-const firebaseConfig = {
+// Firebase config - this will be replaced by the main app with actual values
+let firebaseConfig = {
   apiKey: 'AIzaSyDbcq4vj1qPIUHR4jNq-4HpdqQ94YNTwsc',
   authDomain: 'chatapp5503.firebaseapp.com',
   projectId: 'chatapp5503',
   storageBucket: 'chatapp5503.appspot.com',
   messagingSenderId: '957776005516',
   appId: '1:957776005516:web:868e7aadba0f111bf0aea9',
-  vapidKey:
-    'BAU9dLojWgLiAeaZ2fUYuwUniwbQ_CmElRdu2cSqn4zgvcp7tTq7BqPXd18J1akxmjwnO5YVadnUZI8Sz50ViRI',
 };
 
+let vapidKey =
+  'BAU9dLojWgLiAeaZ2fUYuwUniwbQ_CmElRdu2cSqn4zgvcp7tTq7BqPXd18J1akxmjwnO5YVadnUZI8Sz50ViRI';
+
+// Initialize Firebase
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-//init messaging
+// Initialize messaging
 let messaging = null;
 try {
   messaging = firebase.messaging();
-} catch {
-  //pass
-}
+} catch (error) {}
 
-//show notification
+// Show notification when app is in background
 if (messaging) {
   messaging.onBackgroundMessage((payload) => {
     const data = payload.data || {};
     const notification = payload.notification || {};
-
     let notificationTitle = notification.title || 'New Message';
     let notificationBody = notification.body || 'You have a new message';
-
     let url = '/';
     if (data.type === 'chat_message' && data.chatId) {
       url = `/chat/${data.chatId}`;
     }
-
     const notificationOptions = {
       body: notificationBody,
       icon: '/notification-icon.png',
@@ -52,12 +49,11 @@ if (messaging) {
       renotify: true,
       requireInteraction: true,
     };
-
     return self.registration.showNotification(notificationTitle, notificationOptions);
   });
 }
 
-//activate service worker
+// Activate service worker
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     self.clients.matchAll().then((clients) => {
@@ -68,14 +64,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-//handle notification click
+// Handle notification click
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
   const notificationData = event.notification.data || {};
   const urlToOpen = notificationData.url || '/';
   const isChatMessage = notificationData.type === 'chat_message';
-
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
@@ -94,7 +88,7 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-//handle message
+// Handle messages from main app
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'FIREBASE_CONFIG' && event.data.config) {
     if (!firebase.apps.length) {
@@ -102,9 +96,7 @@ self.addEventListener('message', (event) => {
     }
     try {
       messaging = firebase.messaging();
-    } catch {
-      //pass
-    }
+    } catch (error) {}
     event.source?.postMessage?.({ type: 'SW_FIREBASE_INITIALIZED' });
   }
 });

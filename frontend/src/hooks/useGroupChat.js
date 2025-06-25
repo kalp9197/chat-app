@@ -17,6 +17,7 @@ const MESSAGES_PER_PAGE = 10;
 
 const formatMessages = (rawMessages) =>
   rawMessages.map((m) => ({
+    uuid: m.uuid,
     id: m.id || m.uuid || `msg-${Date.now()}-${Math.random()}`,
     content: m.content,
     message_type: m.message_type,
@@ -128,6 +129,7 @@ export const useGroupChat = create((set, get) => ({
       tempContent = textContent.trim();
     }
     const tempMessage = {
+      uuid: tempId,
       id: tempId,
       content: tempContent,
       message_type: isFileMessage ? 'file' : 'text',
@@ -153,6 +155,7 @@ export const useGroupChat = create((set, get) => ({
           m.id === tempId
             ? {
                 ...m,
+                uuid: serverMessage.uuid,
                 ...formatMessages([serverMessage])[0],
                 isPending: false,
                 content:
@@ -227,5 +230,19 @@ export const useGroupChat = create((set, get) => ({
       currentPage: 0,
       hasMoreMessages: true,
     });
+  },
+
+  deleteMessage: async (messageUuid) => {
+    const originalMessages = get().messages;
+    set((state) => ({
+      messages: state.messages.filter((m) => m.uuid !== messageUuid),
+    }));
+    try {
+      const { deleteMessage } = await import('@/services/messageService');
+      await deleteMessage(messageUuid);
+    } catch (error) {
+      set({ messages: originalMessages, error: 'Failed to delete message' });
+      console.error('Failed to delete message:', error);
+    }
   },
 }));

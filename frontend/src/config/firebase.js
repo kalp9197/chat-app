@@ -15,7 +15,6 @@ let messagingInstance = null;
 
 const initializeFCM = async () => {
   if (messagingInstance) return messagingInstance;
-
   try {
     const supported = await isSupported();
     if (supported) {
@@ -23,7 +22,7 @@ const initializeFCM = async () => {
     } else {
       messagingInstance = null;
     }
-  } catch {
+  } catch (error) {
     messagingInstance = null;
   }
   return messagingInstance;
@@ -44,28 +43,37 @@ export const firebaseConfigForSW = {
 
 export const requestNotificationPermission = async () => {
   const messaging = await getMessagingInstance();
-  if (!messaging) return null;
-
+  if (!messaging) {
+    return null;
+  }
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-      if (!vapidKey) return null;
-
+      if (!vapidKey) {
+        return null;
+      }
       const token = await getToken(messaging, { vapidKey });
       return token || null;
+    } else {
+      return null;
     }
-    return null;
-  } catch {
+  } catch (error) {
     return null;
   }
 };
 
 export const onMessageListener = async (callback) => {
   const messaging = await getMessagingInstance();
-  if (!messaging) return () => {};
-
-  return onMessage(messaging, (payload) => {
-    if (callback) callback(payload);
-  });
+  if (!messaging) {
+    return () => {};
+  }
+  try {
+    const unsubscribe = onMessage(messaging, (payload) => {
+      if (callback) callback(payload);
+    });
+    return unsubscribe;
+  } catch (error) {
+    return () => {};
+  }
 };

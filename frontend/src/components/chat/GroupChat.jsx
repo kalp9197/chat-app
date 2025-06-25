@@ -18,6 +18,7 @@ const GroupChat = ({ group }) => {
     loading,
     loadingMore,
     hasMoreMessages,
+    deleteMessage,
     loadMoreMessages,
   } = useGroupChat();
 
@@ -176,8 +177,8 @@ const GroupChat = ({ group }) => {
                 </div>
               )}
               {messages.map((message) => (
-                <div key={message.id} id={`message-${message.id}`}>
-                  <ChatMessage message={message} />
+                <div key={message.uuid || message.id} id={`message-${message.id}`}>
+                  <ChatMessage message={message} onDeleteMessage={deleteMessage} />
                 </div>
               ))}
               <div ref={messagesEndRef} />

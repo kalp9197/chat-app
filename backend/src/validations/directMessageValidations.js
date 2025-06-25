@@ -35,3 +35,7 @@ export const validateMessageOwnership = [
     .withMessage('Receiver UUID is required')
     .withMessage('Receiver UUID must be a valid UUID'),
 ];
+
+export const validateDeleteMessage = [
+  param('message_uuid').isUUID(4).withMessage('Message UUID must be a valid UUID'),
+];

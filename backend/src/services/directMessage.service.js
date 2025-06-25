@@ -147,3 +147,36 @@ export const getDirectMessages = async (sender_id, receiver_uuid, limit = 10, of
     throw error;
   }
 };
+
+//delete a message
+export const deleteMessage = async (messageUuid, userId) => {
+  const message = await directMessageRepository.findMessageByUuid(messageUuid);
+
+  if (!message) {
+    throw new ApiError('Message not found', HTTP_STATUS.NOT_FOUND);
+  }
+
+  if (message.sender_id !== userId) {
+    throw new ApiError('You are not authorized to delete this message', HTTP_STATUS.FORBIDDEN);
+  }
+
+  if (message.message_type === 'file') {
+    try {
+      const content = JSON.parse(message.content);
+      if (content.filePath) {
+        const fullPath = path.join(PUBLIC_DIR, content.filePath);
+        const fileExists = await fs
+          .access(fullPath)
+          .then(() => true)
+          .catch(() => false);
+        if (fileExists) {
+          await fs.unlink(fullPath);
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to delete file for message ${messageUuid}:`, error);
+    }
+  }
+
+  await directMessageRepository.deleteMessageByUuid(messageUuid);
+};

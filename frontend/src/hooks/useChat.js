@@ -121,6 +121,7 @@ export const useChat = create((set, get) => ({
       const messages = await getMessagesBetweenUsers(receiverUuid, 0, 10);
       if (Array.isArray(messages)) {
         const formattedMessages = messages.map((message) => ({
+          uuid: message.uuid,
           id: message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
           text: message.content || message.text || '',
           content: message.content || message.text || '',
@@ -165,6 +166,7 @@ export const useChat = create((set, get) => ({
       const messages = await getMessagesBetweenUsers(receiverUuid, nextPage, 10);
       if (Array.isArray(messages)) {
         const formattedMessages = messages.map((message) => ({
+          uuid: message.uuid,
           id: message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
           text: message.content || message.text || '',
           content: message.content || message.text || '',
@@ -210,6 +212,7 @@ export const useChat = create((set, get) => ({
       const messages = await getMessagesBetweenUsers(receiverUuid, 0, 10);
       if (Array.isArray(messages)) {
         const formattedMessages = messages.map((message) => ({
+          uuid: message.uuid,
           id: message.id || message.uuid || `msg-${Date.now()}-${Math.random()}`,
           text: message.content || message.text || '',
           content: message.content || message.text || '',
@@ -258,6 +261,7 @@ export const useChat = create((set, get) => ({
       tempContent = textContent.trim();
     }
     const tempMessage = {
+      uuid: tempId,
       id: tempId,
       content: tempContent,
       message_type: isFileMessage ? 'file' : 'text',
@@ -282,6 +286,7 @@ export const useChat = create((set, get) => ({
             m.id === tempId
               ? {
                   ...m,
+                  uuid: serverMessage.uuid,
                   id: serverMessage.id,
                   message_type: serverMessage.message_type,
                   created_at: serverMessage.created_at,
@@ -350,6 +355,20 @@ export const useChat = create((set, get) => ({
     } catch (error) {
       set({ error: error.message });
       return null;
+    }
+  },
+
+  deleteMessage: async (messageUuid) => {
+    const originalMessages = get().messages;
+    set((state) => ({
+      messages: state.messages.filter((m) => m.uuid !== messageUuid),
+    }));
+    try {
+      const { deleteMessage } = await import('@/services/messageService');
+      await deleteMessage(messageUuid);
+    } catch (error) {
+      set({ messages: originalMessages, error: 'Failed to delete message' });
+      console.error('Failed to delete message:', error);
     }
   },
 }));

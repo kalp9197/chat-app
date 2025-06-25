@@ -23,3 +23,8 @@ export const getMessagesBetweenUsers = async (receiverUuid, page = 0, limit = 10
   const response = await axios.get(`/direct-messages/${receiverUuid}?page=${page}&limit=${limit}`);
   return response.data.data;
 };
+
+export const deleteMessage = async (messageUuid) => {
+  const response = await axios.delete(`/direct-messages/message/${messageUuid}`);
+  return response.data;
+};

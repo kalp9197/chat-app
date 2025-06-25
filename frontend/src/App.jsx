@@ -9,6 +9,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import NotificationBanner from '@/components/common/NotificationBanner';
 import { useNotification } from '@/hooks/useNotification';
 import { useAuth } from '@/hooks/useAuth';
+import { setupGlobalNotificationListener } from '@/services/notificationService';
 
 export default function App() {
   // Notification permission logic
@@ -21,6 +22,13 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated, permissionStatus, initialized, requestPermission]);
+
+  // Set up global notification listener when authenticated
+  useEffect(() => {
+    if (isAuthenticated && permissionStatus === 'granted') {
+      setupGlobalNotificationListener();
+    }
+  }, [isAuthenticated, permissionStatus]);
 
   return (
     <div className="min-h-screen">

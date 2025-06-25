@@ -21,4 +21,11 @@ router.get(
   directMessageController.getMessagesBetweenUsers,
 );
 
+router.delete(
+  '/message/:message_uuid',
+  authMiddleware,
+  validate(Validation.validateDeleteMessage),
+  directMessageController.deleteMessage,
+);
+
 export default router;

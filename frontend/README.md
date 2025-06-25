@@ -1,20 +1,21 @@
 # 🚀 Chat App - Frontend
 
 <div align="center">
-  <p><em>Modern React frontend with Vite, Tailwind CSS, and real-time messaging capabilities</em></p>
+  <p><em>Modern React frontend with Vite, Tailwind CSS, and real-time messaging</em></p>
 </div>
 
 ## 📋 Overview
 
-This is the frontend for the Chat App, providing a responsive and interactive user interface for messaging and group chats. It features user authentication, real-time messaging, push notifications, and a modern UI built with React and Tailwind CSS.
+This is the frontend for the Chat App, providing a responsive and interactive user interface for messaging and group chats. It features user authentication, real-time messaging, push notifications, file uploads, and a modern UI built with React and Tailwind CSS.
 
 ## ✨ Features
 
-- 🔒 **User Authentication** - Secure login and registration
+- 🔐 **User Authentication** - Secure login and registration
 - 💬 **Direct Messaging** - Private conversations between users
 - 👥 **Group Chats** - Create and manage group conversations
 - 🔔 **Push Notifications** - Real-time alerts for new messages
-- 📱 **Responsive Design** - Works on desktop and mobile devices
+- 📤 **File Uploads** - Share files in chats
+- 📱 **Responsive Design** - Works on desktop and mobile
 - 🎨 **Modern UI** - Clean interface with Tailwind CSS
 
 ## 🏗️ Project Structure
@@ -25,44 +26,31 @@ frontend/
 ├── src/
 │   ├── components/        # UI components
 │   │   ├── auth/          # Authentication components
-│   │   │   ├── AuthRoute.jsx      # Route for authenticated users
-│   │   │   └── ProtectedRoute.jsx # Route for protected pages
 │   │   ├── chat/          # Chat-related components
 │   │   ├── common/        # Shared components
-│   │   │   └── NotificationBanner.jsx # Notification permission banner
 │   │   └── ui/            # UI elements
-│   ├── config/            # Application configuration
-│   │   └── firebase.js    # Firebase setup for notifications
+│   ├── config/            # App configuration (e.g., firebase.js)
 │   ├── hooks/             # Custom React hooks
-│   │   ├── useAuth.js     # Authentication state management
-│   │   └── useNotification.js # Notification handling
 │   ├── lib/               # Utility functions
-│   │   └── api.js         # API client
-│   ├── pages/             # Page components
-│   │   ├── Home.jsx       # Main chat interface
-│   │   ├── Login.jsx      # User login
-│   │   └── Register.jsx   # User registration
+│   ├── pages/             # Page components (Home, Login, Register)
 │   ├── services/          # API services
-│   │   ├── auth.service.js  # Authentication API calls
-│   │   ├── chat.service.js  # Messaging API calls
-│   │   └── user.service.js  # User management API calls
-│   ├── App.jsx            # Application component
+│   ├── App.jsx            # Main app component
 │   ├── App.css            # Global styles
 │   ├── index.css          # Tailwind imports
-│   └── main.jsx           # Application entry point
+│   └── main.jsx           # App entry point
 └── package.json           # Dependencies and scripts
 ```
 
 ## ⚙️ Key Technologies
 
 - **React** - UI library
-- **Vite** - Fast build tool and development server
-- **React Router** - Client-side routing
+- **Vite** - Fast build tool and dev server
+- **React Router** - Routing
 - **Zustand** - State management
-- **Tailwind CSS** - Utility-first CSS framework
+- **Tailwind CSS** - Utility-first CSS
 - **Axios** - HTTP client
 - **Firebase** - Push notifications
-- **Framer Motion** - Animation library
+- **Framer Motion** - Animations
 - **Emoji Mart** - Emoji picker
 - **Radix UI** - Headless UI components
 
@@ -71,9 +59,9 @@ frontend/
 ### Prerequisites
 
 - Node.js (v18+ recommended)
-- Backend API running
+- Backend API running at http://localhost:8000
 
-### Setting Up the Frontend
+### Setup Instructions
 
 1. **Install dependencies**
 
@@ -83,10 +71,10 @@ npm install
 
 2. **Environment setup**
 
-Create a `.env` file in the frontend directory:
+Create a `.env` file in the `frontend/` directory:
 
-```
-VITE_API_URL="http://localhost:5000/api/v1"
+```env
+VITE_API_URL="http://localhost:8000/api/v1"
 VITE_FIREBASE_API_KEY="your_firebase_api_key"
 VITE_FIREBASE_AUTH_DOMAIN="your_domain.firebaseapp.com"
 VITE_FIREBASE_PROJECT_ID="your_project_id"
@@ -102,11 +90,11 @@ VITE_FIREBASE_VAPID_KEY="your_vapid_key"
 npm run dev
 ```
 
-This will start the frontend application on `http://localhost:3000`.
+The frontend will run at: **http://localhost:5173**
 
-## 📚 Component Overview
+## 🧩 Component Overview
 
-### 🔒 Authentication
+### 🔐 Authentication
 
 - **Login & Register Pages** - User authentication forms
 - **ProtectedRoute** - Guards routes that require authentication
@@ -118,16 +106,21 @@ This will start the frontend application on `http://localhost:3000`.
 - **Chat Window** - Shows messages in the current conversation
 - **Message Input** - For composing and sending messages
 - **User List** - Shows available users to start conversations with
+- **PdfViewerModal** - View PDF files in chat
 
 ### 👥 Group Management
 
 - **Group Creation** - Interface for creating new groups
-- **Group Settings** - Manages group members and permissions
+- **Group Settings** - Manage group members and permissions
 - **Group Chat** - Displays group messages
 
-## 🧪 Available Scripts
+### 📤 File Uploads
 
-- `npm run dev` - Run in development mode
+- **Upload files** directly in chat (PDF, images, etc.)
+
+## 🛠️ Available Scripts
+
+- `npm run dev` - Run in development mode (http://localhost:5173)
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
@@ -139,30 +132,34 @@ This will start the frontend application on `http://localhost:3000`.
 The application uses a combination of custom components and Radix UI primitives styled with Tailwind CSS:
 
 - **Avatar** - User and group avatars
-- **Button** - Action buttons with various styles
+- **Button** - Action buttons
 - **ScrollArea** - Custom scrollable areas
-- **Modal** - Dialog windows for forms and confirmations
+- **Modal** - Dialog windows
 
 ## 📱 Responsive Design
 
-The UI is fully responsive and works on various screen sizes:
+The UI is fully responsive and works on all screen sizes:
 
-- Mobile phones (320px+)
-- Tablets (768px+)
-- Desktops (1024px+)
+- Mobile phones
+- Tablets
+- Desktops
 
-## 🔍 State Management
+## 🔄 State Management
 
-Zustand is used for state management with the following stores:
+Zustand is used for state management:
 
-- **Auth Store** - Manages user authentication state
-- **Chat Store** - Handles active chats and messages
-- **UI Store** - Controls UI state like sidebar visibility
+- **Auth Store** - User authentication state
+- **Chat Store** - Active chats and messages
+- **UI Store** - UI state (sidebar, modals, etc.)
 
-## 📚 Additional Resources
+## 📚 Resources
 
 - [React Documentation](https://reactjs.org/docs/getting-started.html)
 - [Vite Documentation](https://vitejs.dev/guide/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [React Router Documentation](https://reactrouter.com/en/main)
 - [Zustand Documentation](https://github.com/pmndrs/zustand)
+
+---
+
+**Contact:** For questions or issues, please open an issue or contact the maintainer.

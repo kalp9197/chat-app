@@ -253,6 +253,7 @@ export const getGroupMessages = async (groupId, limit, offset) => {
       where: whereClause,
       select: {
         id: true,
+        uuid: true,
         content: true,
         created_at: true,
         message_type: true,

@@ -19,10 +19,12 @@ const Chat = ({ chatId }) => {
     loadMoreMessages,
     sendMessage,
     setActiveChat,
+    deleteMessage,
     cleanupNotifications,
   } = useChat();
 
-  const [setShowScrollButton] = useState(false);
+  //eslint-disable-next-line
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
@@ -98,7 +100,6 @@ const Chat = ({ chatId }) => {
 
       loadMore();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMoreMessages, isLoadingMore, loading, loadMoreMessages, chatId]);
 
   // scroll to bottom
@@ -264,8 +265,8 @@ const Chat = ({ chatId }) => {
               </div>
             )}
             {sortedMessages.map((message, index) => (
-              <div key={`${message.id}-${index}`} id={`message-${message.id}`}>
-                <ChatMessage message={message} />
+              <div key={message.uuid || `${message.id}-${index}`} id={`message-${message.id}`}>
+                <ChatMessage message={message} onDeleteMessage={deleteMessage} />
               </div>
             ))}
             <div ref={messagesEndRef} />

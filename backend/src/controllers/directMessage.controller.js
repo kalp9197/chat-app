@@ -74,3 +74,28 @@ export const getMessagesBetweenUsers = async (req, res) => {
     });
   }
 };
+
+//delete a message
+export const deleteMessage = async (req, res) => {
+  try {
+    const { message_uuid } = req.params;
+    const user_id = req.user.id;
+
+    await directMessageService.deleteMessage(message_uuid, user_id);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Message deleted successfully',
+    });
+  } catch (error) {
+    let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    if (error instanceof ApiError) {
+      statusCode = error.statusCode;
+    }
+
+    return res.status(statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

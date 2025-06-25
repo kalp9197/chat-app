@@ -47,6 +47,7 @@ export const findMessages = async (senderId, receiverId, limit = 10, offset = 0)
       take: limit,
       select: {
         id: true,
+        uuid: true,
         content: true,
         created_at: true,
         message_type: true,
@@ -62,4 +63,18 @@ export const findMessages = async (senderId, receiverId, limit = 10, offset = 0)
   ]);
 
   return { messages, totalCount };
+};
+
+//find a message by uuid
+export const findMessageByUuid = async (uuid) => {
+  return prisma.message.findUnique({
+    where: { uuid },
+  });
+};
+
+//delete a message by uuid
+export const deleteMessageByUuid = async (uuid) => {
+  return prisma.message.delete({
+    where: { uuid },
+  });
 };
