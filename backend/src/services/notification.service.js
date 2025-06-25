@@ -8,13 +8,13 @@ export const saveFcmToken = async (userId, fcmToken) => {
   try {
     await notificationRepository.updateUserFcmToken(userId, fcmToken);
     return true;
-  } catch (error) {
+  } catch {
     throw new ApiError('Error saving FCM token', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
 
 //send a notification
-export const sendNotification = async (receiverId, title, body, data = {}) => {
+export const sendNotification = async (receiverId, title, body, data = {}, silent = false) => {
   try {
     const user = await notificationRepository.findUserWithFcmToken(receiverId);
     if (!user || !user.fcm_token) {
@@ -22,27 +22,23 @@ export const sendNotification = async (receiverId, title, body, data = {}) => {
     }
     const message = {
       token: user.fcm_token,
-      notification: {
-        title,
-        body,
-      },
       data,
       webpush: {
         headers: {
-          Urgency: 'high',
-        },
-        notification: {
-          icon: '/notification-icon.png',
-          click_action: `${process.env.ORIGIN_URL}/chat`,
-        },
-        fcm_options: {
-          link: `${process.env.ORIGIN_URL}/chat`,
+          Urgency: silent ? 'low' : 'high',
         },
       },
     };
+
+    if (!silent) {
+      message.notification = {
+        title,
+        body,
+      };
+    }
     await messaging.send(message);
     return true;
-  } catch (error) {
+  } catch {
     throw new ApiError('Error sending notification', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
@@ -68,7 +64,7 @@ export const sendNewMessageNotification = async (message) => {
       chatId: `user-${sender.uuid}`,
     };
     return await sendNotification(message.receiver_id, title, body, data);
-  } catch (error) {
+  } catch {
     throw new ApiError('Error sending new message notification', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };

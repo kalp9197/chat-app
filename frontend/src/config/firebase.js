@@ -22,7 +22,7 @@ const initializeFCM = async () => {
     } else {
       messagingInstance = null;
     }
-  } catch (error) {
+  } catch {
     messagingInstance = null;
   }
   return messagingInstance;
@@ -58,7 +58,7 @@ export const requestNotificationPermission = async () => {
     } else {
       return null;
     }
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -73,7 +73,7 @@ export const onMessageListener = async (callback) => {
       if (callback) callback(payload);
     });
     return unsubscribe;
-  } catch (error) {
+  } catch {
     return () => {};
   }
 };

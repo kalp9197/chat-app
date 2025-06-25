@@ -69,6 +69,19 @@ export const findMessages = async (senderId, receiverId, limit = 10, offset = 0)
 export const findMessageByUuid = async (uuid) => {
   return prisma.message.findUnique({
     where: { uuid },
+    include: {
+      sender: { select: { uuid: true, name: true } },
+      receiver: { select: { id: true, uuid: true } },
+      group: {
+        select: {
+          name: true,
+          uuid: true,
+          memberships: {
+            select: { user_id: true },
+          },
+        },
+      },
+    },
   });
 };
 

@@ -179,4 +179,41 @@ export const deleteMessage = async (messageUuid, userId) => {
   }
 
   await directMessageRepository.deleteMessageByUuid(messageUuid);
+
+  // Send silent notification about deletion
+  try {
+    const notificationData = {
+      type: 'delete_message',
+      messageUuid: message.uuid,
+    };
+
+    if (message.receiver_id) {
+      // Direct message
+      notificationData.chatId = `user-${message.sender.uuid}`;
+      await notificationService.sendNotification(
+        message.receiver_id,
+        '', // Title not needed for silent
+        '', // Body not needed for silent
+        notificationData,
+        true, // silent
+      );
+    } else if (message.group_id && message.group?.memberships) {
+      // Group message
+      notificationData.chatId = `group-${message.group.uuid}`;
+
+      for (const member of message.group.memberships) {
+        if (member.user_id !== userId) {
+          await notificationService.sendNotification(
+            member.user_id,
+            '', // Title not needed for silent
+            '', // Body not needed for silent
+            notificationData,
+            true, // silent
+          );
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Failed to send delete notification for message ${messageUuid}:`, error);
+  }
 };

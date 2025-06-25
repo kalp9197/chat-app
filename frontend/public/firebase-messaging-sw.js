@@ -12,9 +12,6 @@ let firebaseConfig = {
   appId: '1:957776005516:web:868e7aadba0f111bf0aea9',
 };
 
-let vapidKey =
-  'BAU9dLojWgLiAeaZ2fUYuwUniwbQ_CmElRdu2cSqn4zgvcp7tTq7BqPXd18J1akxmjwnO5YVadnUZI8Sz50ViRI';
-
 // Initialize Firebase
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
@@ -24,7 +21,9 @@ if (!firebase.apps.length) {
 let messaging = null;
 try {
   messaging = firebase.messaging();
-} catch (error) {}
+} catch {
+  // ignore
+}
 
 // Show notification when app is in background
 if (messaging) {
@@ -36,6 +35,9 @@ if (messaging) {
     let url = '/';
     if (data.type === 'chat_message' && data.chatId) {
       url = `/chat/${data.chatId}`;
+    }
+    if (data.type === 'delete_message') {
+      return; // Do not show notification for silent deletes
     }
     const notificationOptions = {
       body: notificationBody,
@@ -96,7 +98,9 @@ self.addEventListener('message', (event) => {
     }
     try {
       messaging = firebase.messaging();
-    } catch (error) {}
+    } catch {
+      // ignore
+    }
     event.source?.postMessage?.({ type: 'SW_FIREBASE_INITIALIZED' });
   }
 });

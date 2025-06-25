@@ -6,7 +6,7 @@ import {
   AlertCircle,
   Download,
   File as FileIcon,
-  MoreVertical,
+  ChevronDown,
   X,
   Trash2,
 } from 'lucide-react';
@@ -67,6 +67,7 @@ const ChatMessage = React.memo(
       };
     }, [message, user]);
 
+    //eslint-disable-next-line
     const [showTimestamp, setShowTimestamp] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState(null);
@@ -117,11 +118,6 @@ const ChatMessage = React.memo(
                 Error: {error}
               </p>
             </div>
-            {isSentByMe && (
-              <div className="flex items-center justify-center ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <MessageMenu isSentByMe={isSentByMe} onDelete={handleDelete} />
-              </div>
-            )}
           </div>
         );
       }
@@ -141,15 +137,6 @@ const ChatMessage = React.memo(
                 }}
                 title={`Click to view ${fileName}`}
               />
-              {isSentByMe && (
-                <div className="absolute top-1 right-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MessageMenu
-                    onDownload={(e) => handleDownload(e, content)}
-                    isSentByMe={isSentByMe}
-                    onDelete={handleDelete}
-                  />
-                </div>
-              )}
             </div>
             {isModalOpen && modalContent === 'image' && (
               <ImageViewerModal
@@ -189,15 +176,6 @@ const ChatMessage = React.memo(
                   <p className="text-xs text-gray-400">PDF Document</p>
                 </div>
               </div>
-              {isSentByMe && (
-                <div className="flex items-center justify-center ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MessageMenu
-                    onDownload={(e) => handleDownload(e, content)}
-                    isSentByMe={isSentByMe}
-                    onDelete={handleDelete}
-                  />
-                </div>
-              )}
             </div>
             {isModalOpen && modalContent === 'pdf' && (
               <PdfViewerModal
@@ -225,15 +203,6 @@ const ChatMessage = React.memo(
             </p>
             <p className="text-xs text-gray-400">{fileSize ? `(${fileSize})` : ''}</p>
           </div>
-          {data && isSentByMe && (
-            <div className="flex items-center justify-center ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <MessageMenu
-                onDownload={(e) => handleDownload(e, content)}
-                isSentByMe={isSentByMe}
-                onDelete={handleDelete}
-              />
-            </div>
-          )}
         </div>
       );
     }
@@ -258,6 +227,7 @@ const ChatMessage = React.memo(
     }, [message.isPending, message.failed]);
 
     // Memoize time ago
+    //eslint-disable-next-line
     const timeAgo = useMemo(() => {
       if (!message.timestamp && !message.created_at) return '';
       const date = message.timestamp ? new Date(message.timestamp) : new Date(message.created_at);
@@ -270,10 +240,15 @@ const ChatMessage = React.memo(
       messageData;
 
     // Message menu for download, etc.
-    const MessageMenu = ({ onDownload, isSentByMe, onDelete }) => {
+    const MessageMenu = ({ onDownload, isSentByMe, onDelete, hasFile }) => {
       const [isOpen, setIsOpen] = useState(false);
       const menuRef = useRef(null);
 
+      // Determine if there are any menu items
+      const hasMenuItems = (hasFile && onDownload) || (isSentByMe && onDelete);
+      if (!hasMenuItems) return null;
+
+      //eslint-disable-next-line
       useEffect(() => {
         const handleClickOutside = (event) => {
           if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -293,18 +268,18 @@ const ChatMessage = React.memo(
               e.stopPropagation();
               setIsOpen((prev) => !prev);
             }}
-            className="p-1 rounded-full hover:bg-black/10"
+            className="w-6 h-6 flex items-center justify-center rounded-md bg-gray-500/80 hover:bg-gray-600 transition-colors shadow text-white"
           >
-            <MoreVertical size={18} className={isSentByMe ? 'text-white' : 'text-gray-500'} />
+            <ChevronDown size={16} />
           </button>
           {isOpen && (
             <div className="absolute top-full right-0 mt-1 w-40 bg-white dark:bg-slate-800 rounded-md shadow-lg z-20 border border-gray-200 dark:border-slate-700">
               <ul className="py-1">
-                {onDownload && (
+                {hasFile && onDownload && (
                   <li
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDownload(e);
+                      onDownload(e, messageContent);
                       setIsOpen(false);
                     }}
                     className="flex items-center px-3 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer"
@@ -350,7 +325,7 @@ const ChatMessage = React.memo(
           </div>
         ) : null}
 
-        <div className="flex flex-col max-w-[90%] md:max-w-[80%]">
+        <div className="flex flex-col max-w-[90%] md:max-w-[80%] group relative">
           <div
             className={cn(
               'px-4 py-2.5 rounded-2xl shadow-sm transition-all duration-200',
@@ -359,23 +334,31 @@ const ChatMessage = React.memo(
                 : 'bg-white text-gray-800 border border-gray-100 rounded-bl-sm',
             )}
           >
+            {/* Message menu for all messages (top-right edge, on hover) */}
+            <div className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              <MessageMenu
+                isSentByMe={isSentByMe}
+                onDelete={handleDelete}
+                onDownload={handleDownload}
+                hasFile={messageType === 'file'}
+              />
+            </div>
             {/* Sender name for group/other messages */}
             {!isSentByMe && senderName && (
               <div className="text-xs font-semibold mb-1 text-purple-600">{senderName}</div>
             )}
-            <div className="text-sm whitespace-pre-wrap break-words leading-relaxed relative flex items-center group">
-              {messageType === 'file'
-                ? renderFileMessage(messageContent, isSentByMe)
-                : typeof messageContent === 'string' && (
-                    <>
-                      <span className="flex-1">{messageContent}</span>
-                      {isSentByMe && (
-                        <div className="flex items-center justify-center ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MessageMenu isSentByMe={isSentByMe} onDelete={handleDelete} />
-                        </div>
-                      )}
-                    </>
+            <div className="text-sm whitespace-pre-wrap break-words leading-relaxed flex items-center">
+              {messageType === 'file' ? (
+                renderFileMessage(messageContent, isSentByMe)
+              ) : (
+                <span className="flex-1">
+                  {typeof messageContent === 'string' && messageContent.trim() ? (
+                    messageContent
+                  ) : (
+                    <span className="text-gray-400 italic">[No content]</span>
                   )}
+                </span>
+              )}
             </div>
           </div>
 

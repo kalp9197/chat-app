@@ -10,8 +10,9 @@ const NotificationBanner = () => {
   const [notifications, setNotifications] = useState([]);
   const [currentNotification, setCurrentNotification] = useState(null);
   const navigate = useNavigate();
-  const { fetchChats, fetchMessages } = useChat();
-  const { fetchLatestMessages: fetchGroupMessages } = useGroupChat();
+  const { fetchChats, fetchMessages, removeMessageByUuid: removeDirectMessage } = useChat();
+  const { fetchLatestMessages: fetchGroupMessages, removeMessageByUuid: removeGroupMessage } =
+    useGroupChat();
   const { fetchGroups } = useGroups();
 
   // Show next notification if available
@@ -48,8 +49,18 @@ const NotificationBanner = () => {
   const handleNotification = useCallback(
     (payload) => {
       if (!payload) return;
-      const title = payload.notification?.title || payload.data?.title || 'New notification';
       const data = payload.data || payload.notification?.data || {};
+
+      if (data.type === 'delete_message' && data.messageUuid) {
+        if (data.chatId?.startsWith('group-')) {
+          removeGroupMessage(data.messageUuid);
+        } else {
+          removeDirectMessage(data.messageUuid);
+        }
+        return;
+      }
+
+      const title = payload.notification?.title || payload.data?.title || 'New notification';
       const body = getNotificationText(
         data,
         payload.notification?.body || payload.data?.body || '',
@@ -81,7 +92,15 @@ const NotificationBanner = () => {
         ? setNotifications((prev) => [...prev, newNotification])
         : setCurrentNotification({ ...newNotification, visible: true });
     },
-    [currentNotification, fetchChats, fetchMessages, fetchGroupMessages, fetchGroups],
+    [
+      currentNotification,
+      fetchChats,
+      fetchMessages,
+      fetchGroupMessages,
+      fetchGroups,
+      removeDirectMessage,
+      removeGroupMessage,
+    ],
   );
 
   // Handle click to navigate to chat

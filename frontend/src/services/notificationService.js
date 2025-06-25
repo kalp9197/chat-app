@@ -20,7 +20,7 @@ export const initializeNotifications = async () => {
       return token;
     }
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -61,7 +61,7 @@ export const listenForNotifications = (callback) => {
 export const triggerTestNotification = async (title, body) => {
   try {
     await axios.post('/notifications/test', { title, body });
-  } catch (error) {
+  } catch {
     // ignore
   }
 };

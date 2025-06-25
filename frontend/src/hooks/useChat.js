@@ -371,4 +371,10 @@ export const useChat = create((set, get) => ({
       console.error('Failed to delete message:', error);
     }
   },
+
+  removeMessageByUuid: (messageUuid) => {
+    set((state) => ({
+      messages: state.messages.filter((m) => m.uuid !== messageUuid),
+    }));
+  },
 }));
