@@ -13,6 +13,10 @@ const GroupDetails = ({ group }) => {
   const { deleteGroup } = useGroups();
   const { user } = useAuth();
 
+  if (!group || !user) {
+    return null;
+  }
+
   const currentUserMembership = group?.memberships?.find((m) => m.user.uuid === user.uuid);
   const isCurrentUserAdmin = currentUserMembership?.role === 'admin';
 
@@ -26,8 +30,6 @@ const GroupDetails = ({ group }) => {
       setIsDeleting(false);
     }
   };
-
-  if (!group) return null;
 
   return (
     <div className="p-4 border-b flex justify-between items-center bg-white dark:bg-slate-800 shadow-sm">

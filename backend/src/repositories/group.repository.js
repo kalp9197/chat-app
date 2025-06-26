@@ -188,9 +188,21 @@ export const updateGroupTransaction = async (groupId, updates) => {
 //add members to a group
 export const addMembersTransaction = async (groupId, memberships) => {
   return prisma.$transaction(async (tx) => {
-    await tx.groupMembership.createMany({
-      data: memberships,
-    });
+    for (const member of memberships) {
+      await tx.groupMembership.upsert({
+        where: {
+          user_id_group_id: {
+            user_id: member.user_id,
+            group_id: member.group_id,
+          },
+        },
+        update: {
+          is_active: 1,
+          role: member.role,
+        },
+        create: member,
+      });
+    }
 
     return tx.group.findUnique({
       where: { id: groupId },

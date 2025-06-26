@@ -134,21 +134,20 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
   if (addMembers.length > 0) {
     const addUuids = addMembers.map((m) => m.uuid).filter(Boolean);
     if (addUuids.length > 0) {
-      const { users: usersToAdd, existingMemberships } =
-        await groupRepository.getExistingMembershipsTransaction(group.id, addUuids);
+      const { users: usersToAdd } = await groupRepository.getExistingMembershipsTransaction(
+        group.id,
+        addUuids,
+      );
 
-      const existingUserIds = new Set(existingMemberships.map((m) => m.user.id));
       const roleMap = Object.fromEntries(
         addMembers.map((m) => [m.uuid, m.role === 'admin' ? 'admin' : 'member']),
       );
 
-      addMemberships = usersToAdd
-        .filter((u) => !existingUserIds.has(u.id))
-        .map((u) => ({
-          user_id: u.id,
-          group_id: group.id,
-          role: roleMap[u.uuid] || 'member',
-        }));
+      addMemberships = usersToAdd.map((u) => ({
+        user_id: u.id,
+        group_id: group.id,
+        role: roleMap[u.uuid] || 'member',
+      }));
     }
   }
 
@@ -190,30 +189,13 @@ export const addMembersToGroup = async (groupUuid, members = [], requesterId) =>
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
   if (!memberUuids.length) return { memberships: [], memberCount: 0 };
 
-  const { users, existingMemberships } = await groupRepository.getExistingMembershipsTransaction(
-    group.id,
-    memberUuids,
-  );
-
-  const existingUserIds = new Set(existingMemberships.map((m) => m.user.id));
-  const newUsers = users.filter((u) => !existingUserIds.has(u.id));
-
-  if (newUsers.length === 0) {
-    const currentGroup = await groupRepository.getGroupWithMembers(group.id);
-    const memberships = currentGroup.memberships.map((m) => ({
-      uuid: m.user.uuid,
-      name: m.user.name,
-      email: m.user.email,
-      role: m.role,
-    }));
-    return { memberships, memberCount: memberships.length };
-  }
+  const { users } = await groupRepository.getExistingMembershipsTransaction(group.id, memberUuids);
 
   const roleMap = Object.fromEntries(
     members.map((m) => [m.uuid, m.role === 'admin' ? 'admin' : 'member']),
   );
 
-  const newMemberships = newUsers.map((u) => ({
+  const newMemberships = users.map((u) => ({
     user_id: u.id,
     group_id: group.id,
     role: roleMap[u.uuid] || 'member',
