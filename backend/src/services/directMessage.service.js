@@ -103,6 +103,13 @@ export const getDirectMessages = async (sender_id, receiver_uuid, limit = 10, of
 
     const processedMessages = await Promise.all(
       messages.map(async (message) => {
+        if (message.is_active === 0) {
+          return {
+            ...message,
+            content: 'This message was deleted',
+            message_type: 'text',
+          };
+        }
         if (message.message_type === 'file') {
           let content;
           try {
@@ -158,24 +165,6 @@ export const deleteMessage = async (messageUuid, userId) => {
 
   if (message.sender_id !== userId) {
     throw new ApiError('You are not authorized to delete this message', HTTP_STATUS.FORBIDDEN);
-  }
-
-  if (message.message_type === 'file') {
-    try {
-      const content = JSON.parse(message.content);
-      if (content.filePath) {
-        const fullPath = path.join(PUBLIC_DIR, content.filePath);
-        const fileExists = await fs
-          .access(fullPath)
-          .then(() => true)
-          .catch(() => false);
-        if (fileExists) {
-          await fs.unlink(fullPath);
-        }
-      }
-    } catch (error) {
-      console.error(`Failed to delete file for message ${messageUuid}:`, error);
-    }
   }
 
   await directMessageRepository.deleteMessageByUuid(messageUuid);

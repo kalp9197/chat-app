@@ -21,6 +21,7 @@ const formatMessages = (rawMessages) =>
     id: m.id || m.uuid || `msg-${Date.now()}-${Math.random()}`,
     content: m.content,
     message_type: m.message_type,
+    is_active: m.is_active,
     sender: m.sender || {
       uuid: m.sender_uuid,
       name: m.sender_name,
@@ -235,7 +236,7 @@ export const useGroupChat = create((set, get) => ({
   deleteMessage: async (messageUuid) => {
     const originalMessages = get().messages;
     set((state) => ({
-      messages: state.messages.filter((m) => m.uuid !== messageUuid),
+      messages: state.messages.map((m) => (m.uuid === messageUuid ? { ...m, is_active: 0 } : m)),
     }));
     try {
       const { deleteMessage } = await import('@/services/messageService');
@@ -248,7 +249,7 @@ export const useGroupChat = create((set, get) => ({
 
   removeMessageByUuid: (messageUuid) => {
     set((state) => ({
-      messages: state.messages.filter((m) => m.uuid !== messageUuid),
+      messages: state.messages.map((m) => (m.uuid === messageUuid ? { ...m, is_active: 0 } : m)),
     }));
   },
 }));

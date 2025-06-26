@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   CheckCircle2,
@@ -53,6 +53,7 @@ const ChatMessage = React.memo(
       const messageContent = message.content;
       const messageType =
         message.message_type || (typeof messageContent === 'string' ? 'text' : 'file');
+      const is_active = message.is_active ?? 1;
       const senderInitial = isSentByMe
         ? (user.name?.charAt(0) || 'M').toUpperCase()
         : (senderName.charAt(0) || '?').toUpperCase();
@@ -64,6 +65,7 @@ const ChatMessage = React.memo(
         messageContent,
         messageType,
         senderInitial,
+        is_active,
       };
     }, [message, user]);
 
@@ -242,27 +244,14 @@ const ChatMessage = React.memo(
     // Message menu for download, etc.
     const MessageMenu = ({ onDownload, isSentByMe, onDelete, hasFile }) => {
       const [isOpen, setIsOpen] = useState(false);
-      const menuRef = useRef(null);
+      const isDeleted = messageData.is_active === 0;
 
       // Determine if there are any menu items
-      const hasMenuItems = (hasFile && onDownload) || (isSentByMe && onDelete);
+      const hasMenuItems = !isDeleted && ((hasFile && onDownload) || (isSentByMe && onDelete));
       if (!hasMenuItems) return null;
 
-      //eslint-disable-next-line
-      useEffect(() => {
-        const handleClickOutside = (event) => {
-          if (menuRef.current && !menuRef.current.contains(event.target)) {
-            setIsOpen(false);
-          }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-          document.removeEventListener('mousedown', handleClickOutside);
-        };
-      }, []);
-
       return (
-        <div ref={menuRef} className="relative">
+        <div className="relative">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -348,10 +337,16 @@ const ChatMessage = React.memo(
               <div className="text-xs font-semibold mb-1 text-purple-600">{senderName}</div>
             )}
             <div className="text-sm whitespace-pre-wrap break-words leading-relaxed flex items-center">
-              {messageType === 'file' ? (
+              {messageData.is_active === 0 ? (
+                <span
+                  className={cn('flex-1 italic', isSentByMe ? 'text-gray-300' : 'text-gray-400')}
+                >
+                  This message was deleted
+                </span>
+              ) : messageType === 'file' ? (
                 renderFileMessage(messageContent, isSentByMe)
               ) : (
-                <span className="flex-1">
+                <span className={cn('flex-1', isSentByMe ? 'text-white' : 'text-gray-800')}>
                   {typeof messageContent === 'string' && messageContent.trim() ? (
                     messageContent
                   ) : (
@@ -392,6 +387,7 @@ const ChatMessage = React.memo(
       prevProps.message.content === nextProps.message.content &&
       prevProps.message.message_type === nextProps.message.message_type &&
       prevProps.message.timestamp === nextProps.message.timestamp &&
+      prevProps.message.is_active === nextProps.message.is_active &&
       prevProps.onDeleteMessage === nextProps.onDeleteMessage
     );
   },

@@ -4,12 +4,17 @@ import { Button } from '@/components/ui/button';
 import EditGroupModal from './EditGroupModal';
 import AddMembersModal from './AddMembersModal';
 import { Pencil, Trash2, Plus } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const GroupDetails = ({ group }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { deleteGroup } = useGroups();
+  const { user } = useAuth();
+
+  const currentUserMembership = group?.memberships?.find((m) => m.user.uuid === user.uuid);
+  const isCurrentUserAdmin = currentUserMembership?.role === 'admin';
 
   const handleDelete = async () => {
     if (isDeleting || !confirm('Delete this group?')) return;
@@ -34,23 +39,25 @@ const GroupDetails = ({ group }) => {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button onClick={() => setShowAddModal(true)} variant="ghost" size="icon">
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button onClick={() => setShowEditModal(true)} variant="ghost" size="icon">
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button
-          onClick={handleDelete}
-          variant="ghost"
-          size="icon"
-          disabled={isDeleting}
-          className="text-red-500 hover:text-red-600"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
+      {isCurrentUserAdmin && (
+        <div className="flex gap-2">
+          <Button onClick={() => setShowAddModal(true)} variant="ghost" size="icon">
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button onClick={() => setShowEditModal(true)} variant="ghost" size="icon">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={handleDelete}
+            variant="ghost"
+            size="icon"
+            disabled={isDeleting}
+            className="text-red-500 hover:text-red-600"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {showEditModal && <EditGroupModal group={group} onClose={() => setShowEditModal(false)} />}
       {showAddModal && (

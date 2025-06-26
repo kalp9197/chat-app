@@ -11,9 +11,12 @@ export const getUsersByUuids = async (uuids) => {
 //get a group with its members
 export const getGroupWithMembers = async (groupId) => {
   return prisma.group.findUnique({
-    where: { id: groupId },
+    where: { id: groupId, is_active: 1 },
     include: {
       memberships: {
+        where: {
+          is_active: 1,
+        },
         include: {
           user: { select: { uuid: true, name: true, email: true } },
         },
@@ -45,15 +48,22 @@ export const createGroupWithMembers = async (name, memberships) => {
 export const findGroupsForUser = async (userId) => {
   return prisma.group.findMany({
     where: {
-      memberships: { some: { user_id: userId } },
+      memberships: { some: { user_id: userId, is_active: 1 } },
+      is_active: 1,
     },
     include: {
       memberships: {
+        where: {
+          is_active: 1,
+        },
         include: {
           user: { select: { uuid: true, name: true } },
         },
       },
       messages: {
+        where: {
+          is_active: 1,
+        },
         orderBy: { created_at: 'desc' },
         take: 1,
       },
@@ -66,7 +76,8 @@ export const findGroupByUuid = async (groupUuid, userId) => {
   return prisma.group.findFirst({
     where: {
       uuid: groupUuid,
-      memberships: { some: { user_id: userId } },
+      memberships: { some: { user_id: userId, is_active: 1 } },
+      is_active: 1,
     },
     include: {
       memberships: {
@@ -83,10 +94,12 @@ export const validateGroupAndAdminAccess = async (groupUuid, userId) => {
   return prisma.group.findFirst({
     where: {
       uuid: groupUuid,
+      is_active: 1,
       memberships: {
         some: {
           user_id: userId,
           role: 'admin',
+          is_active: 1,
         },
       },
     },
@@ -109,11 +122,12 @@ export const updateGroupTransaction = async (groupId, updates) => {
     }
 
     if (removeUserIds.length > 0) {
-      results.removedMembers = await tx.groupMembership.deleteMany({
+      results.removedMembers = await tx.groupMembership.updateMany({
         where: {
           group_id: groupId,
           user_id: { in: removeUserIds },
         },
+        data: { is_active: 0 },
       });
     }
 
@@ -135,7 +149,7 @@ export const updateGroupTransaction = async (groupId, updates) => {
     }
 
     const adminCount = await tx.groupMembership.count({
-      where: { group_id: groupId, role: 'admin' },
+      where: { group_id: groupId, role: 'admin', is_active: 1 },
     });
     if (adminCount === 0) {
       throw new Error('Group must have at least one admin');
@@ -188,6 +202,7 @@ export const getExistingMembershipsTransaction = async (groupId, userUuids) => {
         where: {
           group_id: groupId,
           user: { uuid: { in: userUuids } },
+          is_active: 1,
         },
         include: {
           user: { select: { id: true, uuid: true } },
@@ -209,12 +224,14 @@ export const deleteGroupByUuid = async (groupUuid) => {
 
     if (!group) throw new Error('Group not found');
 
-    await tx.groupMembership.deleteMany({
+    await tx.groupMembership.updateMany({
       where: { group_id: group.id },
+      data: { is_active: 0 },
     });
 
-    return tx.group.delete({
+    return tx.group.update({
       where: { uuid: groupUuid },
+      data: { is_active: 0 },
     });
   });
 };
@@ -257,6 +274,7 @@ export const getGroupMessages = async (groupId, limit, offset) => {
         content: true,
         created_at: true,
         message_type: true,
+        is_active: true,
         sender: { select: { uuid: true, name: true, email: true } },
       },
       orderBy: { created_at: 'desc' },

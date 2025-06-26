@@ -51,6 +51,7 @@ export const findMessages = async (senderId, receiverId, limit = 10, offset = 0)
         content: true,
         created_at: true,
         message_type: true,
+        is_active: true,
         sender: {
           select: { id: true, uuid: true, name: true },
         },
@@ -68,7 +69,7 @@ export const findMessages = async (senderId, receiverId, limit = 10, offset = 0)
 //find a message by uuid
 export const findMessageByUuid = async (uuid) => {
   return prisma.message.findUnique({
-    where: { uuid },
+    where: { uuid, is_active: 1 },
     include: {
       sender: { select: { uuid: true, name: true } },
       receiver: { select: { id: true, uuid: true } },
@@ -87,7 +88,8 @@ export const findMessageByUuid = async (uuid) => {
 
 //delete a message by uuid
 export const deleteMessageByUuid = async (uuid) => {
-  return prisma.message.delete({
+  return prisma.message.update({
     where: { uuid },
+    data: { is_active: 0 },
   });
 };

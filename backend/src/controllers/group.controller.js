@@ -83,6 +83,7 @@ export const updateGroupByUuid = async (req, res) => {
       data,
     });
   } catch (error) {
+    console.log(error.message);
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
     if (error instanceof ApiError) {
       statusCode = error.statusCode;

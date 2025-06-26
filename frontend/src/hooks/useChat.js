@@ -132,6 +132,7 @@ export const useChat = create((set, get) => ({
           senderName: message.sender?.name || message.sender_name || '',
           timestamp: message.created_at || message.timestamp || Date.now(),
           created_at: message.created_at || message.timestamp || Date.now(),
+          is_active: message.is_active,
           _raw: message,
         }));
         const uniqueMessages = formattedMessages.filter(
@@ -177,6 +178,7 @@ export const useChat = create((set, get) => ({
           senderName: message.sender?.name || message.sender_name || '',
           timestamp: message.created_at || message.timestamp || Date.now(),
           created_at: message.created_at || message.timestamp || Date.now(),
+          is_active: message.is_active,
           _raw: message,
         }));
         set((state) => {
@@ -223,6 +225,7 @@ export const useChat = create((set, get) => ({
           senderName: message.sender?.name || message.sender_name || '',
           timestamp: message.created_at || message.timestamp || Date.now(),
           created_at: message.created_at || message.timestamp || Date.now(),
+          is_active: message.is_active,
           _raw: message,
         }));
         set((state) => {
@@ -361,7 +364,7 @@ export const useChat = create((set, get) => ({
   deleteMessage: async (messageUuid) => {
     const originalMessages = get().messages;
     set((state) => ({
-      messages: state.messages.filter((m) => m.uuid !== messageUuid),
+      messages: state.messages.map((m) => (m.uuid === messageUuid ? { ...m, is_active: 0 } : m)),
     }));
     try {
       const { deleteMessage } = await import('@/services/messageService');
@@ -374,7 +377,7 @@ export const useChat = create((set, get) => ({
 
   removeMessageByUuid: (messageUuid) => {
     set((state) => ({
-      messages: state.messages.filter((m) => m.uuid !== messageUuid),
+      messages: state.messages.map((m) => (m.uuid === messageUuid ? { ...m, is_active: 0 } : m)),
     }));
   },
 }));

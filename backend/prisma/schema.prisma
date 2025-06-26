@@ -38,6 +38,7 @@ model Group {
   id         Int      @id @default(autoincrement())
   uuid       String   @unique @default(uuid())
   name       String
+  is_active  Int      @default(1)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -53,6 +54,7 @@ model GroupMembership {
   user_id   Int
   group_id  Int
   role      GroupRole @default(member)
+  is_active Int       @default(1)
   joined_at DateTime  @default(now())
 
   user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -72,6 +74,7 @@ model Message {
   group_id     Int?
   content      String
   message_type MessageType @default(text)
+  is_active    Int         @default(1)
   created_at   DateTime    @default(now())
   updated_at   DateTime    @updatedAt
 

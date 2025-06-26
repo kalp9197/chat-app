@@ -52,6 +52,13 @@ export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
 
   const processedMessages = await Promise.all(
     messages.map(async (message) => {
+      if (message.is_active === 0) {
+        return {
+          ...message,
+          content: 'This message was deleted',
+          message_type: 'text',
+        };
+      }
       if (message.message_type === 'file') {
         let content;
         try {
