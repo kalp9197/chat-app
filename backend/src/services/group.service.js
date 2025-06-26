@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { logError } from '../helper/logger.js';
+import { broadcast } from '../config/websocket.config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +31,17 @@ export const createGroup = async (name, creatorId, members = []) => {
       })),
   ];
 
-  return groupRepository.createGroupWithMembers(name, memberships);
+  const group = await groupRepository.createGroupWithMembers(name, memberships);
+
+  broadcast({
+    type: 'GROUP_MEMBER_COUNT_UPDATED',
+    payload: {
+      groupUuid: group.uuid,
+      memberCount: group.memberships.length,
+    },
+  });
+
+  return group;
 };
 
 //get all groups for a user
@@ -134,21 +145,20 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
   if (addMembers.length > 0) {
     const addUuids = addMembers.map((m) => m.uuid).filter(Boolean);
     if (addUuids.length > 0) {
-      const { users: usersToAdd, existingMemberships } =
-        await groupRepository.getExistingMembershipsTransaction(group.id, addUuids);
+      const { users: usersToAdd } = await groupRepository.getExistingMembershipsTransaction(
+        group.id,
+        addUuids,
+      );
 
-      const existingUserIds = new Set(existingMemberships.map((m) => m.user.id));
       const roleMap = Object.fromEntries(
         addMembers.map((m) => [m.uuid, m.role === 'admin' ? 'admin' : 'member']),
       );
 
-      addMemberships = usersToAdd
-        .filter((u) => !existingUserIds.has(u.id))
-        .map((u) => ({
-          user_id: u.id,
-          group_id: group.id,
-          role: roleMap[u.uuid] || 'member',
-        }));
+      addMemberships = usersToAdd.map((u) => ({
+        user_id: u.id,
+        group_id: group.id,
+        role: roleMap[u.uuid] || 'member',
+      }));
     }
   }
 
@@ -158,12 +168,22 @@ export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
       .map((r) => ({ userId: userMap[r.uuid].id, role: r.role }));
   }
 
-  return groupRepository.updateGroupTransaction(group.id, {
+  const updatedGroup = await groupRepository.updateGroupTransaction(group.id, {
     name: name?.trim(),
     removeUserIds,
     addMemberships,
     roleUpdates: processedRoleUpdates,
   });
+
+  broadcast({
+    type: 'GROUP_MEMBER_COUNT_UPDATED',
+    payload: {
+      groupUuid: updatedGroup.uuid,
+      memberCount: updatedGroup.memberships.length,
+    },
+  });
+
+  return updatedGroup;
 };
 
 //delete a group by uuid
@@ -175,6 +195,13 @@ export const deleteGroupByUuid = async (groupUuid, requesterId) => {
   }
 
   await groupRepository.deleteGroupByUuid(groupUuid);
+
+  broadcast({
+    type: 'GROUP_DELETED',
+    payload: {
+      groupUuid,
+    },
+  });
 };
 
 //add members to a group
@@ -190,36 +217,27 @@ export const addMembersToGroup = async (groupUuid, members = [], requesterId) =>
   const memberUuids = members.map((m) => m.uuid).filter(Boolean);
   if (!memberUuids.length) return { memberships: [], memberCount: 0 };
 
-  const { users, existingMemberships } = await groupRepository.getExistingMembershipsTransaction(
-    group.id,
-    memberUuids,
-  );
-
-  const existingUserIds = new Set(existingMemberships.map((m) => m.user.id));
-  const newUsers = users.filter((u) => !existingUserIds.has(u.id));
-
-  if (newUsers.length === 0) {
-    const currentGroup = await groupRepository.getGroupWithMembers(group.id);
-    const memberships = currentGroup.memberships.map((m) => ({
-      uuid: m.user.uuid,
-      name: m.user.name,
-      email: m.user.email,
-      role: m.role,
-    }));
-    return { memberships, memberCount: memberships.length };
-  }
+  const { users } = await groupRepository.getExistingMembershipsTransaction(group.id, memberUuids);
 
   const roleMap = Object.fromEntries(
     members.map((m) => [m.uuid, m.role === 'admin' ? 'admin' : 'member']),
   );
 
-  const newMemberships = newUsers.map((u) => ({
+  const newMemberships = users.map((u) => ({
     user_id: u.id,
     group_id: group.id,
     role: roleMap[u.uuid] || 'member',
   }));
 
   const updatedGroup = await groupRepository.addMembersTransaction(group.id, newMemberships);
+
+  broadcast({
+    type: 'GROUP_MEMBER_COUNT_UPDATED',
+    payload: {
+      groupUuid: updatedGroup.uuid,
+      memberCount: updatedGroup.memberships.length,
+    },
+  });
 
   const memberships = updatedGroup.memberships.map((m) => ({
     uuid: m.user.uuid,

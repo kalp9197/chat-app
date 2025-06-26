@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as groupService from '@/services/groupService';
+import { websocketService } from '@/services/websocketService';
 
 const formatGroup = (group) => ({
   ...group,
@@ -8,7 +9,7 @@ const formatGroup = (group) => ({
   memberCount: group.memberCount ?? group.memberships?.length ?? 0,
 });
 
-export const useGroups = create((set) => ({
+const useGroupsStore = create((set) => ({
   groups: [],
   loading: false,
   error: null,
@@ -123,4 +124,33 @@ export const useGroups = create((set) => ({
   },
 
   setActiveGroup: (group) => set({ activeGroup: group }),
+
+  _handleMemberCountUpdate: (payload) => {
+    const { groupUuid, memberCount } = payload;
+    set((state) => ({
+      groups: state.groups.map((group) =>
+        group.uuid === groupUuid ? { ...group, memberCount } : group,
+      ),
+      activeGroup:
+        state.activeGroup?.uuid === groupUuid
+          ? { ...state.activeGroup, memberCount }
+          : state.activeGroup,
+    }));
+  },
+
+  _handleGroupDeleted: (payload) => {
+    const { groupUuid } = payload;
+    set((state) => ({
+      groups: state.groups.filter((g) => g.uuid !== groupUuid),
+      activeGroup: state.activeGroup?.uuid === groupUuid ? null : state.activeGroup,
+    }));
+  },
 }));
+
+websocketService.on(
+  'GROUP_MEMBER_COUNT_UPDATED',
+  useGroupsStore.getState()._handleMemberCountUpdate,
+);
+websocketService.on('GROUP_DELETED', useGroupsStore.getState()._handleGroupDeleted);
+
+export const useGroups = useGroupsStore;

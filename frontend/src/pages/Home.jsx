@@ -8,17 +8,28 @@ import ChatList from '@/components/chat/ChatList';
 import Chat from '@/components/chat/Chat';
 import GroupDetails from '@/components/chat/GroupDetails';
 import GroupChat from '@/components/chat/GroupChat';
+import { websocketService } from '@/services/websocketService';
 
 export default function Home() {
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
   const [selectedChat, setSelectedChat] = useState(null);
   const { setActiveChat } = useChat();
-  const { fetchGroups, setActiveGroup } = useGroups();
+  const { groups, fetchGroups, setActiveGroup } = useGroups();
 
   useEffect(() => {
     fetchGroups();
-  }, [fetchGroups]);
+    websocketService.connect();
+  }, [fetchGroups, user]);
+
+  useEffect(() => {
+    if (selectedChat && selectedChat.id?.startsWith('group-')) {
+      const updatedGroup = groups.find((g) => g.id === selectedChat.id);
+      if (updatedGroup && updatedGroup.memberCount !== selectedChat.memberCount) {
+        setSelectedChat(updatedGroup);
+      }
+    }
+  }, [groups, selectedChat]);
 
   // Handles chat or group selection
   const handleSelectChat = (chat) => {

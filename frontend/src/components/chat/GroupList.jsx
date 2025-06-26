@@ -1,14 +1,9 @@
-import { useEffect } from 'react';
 import { useGroups } from '@/hooks/useGroups';
 import EmptyState from '@/components/common/EmptyState';
 import { motion as Motion } from 'framer-motion';
 
 const GroupList = ({ onSelectGroup, currentGroupId, onCreateGroup }) => {
   const { groups, fetchGroups, loading, error } = useGroups();
-
-  useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
 
   if (loading) {
     return (
