@@ -77,13 +77,11 @@ export const getGroupByUuid = async (req, res) => {
 export const updateGroupByUuid = async (req, res) => {
   try {
     const data = await groupService.updateGroupByUuid(req.params.uuid, req.body, req.user.id);
-
     return res.status(HTTP_STATUS.OK).json({
       message: 'Group updated successfully',
       data,
     });
   } catch (error) {
-    console.log(error.message);
     let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
     if (error instanceof ApiError) {
       statusCode = error.statusCode;

@@ -1,4 +1,5 @@
 import { prisma } from '../config/database.config.js';
+import { logError } from '../helper/logger.js';
 
 //get users by uuids
 export const getUsersByUuids = async (uuids) => {
@@ -73,7 +74,7 @@ export const findGroupsForUser = async (userId) => {
 
 //find a group by uuid
 export const findGroupByUuid = async (groupUuid, userId) => {
-  return prisma.group.findFirst({
+  return await prisma.group.findFirst({
     where: {
       uuid: groupUuid,
       memberships: { some: { user_id: userId, is_active: 1 } },
@@ -111,7 +112,7 @@ export const validateGroupAndAdminAccess = async (groupUuid, userId) => {
 export const updateGroupTransaction = async (groupId, updates) => {
   return prisma.$transaction(async (tx) => {
     const { name, removeUserIds = [], addMemberships = [], roleUpdates = [] } = updates;
-
+    logError('addMemberships');
     const results = {};
 
     if (name) {
@@ -130,11 +131,25 @@ export const updateGroupTransaction = async (groupId, updates) => {
         data: { is_active: 0 },
       });
     }
-
     if (addMemberships.length > 0) {
-      results.addedMembers = await tx.groupMembership.createMany({
-        data: addMemberships,
-      });
+      results.addedMembers = [];
+      for (const member of addMemberships) {
+        const upserted = await tx.groupMembership.upsert({
+          where: {
+            user_id_group_id: {
+              user_id: member.user_id,
+              group_id: member.group_id,
+            },
+          },
+          update: {
+            is_active: 1,
+            role: member.role,
+          },
+          create: member,
+        });
+        results.addedMembers.push(upserted);
+      }
+      logError('addMemberships' + JSON.stringify(results.addedMembers));
     }
 
     if (roleUpdates.length > 0) {

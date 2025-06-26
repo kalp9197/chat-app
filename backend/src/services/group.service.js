@@ -1,9 +1,10 @@
 import { groupRepository } from '../repositories/index.js';
 import { HTTP_STATUS } from '../constants/statusCodes.js';
 import { ApiError } from '../errors/apiError.js';
-import fs from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { logError } from '../helper/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,10 +64,7 @@ export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
         let content;
         try {
           content = JSON.parse(message.content);
-        } catch (parseError) {
-          console.error(
-            `Failed to parse message content for message ${message.id}: ${parseError.message}`,
-          );
+        } catch {
           return {
             ...message,
             content: {
@@ -84,7 +82,7 @@ export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
             content.data = base64Data;
             delete content.filePath;
           } catch (err) {
-            console.error(`Failed to read file for message ${message.id}: ${err.message}`);
+            logError('getGroupByUuid', err, { messageId: message.id });
             content.data = null;
             content.error = 'File not found';
             delete content.filePath;
@@ -107,7 +105,6 @@ export const getGroupByUuid = async (groupUuid, userId, limit, offset) => {
 //update a group by uuid
 export const updateGroupByUuid = async (groupUuid, updates, requesterId) => {
   const group = await groupRepository.validateGroupAndAdminAccess(groupUuid, requesterId);
-
   if (!group) {
     throw new ApiError('Group not found or admin access required', HTTP_STATUS.NOT_FOUND);
   }
